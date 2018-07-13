@@ -6,7 +6,7 @@ Equations-of-motion state base class.
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-from scipy.linalg import eigh
+from scipy.linalg import eig
 
 
 __all__ = [
@@ -172,8 +172,8 @@ class EOMState(metaclass=ABCMeta):
             Eigenvector matrix (m eigenvectors).
 
         """
-        # Run scipy `linalg.eigh` eigenvalue solver
-        w, v = eigh(self._lhs, b=self._rhs, eigvals=eigvals)
+        # Run scipy `linalg.eig` eigenvalue solver
+        w, v = eig(self._lhs, b=self._rhs, eigvals=eigvals)
         # Return w (eigenvalues)
         #    and v (eigenvector column matrix -- so transpose it!)
         return w, v.T
