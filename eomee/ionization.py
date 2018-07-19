@@ -37,7 +37,7 @@ class IonizationEOMState(EOMState):
         # A_mn = -h_nq \gamma_mq + 2 v_qnrs \Gamma_mqrs
         #      = -\gamma_mq h_qn + 2 \Gamma_mqrs v_qnrs
         a = np.dot(self._dm1, self._h)
-        b = np.tensordot(self._dm2, self._v, axes=((3, 2, 1), (3, 2, 0)))
+        b = np.tensordot(self._dm2, self._v, ((3, 2, 1), (3, 2, 0)))
         b *= 2
         b -= a
         return b

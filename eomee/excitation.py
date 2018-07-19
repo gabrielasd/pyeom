@@ -45,7 +45,7 @@ class ExcitationEOM(EOMState):
 
         """
         dm1h = np.dot(self._dm1, self._h)
-        I = np.eye(self._n)
+        I = np.eye(self._n, dtype=self._h.dtype)
 
         # A_klij = h_li \gamma_kj + h_jk \gamma_il
         #        = \gamma_kj h_li + h_kj \gamma_li
@@ -88,21 +88,21 @@ class ExcitationEOM(EOMState):
         b += a
         # A_klij -= v_jqrs \delta_li \Gamma_kqrs + v_pqis \delta_kj \Gamma_pqls
         #        -= (\Gamma_kqrs v_jqrs) \delta_li + \delta_kj (\Gamma_pqls v_pqis)
-        a = np.dot(self._dm2, self._v, axes=([1, 2, 3], [1, 2, 3]))
+        a = np.tensordot(self._dm2, self._v, ([1, 2, 3], [1, 2, 3]))
         a = np.kron(a, I).reshape(self._n, self._n, self._n, self._n)
         a = a.transpose(0, 1, 3, 2)
         b -= a
-        a = np.dot(self._dm2, self._v, axes=([0, 1, 3], [0, 1, 3]))
+        a = np.tensordot(self._dm2, self._v, ([0, 1, 3], [0, 1, 3]))
         a = np.kron(I, a).reshape(self._n, self._n, self._n, self._n)
         a = a.transpose(0, 1, 3, 2)
         b -= a
         # A_klij += v_pjrs \delta_il \Gamma_pksr + v_pqri \delta_jk \Gamma_pqlr
         #        += (\Gamma_pksr v_pjrs) \delta_li + \delta_kj (\Gamma_pqlr v_pqri)
-        a = np.dot(self._dm2, self._v, axes=([0, 2, 3], [0, 2, 3]))
+        a = np.tensordot(self._dm2, self._v, ([0, 2, 3], [0, 2, 3]))
         a = np.kron(a, I).reshape(self._n, self._n, self._n, self._n)
         a = a.transpose(0, 1, 3, 2)
         b += a
-        a = np.dot(self._dm2, self._v, axes=([0, 1, 3], [0, 1, 2]))
+        a = np.tensordot(self._dm2, self._v, ([0, 1, 3], [0, 1, 2]))
         a = np.kron(I, a).reshape(self._n, self._n, self._n, self._n)
         a = a.transpose(0, 1, 3, 2)
         b += a
@@ -113,11 +113,11 @@ class ExcitationEOM(EOMState):
         Compute M = \sum_ij { \gamma_{kj} \delta_{li} - \delta_{jk} \gamma_{il} }.
 
         """
-        I = np.eye(self._n)
+        I = np.eye(self._n, dtype=self._h.dtype)
 
         # M_klij = \gamma_kj \delta_li - \delta_jk \gamma_il
         #        = \gamma_kj \delta_li - \delta_kj \gamma_li
         m = np.kron(self._dm1, I).reshape(self._n, self._n, self._n, self._n)
-        n -= np.kron(I, self._dm1).reshape(self._n, self._n, self._n, self._n)
+        m -= np.kron(I, self._dm1).reshape(self._n, self._n, self._n, self._n)
         m = m.transpose(0, 1, 3, 2)
         return m.reshape(self._n**2, self._n**2)
