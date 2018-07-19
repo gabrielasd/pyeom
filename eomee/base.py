@@ -173,7 +173,7 @@ class EOMState(metaclass=ABCMeta):
 
         """
         # Run scipy `linalg.eig` eigenvalue solver
-        w, v = eig(self._lhs, b=self._rhs, eigvals=eigvals)
+        w, v = eig(self._lhs, b=self._rhs)
         # Return w (eigenvalues)
         #    and v (eigenvector column matrix -- so transpose it!)
         return w, v.T
