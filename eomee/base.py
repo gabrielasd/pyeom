@@ -6,7 +6,9 @@ Equations-of-motion state base class.
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-from scipy.linalg import eig
+import numpy as np
+from scipy.linalg import eig, svd
+from scipy.sparse.linalg import eigs
 
 
 __all__ = [
@@ -153,16 +155,14 @@ class EOMState(metaclass=ABCMeta):
         """
         return self._rhs
 
-    def solve(self, eigvals=None):
+    def solve_dense(self, tol=1.0e-10, *args, **kwargs):
         """
         Solve the EOM eigenvalue system.
 
         Parameters
         ----------
-        eigvals : (2,), optional
-            Range of eigenpairs to find, by ascending eigenvalue, denoted (lo, hi).
-            E.g., (0, 3) would find the 3 eigenpairs with the lowest eigenvalues.
-            If `None`, all eigenpairs are found (default).
+        tol : float, optional
+            Tolerance for small singular values. Default: 1.0e-10
 
         Returns
         -------
@@ -172,11 +172,60 @@ class EOMState(metaclass=ABCMeta):
             Eigenvector matrix (m eigenvectors).
 
         """
+        # Invert RHS matrix
+        # RHS matrix SVD 
+        U, s, V = svd(self._rhs)
+        # Check singular value threshold
+        s = s ** (-1)
+        s[s >= 1/tol] = 0.
+        # S^(-1)
+        S_inv = s * np.eye(len(s))
+        # rhs^(-1)
+        rhs_inv = np.dot(V, np.dot(S_inv, U.T))
+        # Apply RHS^-1 * LHS
+        A = np.dot(rhs_inv, self._lhs)
         # Run scipy `linalg.eig` eigenvalue solver
-        w, v = eig(self._lhs, b=self._rhs)
+        w, v = eig(A, *args, **kwargs)
         # Return w (eigenvalues)
         #    and v (eigenvector column matrix -- so transpose it!)
-        return w, v.T
+        return np.real(w), np.real(v.T)
+
+    def solve_sparse(self, eigvals=6, tol=1.0e-10,  *args, **kwargs):
+        """
+        Solve the EOM eigenvalue system.
+
+        Parameters
+        ----------
+        eigvals : int, optional
+            Number of eigenpairs to find. Must be smaller than N-1.
+        tol : float, optional
+            Tolerance for small singular values. Default: 1.0e-10
+
+        Returns
+        -------
+        w : np.ndarray((m,))
+            Eigenvalue array (m eigenvalues).
+        v : np.ndarray((m, n))
+            Eigenvector matrix (m eigenvectors).
+
+        """
+        # Invert RHS matrix
+        # RHS matrix SVD 
+        U, s, V = svd(self._rhs)
+        # Check singular value threshold
+        s = s ** (-1)
+        s[s >= 1/tol] = 0.
+        # S^(-1)
+        S_inv = s * np.eye(len(s))
+        # rhs^(-1)
+        rhs_inv = np.dot(V, np.dot(S_inv, U.T))
+        # Apply RHS^-1 * LHS
+        A = np.dot(rhs_inv, self._lhs)
+        # Run scipy `linalg.eigs` eigenvalue solver
+        w, v = eigs(A, k=eigvals, which='SR', *args, **kwargs)
+        # Return w (eigenvalues)
+        #    and v (eigenvector column matrix -- so transpose it!)
+        return np.real(w), np.real(v.T)
 
     @abstractmethod
     def _compute_lhs(self):
