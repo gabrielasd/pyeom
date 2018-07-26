@@ -179,7 +179,7 @@ class EOMState(metaclass=ABCMeta):
         s = s ** (-1)
         s[s >= 1/tol] = 0.
         # S^(-1)
-        S_inv = s * np.eye(len(s))
+        S_inv = np.diag(s)
         # rhs^(-1)
         rhs_inv = np.dot(V, np.dot(S_inv, U.T))
         # Apply RHS^-1 * LHS
@@ -216,7 +216,7 @@ class EOMState(metaclass=ABCMeta):
         s = s ** (-1)
         s[s >= 1/tol] = 0.
         # S^(-1)
-        S_inv = s * np.eye(len(s))
+        S_inv = np.diag(s)
         # rhs^(-1)
         rhs_inv = np.dot(V, np.dot(S_inv, U.T))
         # Apply RHS^-1 * LHS
