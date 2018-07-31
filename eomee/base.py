@@ -41,6 +41,18 @@ class EOMState(metaclass=ABCMeta):
 
         """
         # Basic system attributes
+        if not (isinstance(h, np.ndarray) and h.ndim == 2):
+            raise ValueError('One-particle integrals should be a 2-dimensional 
+                    numpy array')
+        if not (isinstance(v, np.ndarray) and h.ndim == 4):
+            raise ValueError('Two-particle integrals should be a 4-dimensional 
+                    numpy array')
+        if not (isinstance(dm1, np.ndarray) and h.ndim == 2):
+            raise ValueError('One-particle reduced density matrix should be a 
+                    2-dimensional numpy array')
+        if not (isinstance(dm2, np.ndarray) and h.ndim == 4):
+            raise ValueError('Two-particle reduced density matrix should be a 
+                    2-dimensional numpy array')
         self._n = h.shape[0]
         self._h = h
         self._v = v
@@ -172,6 +184,8 @@ class EOMState(metaclass=ABCMeta):
             Eigenvector matrix (m eigenvectors).
 
         """
+        if not isinstance(tol, float):
+            raise TypeError('Argument tol must be a float')
         # Invert RHS matrix
         # RHS matrix SVD 
         U, s, V = svd(self._rhs)
@@ -209,6 +223,8 @@ class EOMState(metaclass=ABCMeta):
             Eigenvector matrix (m eigenvectors).
 
         """
+        if not isinstance(tol, float):
+            raise TypeError('Argument tol must be a float')
         # Invert RHS matrix
         # RHS matrix SVD 
         U, s, V = svd(self._rhs)
