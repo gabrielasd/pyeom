@@ -42,17 +42,17 @@ class EOMState(metaclass=ABCMeta):
         """
         # Basic system attributes
         if not (isinstance(h, np.ndarray) and h.ndim == 2):
-            raise ValueError('One-particle integrals should be a 2-dimensional 
-                    numpy array')
-        if not (isinstance(v, np.ndarray) and h.ndim == 4):
+            raise ValueError('One-particle integrals should be a 2-dimensional ' 
+                    'numpy array')
+        if not (isinstance(v, np.ndarray) and v.ndim == 4):
             raise ValueError('Two-particle integrals should be a 4-dimensional 
                     numpy array')
-        if not (isinstance(dm1, np.ndarray) and h.ndim == 2):
-            raise ValueError('One-particle reduced density matrix should be a 
-                    2-dimensional numpy array')
-        if not (isinstance(dm2, np.ndarray) and h.ndim == 4):
-            raise ValueError('Two-particle reduced density matrix should be a 
-                    2-dimensional numpy array')
+        if not (isinstance(dm1, np.ndarray) and dm1.ndim == 2):
+            raise ValueError('One-particle reduced density matrix should be a '
+                    '2-dimensional numpy array')
+        if not (isinstance(dm2, np.ndarray) and dm2.ndim == 4):
+            raise ValueError('Two-particle reduced density matrix should be a '
+                    '2-dimensional numpy array')
         self._n = h.shape[0]
         self._h = h
         self._v = v
