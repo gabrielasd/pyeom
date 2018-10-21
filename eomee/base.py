@@ -45,8 +45,8 @@ class EOMState(metaclass=ABCMeta):
             raise ValueError('One-particle integrals should be a 2-dimensional ' 
                     'numpy array')
         if not (isinstance(v, np.ndarray) and v.ndim == 4):
-            raise ValueError('Two-particle integrals should be a 4-dimensional 
-                    numpy array')
+            raise ValueError('Two-particle integrals should be a 4-dimensional ' 
+                    'numpy array')
         if not (isinstance(dm1, np.ndarray) and dm1.ndim == 2):
             raise ValueError('One-particle reduced density matrix should be a '
                     '2-dimensional numpy array')
@@ -195,7 +195,7 @@ class EOMState(metaclass=ABCMeta):
         # S^(-1)
         S_inv = np.diag(s)
         # rhs^(-1)
-        rhs_inv = np.dot(V, np.dot(S_inv, U.T))
+        rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
         # Apply RHS^-1 * LHS
         A = np.dot(rhs_inv, self._lhs)
         # Run scipy `linalg.eig` eigenvalue solver
