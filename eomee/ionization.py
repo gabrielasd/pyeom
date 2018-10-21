@@ -31,16 +31,17 @@ class IonizationEOMState(EOMState):
     def _compute_lhs(self):
         """
         Compute A = \sum_q { -h_{nq} \gamma_{mq} }
-                  + 2 \sum_{qrs} { v_{qnrs} \Gamma_{mqrs} }.
+                  - 2 \sum_{qrs} { \left< nq||rs \right> \Gamma_{mqrs} }.
 
         """
-        # A_mn = -h_nq \gamma_mq + 2 v_qnrs \Gamma_mqrs
-        #      = -\gamma_mq h_qn + 2 \Gamma_mqrs v_qnrs
+        # A_mn = -h_nq \gamma_mq + 0.5 (v_pnrs \Gamma_mprs - v_nqrs \Gamma_mqrs)
+        #      = -h_nq \gamma_mq + 0.5 (v_qnrs - v_nqrs) \Gamma_mqrs
+        #      = -h_nq \gamma_mq - 2 <v_nqrs> \Gamma_mqrs
         a = np.dot(self._dm1, self._h)
-        b = np.tensordot(self._dm2, self._v, ((3, 2, 1), (3, 2, 0)))
-        b *= 2
-        b -= a
-        return b
+        b = np.tensordot(self._dm2, self._v, ((1, 2, 3), (1, 2, 3)))
+        b *= 0.5
+        b += a
+        return -b
 
     def _compute_rhs(self):
         """
