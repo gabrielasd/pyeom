@@ -34,30 +34,24 @@ class ElectronAffinitiesEOM1(EOMState):
 
     def _compute_lhs(self):
         """
-        Compute A = h_mn + \sum_p { -h_{pn} \gamma_{pm} }
-                  + \sum_{pqs} { v_pqns \Gamma_pqsm - v_pqsn \Gamma_pqsm }
-                  + 2 \sum_{qs} { v_mqns \gamma_qs + v_qmns \gamma_qs}. 
+        Compute A = h_mn - \sum_p { h_{pn} \gamma_{pm} }
+                  - 2 \sum_{pqs} { v_pqsn \Gamma_pqsm }
+                  + 4 \sum_{qs} { v_mqns \gamma_qs}. 
 
         """
-        # A_mn = h_mn - h_pn \gamma_pm + v_pqns \Gamma_pqsm - v_pqsn \Gamma_pqsm
-        #      + 2 v_mqns \gamma_qs - 2 v_qmns \gamma_qs
-        #      = h_mn - \gamma_mp h_pn + \Gamma_pqsm v_pqns - \Gamma_pqsm v_pqsn
-        #      + 2 v_mqns \gamma_qs - 2 v_qmns \gamma_qs
+        # A_mn = h_mn - h_pn \gamma_pm - 0.5 v_pqsn \Gamma_pqsm
+        #      + v_mqns \gamma_qs
+        # A_mn = h_mn + v_mqns \gamma_qs
+        #      - ( h_pn \gamma_pm + 0.5 * v_pqsn \Gamma_pqsm )
         a = self._h
+        a += np.tensordot(self._v, self._dm1, axes=((1, 3), (0, 1)))
         a -= np.dot(self._dm1, self._h)
-        a += np.tensordot(self._dm2, self._v, axes=((0, 1, 2), (0, 1, 3)))
-        a -= np.tensordot(self._dm2, self._v, axes=((0, 1, 2), (0, 1, 2)))
-        b = np.tensordot(self._v, self._dm1, axes=((1, 3), (0, 1)))
-        b *= 2
-        a += b
-        b = np.tensordot(self._v, self._dm1, axes=((0, 3), (0, 1)))
-        b *= 2
-        a -= b
-        return b
+        a -= 0.5 * np.tensordot(self._dm2, self._v, axes=((0, 1, 2), (0, 1, 2)))
+        return a
 
     def _compute_rhs(self):
         """
-        Compute M = \sum_n { \delta_mn - \gamma_{nm} }.
+        Compute M = \sum_n { \delta_nm - \gamma_{nm} }.
 
         """
         # M_mn = \delta_mn - \gamma_mn
