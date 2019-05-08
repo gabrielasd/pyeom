@@ -82,7 +82,6 @@ class ExcitationEOM(EOMState):
         """
         I = np.eye(self._n, dtype=self._h.dtype)
 
-        # M_klij = [\gamma_kj \delta_li]_klji - [\delta_jk \gamma_il]_jikl
-        m = np.einsum('kj,li->klij', self.dm1, I)
-        m -= np.einsum('kj,li->klij', I, self.dm1)
+        # M_klij = [\delta_li \gamma_kj]_lkij
+        m = np.einsum('li,kj->klij', I, self.dm1)
         return m.reshape(self._n**2, self._n**2)

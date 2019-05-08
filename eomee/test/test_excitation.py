@@ -43,9 +43,9 @@ def test_excitation_heh_sto3g():
     # print(eom.neigs)
     aval = np.sort(aval)
     # print(aval)
-    # Reference value
-    e = 0.911
-    assert abs(aval[-1] - e) < 1e-2
+    # Reference value fom PyCI
+    e = 0.91123311 
+    assert abs(aval[-5] - e) < 1e-6
     
 
 test_excitation_heh_sto3g()
