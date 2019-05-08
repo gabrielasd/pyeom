@@ -49,84 +49,58 @@ class ExcitationEOM(EOMState):
 
         # A_klij = h_li \gamma_kj + h_jk \gamma_il
         #        = \gamma_kj h_li + h_kj \gamma_li
-        b = np.einsum('il,jk->klij', I, hdm1)
-        b *= -2
-#        b = np.kron(self._dm1, self._h)
-#        b += np.kron(self._h, self._dm1)
-#        b = b.reshape(self._n, self._n, self._n, self._n).transpose(0, 1, 3, 2)
+        b = -np.einsum('il,jk->klij', I, hdm1)
+        b -= np.einsum('jk,il->klij', I, hdm1)
+#        b = np.einsum('il,jk->klij', I, hdm1)
+#        b *= -2
         # A_klij -= h_jq \delta_li \gamma_kq + h_pi \delta_jk \gamma_pl
         #        -= \gamma_kq h_qj \delta_li + \delta_kj \gamma_lp h_pi
-        a = np.einsum('li,kj->klij', self.h, self.dm1)
-        a *= 2
-        b += a
-#        a = np.kron(dm1h, I)
-#        a += np.kron(I, dm1h)
-#        a = a.reshape(self._n, self._n, self._n, self._n).transpose(0, 1, 3, 2)
-#        b -= a
+        b += np.einsum('li,kj->klij', self.h, self.dm1)
+        b += np.einsum('jk,il->klij', self.h, self.dm1)
+#        a = np.einsum('li,kj->klij', self.h, self.dm1)
+#        a *= 2
+#        b += a
         # A_klij += v_lpiq \Gamma_kpjq + v_jpkq \Gamma_iplq
         #        += \Gamma_kpjq v_lpiq + v_kqjp \Gamma_lqip
         vdm2 = np.einsum('jqrs,kqrs->jk', self.v, self.dm2)
-        a = np.einsum('il,jk->klij', I, vdm2)
-        a *= -0.5
-#        a = np.tensordot(self._dm2, self._v, axes=([1,3], [1, 3]))
-#        a += np.tensordot(self._v, self._dm2, axes=([1,3], [1, 3]))
-#        a = a.transpose(0, 2, 3, 1)
-        b += a
+        b -= 0.5 * np.einsum('il,jk->klij', I, vdm2)
+#        a = np.einsum('il,jk->klij', I, vdm2)
+#        a *= -0.5
+#        b += a
         # A_klij += 2 * (v_plis \Gamma_pkjs + v_pjks \Gamma_pils )
         #        += 2 * ( \Gamma_pkjs v_plis + v_kspj \Gamma_lspi)
         vdm2 = np.einsum('pqis,pqsl->il', self.v, self.dm2)
-        a = np.einsum('jk,il->klij', I, vdm2)
-        a *= -0.5
-#        a = np.tensordot(self._dm2, self._v, axes=([0,3], [0, 3]))
-#        a += np.tensordot(self._v, self._dm2, axes=([1,2], [1, 2]))
-#        a = a.transpose(0, 2, 3, 1)
-#        a *= 2
-        b += a
+        b -= 0.5 * np.einsum('jk,il->klij', I, vdm2)
+#        a = np.einsum('jk,il->klij', I, vdm2)
+#        a *= -0.5
+#        b += a
         # A_klij -= v_plri \Gamma_pkjr + v_pjrk \Gamma_pilr
         #        -= \Gamma_pkjr v_plri + v_rkpj \Gamma_lrpi
-        a = np.einsum('pqik,pqlj->klij', self.v, self.dm2)
-        a *= 0.5
-#        a = np.tensordot(self._dm2, self._v, axes=([0,3], [0, 2]))
-#        a += np.tensordot(self._v, self._dm2, axes=([1,2], [1, 2]))
-#        a = a.transpose(0, 2, 3, 1)
-#        b -= a
-        b += a
+        b += 0.5 * np.einsum('pqik,pqlj->klij', self.v, self.dm2)
+#        a = np.einsum('pqik,pqlj->klij', self.v, self.dm2)
+#        a *= 0.5
+#        b += a
         # A_klij += v_jlrs \Gamma_iksr - v_ljrs \Gamma_iksr
         #        += \Gamma_iksr v_jlrs - \Gamma_iksr v_ljrs
-        a = 2 * np.einsum('lqsi,kqsj->klij', self.v, self.dm2)
-        a *= 0.5
-#        a = np.tensordot(self._dm2, self._v, axes=([2,3], [3, 2])).transpose(1, 3, 0, 2)
-#        a -= np.tensordot(self._dm2, self._v, axes=([2,3], [3, 2])).transpose(1, 2, 0, 3)
-        b += a
+        b += 0.5 * np.einsum('lqsi,kqsj->klij', self.v, self.dm2)
+        b += 0.5 * np.einsum('lpsi,kpsj->klij', self.v, self.dm2)
+#        a = 2 * np.einsum('lqsi,kqsj->klij', self.v, self.dm2)
+#        a *= 0.5
+#        b += a
         # A_klij += v_ikpq \Gamma_ljpq - v_kipq \Gamma_ljpq
-        a = 2 * np.einsum('jqsk,iqsl->klij', self.v, self.dm2)
-        a *= 0.5
-#        a = np.tensordot(self._v, self._dm2, axes=([2,3], [2, 3])).transpose(1, 2, 0, 3)
-#        a -= np.tensordot(self._v, self._dm2, axes=([2,3], [2, 3])).transpose(0, 2, 1, 3)
-        b += a
+        b += 0.5 * np.einsum('jqsk,iqsl->klij', self.v, self.dm2)
+#        a = 2 * np.einsum('jqsk,iqsl->klij', self.v, self.dm2)
+#        a *= 0.5
+#        b += a
         # A_klij -= v_jqrs \delta_li \Gamma_kqrs + v_pqis \delta_kj \Gamma_pqls
         #        -= (\Gamma_kqrs v_jqrs) \delta_li + \delta_kj (\Gamma_pqls v_pqis)
-        a = np.einsum('jlrs,ikrs->klij', self.v, self.dm2)
-        a *= -0.5
-#        a = np.tensordot(self._dm2, self._v, ([1, 2, 3], [1, 2, 3]))
-#        a = np.kron(a, I).reshape(self._n, self._n, self._n, self._n)
-#        a = a.transpose(0, 1, 3, 2)
-#        b -= a
-        b += a
-#        a = np.tensordot(self._dm2, self._v, ([0, 1, 3], [0, 1, 3]))
-#        a = np.kron(I, a).reshape(self._n, self._n, self._n, self._n)
-#        a = a.transpose(0, 1, 3, 2)
-#        b -= a
+        b -= 0.5 * np.einsum('jlrs,ikrs->klij', self.v, self.dm2)
+#        a = np.einsum('jlrs,ikrs->klij', self.v, self.dm2)
+#        a *= -0.5
+#        b += a
         # A_klij += v_pjrs \delta_il \Gamma_pksr + v_pqri \delta_jk \Gamma_pqlr
         #        += (\Gamma_pksr v_pjrs) \delta_li + \delta_kj (\Gamma_pqlr v_pqri)
-#        a = np.tensordot(self._dm2, self._v, ([0, 2, 3], [0, 2, 3]))
-#        a = np.kron(a, I).reshape(self._n, self._n, self._n, self._n)
-#        a = a.transpose(0, 1, 3, 2)
-#        b += a
-#        a = np.tensordot(self._dm2, self._v, ([0, 1, 3], [0, 1, 2]))
-#        a = np.kron(I, a).reshape(self._n, self._n, self._n, self._n)
-#        a = a.transpose(0, 1, 3, 2)
-#        b += a
+        b += 0.5 * np.einsum('jpsk,ipsl->klij', self.v, self.dm2)
         return b.reshape(self._n**2, self._n**2)
 
     def _compute_rhs(self):
