@@ -13,7 +13,7 @@ from scipy.sparse.linalg import eigs
 
 __all__ = [
     'EOMState',
-    ]
+]
 
 
 class EOMState(metaclass=ABCMeta):
@@ -42,17 +42,17 @@ class EOMState(metaclass=ABCMeta):
         """
         # Basic system attributes
         if not (isinstance(h, np.ndarray) and h.ndim == 2):
-            raise ValueError('One-particle integrals should be a 2-dimensional ' 
-                    'numpy array')
+            raise ValueError('One-particle integrals should be a 2-dimensional '
+                             'numpy array')
         if not (isinstance(v, np.ndarray) and v.ndim == 4):
-            raise ValueError('Two-particle integrals should be a 4-dimensional ' 
-                    'numpy array')
+            raise ValueError('Two-particle integrals should be a 4-dimensional '
+                             'numpy array')
         if not (isinstance(dm1, np.ndarray) and dm1.ndim == 2):
             raise ValueError('One-particle reduced density matrix should be a '
-                    '2-dimensional numpy array')
+                             '2-dimensional numpy array')
         if not (isinstance(dm2, np.ndarray) and dm2.ndim == 4):
             raise ValueError('Two-particle reduced density matrix should be a '
-                    '2-dimensional numpy array')
+                             '2-dimensional numpy array')
         self._n = h.shape[0]
         self._h = h
         self._v = v
@@ -187,11 +187,11 @@ class EOMState(metaclass=ABCMeta):
         if not isinstance(tol, float):
             raise TypeError('Argument tol must be a float')
         # Invert RHS matrix
-        # RHS matrix SVD 
+        # RHS matrix SVD
         U, s, V = svd(self._rhs)
         # Check singular value threshold
         s = s ** (-1)
-        s[s >= 1/tol] = 0.
+        s[s >= 1 / tol] = 0.
         # S^(-1)
         S_inv = np.diag(s)
         # rhs^(-1)
@@ -204,7 +204,7 @@ class EOMState(metaclass=ABCMeta):
         #    and v (eigenvector column matrix -- so transpose it!)
         return np.real(w), np.real(v.T)
 
-    def solve_sparse(self, eigvals=6, tol=1.0e-10,  *args, **kwargs):
+    def solve_sparse(self, eigvals=6, tol=1.0e-10, *args, **kwargs):
         """
         Solve the EOM eigenvalue system.
 
@@ -226,15 +226,15 @@ class EOMState(metaclass=ABCMeta):
         if not isinstance(tol, float):
             raise TypeError('Argument tol must be a float')
         # Invert RHS matrix
-        # RHS matrix SVD 
+        # RHS matrix SVD
         U, s, V = svd(self._rhs)
         # Check singular value threshold
         s = s ** (-1)
-        s[s >= 1/tol] = 0.
+        s[s >= 1 / tol] = 0.
         # S^(-1)
         S_inv = np.diag(s)
         # rhs^(-1)
-        rhs_inv = np.dot(V, np.dot(S_inv, U.T))
+        rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
         # Apply RHS^-1 * LHS
         A = np.dot(rhs_inv, self._lhs)
         # Run scipy `linalg.eigs` eigenvalue solver

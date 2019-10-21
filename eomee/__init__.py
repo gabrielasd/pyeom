@@ -8,11 +8,11 @@ __all__ = [
     'EOMState',
     'IonizationEOMState',
     'ElectronAffinitiesEOM1',
-    'ExcitationEOM'
-    ]
+    'IonizationDoubleCommutator'
+]
 
 
 from eomee.base import EOMState
 from eomee.ionization import IonizationEOMState
 from eomee.electronaff import ElectronAffinitiesEOM1
-from eomee.excitation import ExcitationEOM
+from eomee.ionization2 import IonizationDoubleCommutator
