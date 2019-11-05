@@ -15,4 +15,4 @@ __all__ = [
 from eomee.base import EOMState
 from eomee.ionization import IonizationEOMState
 from eomee.electronaff import ElectronAffinitiesEOM1
-from eomee.ionization2 import IonizationDoubleCommutator
+from eomee.ionization import IonizationDoubleCommutator
