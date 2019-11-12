@@ -11,7 +11,8 @@ from scipy.linalg import eig, svd
 
 
 def test_doubleionization_one_body_term_H2():
-    """
+    """Check the one-body teerms of the double ionization potential
+    equation of motion are correct.
 
     """
     one_mo = np.load(find_datafiles('test/h2_sto6g_oneint_genzd.npy'))
@@ -30,7 +31,8 @@ def test_doubleionization_one_body_term_H2():
 
 
 def test_doubleionization_two_body_term_H2():
-    """
+    """Check the two-body teerms of the double ionization potential
+    equation of motion are correct.
 
     """
     one_mo = np.load(find_datafiles('test/h2_sto6g_oneint_genzd.npy'))
@@ -42,7 +44,6 @@ def test_doubleionization_two_body_term_H2():
     eom = eomee.DoubleElectronRemovalEOM(one_mo, two_mo, one_dm, two_dm)
     aval, avec = eom.solve_dense()
     aval = np.sort(aval)
-    print(aval[-1])
 
     # Recomputing the left- and right-hand-sides for the double electron removal EOM
     # operator using the two-electron reduced Hamiltonian. The contribution
@@ -175,7 +176,9 @@ def test_doubleionization_two_body_term_H2():
 
 
 def test_doubleionization_H2_sto6g():
-    """
+    """Test DoubleElectronRemovalEOM for H2 (STO-6G)
+    against Hartree-Fock canonical orbitals energy
+    difference.
 
     """
     one_mo = np.load(find_datafiles('test/h2_sto6g_oneint_genzd.npy'))
@@ -192,7 +195,9 @@ def test_doubleionization_H2_sto6g():
 
 
 def test_doubleionization_He_ccpvdz():
-    """
+    """Test DoubleElectronRemovalEOM for He (cc-pVDZ)
+    against Hartree-Fock canonical orbitals energy
+    difference.
 
     """
     one_mo = np.load(find_datafiles('test/he_ccpvdz_oneint_genzd.npy'))
@@ -209,7 +214,9 @@ def test_doubleionization_He_ccpvdz():
 
 
 def test_doubleionization_HeHcation_sto3g():
-    """
+    """Test DoubleElectronRemovalEOM for HeH^{+} (STO-3G)
+    against Hartree-Fock canonical orbitals energy
+    difference.
 
     """
     one_mo = np.load(find_datafiles('test/heh+_sto3g_oneint_genzd.npy'))
@@ -223,10 +230,3 @@ def test_doubleionization_HeHcation_sto3g():
 
     dip = -2 * (-1.52378328) + two_mo[0, 2, 0, 2]
     assert abs(aval[-1] - dip) < 1e-6
-
-
-test_doubleionization_one_body_term_H2()
-test_doubleionization_two_body_term_H2()
-test_doubleionization_H2_sto6g()
-test_doubleionization_He_ccpvdz()
-test_doubleionization_HeHcation_sto3g()
