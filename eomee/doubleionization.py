@@ -34,32 +34,32 @@ class DoubleElectronRemovalEOM(EOMState):
         I = np.eye(self._n, dtype=self._h.dtype)
 
         # A_klji = 2 h_il \delta_jk - 2 h_il \gamma_jk + 2 h_ik \gamma_jl - 2 h_ik \delta_jl
-        a = np.einsum('il,jk->klji', self._h, I)
-        a -= np.einsum('il,jk->klji', self._h, self._dm1)
-        a += np.einsum('ik,jl->klji', self._h, self._dm1)
-        a -= np.einsum('ik,jl->klji', self._h, I)
+        a = np.einsum('il,jk->klji', self._h, I, optimize=True)
+        a -= np.einsum('il,jk->klji', self._h, self._dm1, optimize=True)
+        a += np.einsum('ik,jl->klji', self._h, self._dm1, optimize=True)
+        a -= np.einsum('ik,jl->klji', self._h, I, optimize=True)
         # A_klji += 2 \gamma_lq h_qj \delta_ki - 2 \gamma_kq h_qj \delta_li
-        dm1h = np.einsum('ab,bc->ac', self._dm1, self._h)
-        a += np.einsum('lj,ki->klji', dm1h, I)
-        a -= np.einsum('kj,li->klji', dm1h, I)
+        dm1h = np.einsum('ab,bc->ac', self._dm1, self._h, optimize=True)
+        a += np.einsum('lj,ki->klji', dm1h, I, optimize=True)
+        a -= np.einsum('kj,li->klji', dm1h, I, optimize=True)
         a *= 2
         # A_klji += <v_klji>
         a += self._v
         # A_klji += <v_jilr> \gamma_kr - <v_jikr> \gamma_lr + 2 <v_qjkl> \gamma_qi
-        a += np.einsum('jilr,kr->klji', self._v, self._dm1)
-        a -= np.einsum('jikr,lr->klji', self._v, self._dm1)
-        a += 2 * np.einsum('qjkl,qi->klji', self._v, self._dm1)
+        a += np.einsum('jilr,kr->klji', self._v, self._dm1, optimize=True)
+        a -= np.einsum('jikr,lr->klji', self._v, self._dm1, optimize=True)
+        a += 2 * np.einsum('qjkl,qi->klji', self._v, self._dm1, optimize=True)
         # A_klji += 2 ( <v_iqrk> \gamma_qr \delta_lj - <v_iqrl> \gamma_qr \delta_kj )
-        vdm1 = np.einsum('abcd,bc->ad', self._v, self._dm1)
-        a += 2 * np.einsum('ik,lj->klji', vdm1, I)
-        a -= 2 * np.einsum('il,kj->klji', vdm1, I)
+        vdm1 = np.einsum('abcd,bc->ad', self._v, self._dm1, optimize=True)
+        a += 2 * np.einsum('ik,lj->klji', vdm1, I, optimize=True)
+        a -= 2 * np.einsum('il,kj->klji', vdm1, I, optimize=True)
         # A_klji += 2 ( <v_jqrk> \Gamma_qlri + <v_jqlr> \Gamma_qkri )
-        a += 2 * np.einsum('jqrk,qlri->klji', self._v, self._dm2)
-        a += 2 * np.einsum('jqlr,qkri->klji', self._v, self._dm2)
+        a += 2 * np.einsum('jqrk,qlri->klji', self._v, self._dm2, optimize=True)
+        a += 2 * np.einsum('jqlr,qkri->klji', self._v, self._dm2, optimize=True)
         # A_klji += <v_qjrs> \Gamma_qlrs \delta_ki - <v_qjrs> \Gamma_qkrs \delta_li
-        vdm2 = np.einsum('abcd,aecd->be', self._v, self._dm2)
-        a += np.einsum('jl,ki->klji', vdm2, I)
-        a -= np.einsum('jk,li->klji', vdm2, I)
+        vdm2 = np.einsum('abcd,aecd->be', self._v, self._dm2, optimize=True)
+        a += np.einsum('jl,ki->klji', vdm2, I, optimize=True)
+        a -= np.einsum('jk,li->klji', vdm2, I, optimize=True)
         return a.reshape(self._n**2, self._n**2)
 
     def _compute_rhs(self):
