@@ -9,43 +9,39 @@ import numpy as np
 from scipy.linalg import eig, svd
 
 
-def test_excitation_heh_sto3g():
-    """
-    HeH+ sto3g
-    
+def check_inputs_symm(oneint, twoint, onedm, twodm):
+    """Check symmetry of electron integrals and Density Matrices."""
+    # Electron integrals and DMs symmetric permutations
+    assert np.allclose(oneint, oneint.T)
+    assert np.allclose(onedm, onedm.T)
+    assert np.allclose(twoint, np.einsum('pqrs->rspq', twoint))
+    assert np.allclose(twoint, np.einsum('pqrs->qpsr', twoint))
+    assert np.allclose(twodm, np.einsum('pqrs->rspq', twodm))
+    assert np.allclose(twodm, np.einsum('pqrs->qpsr', twodm))
+    # Two-electron integrals  and 2DM antisymmetric permutations
+    assert np.allclose(twoint, -np.einsum('pqrs->pqsr', twoint))
+    assert np.allclose(twoint, -np.einsum('pqrs->qprs', twoint))
+    assert np.allclose(twodm, -np.einsum('pqrs->pqsr', twodm))
+    assert np.allclose(twodm, -np.einsum('pqrs->qprs', twodm))
+
+
+def test_excitationeom_heh_sto3g():
+    """Test ExcitationEOM for HeH+ (STO-3G)
+    against Gaussian's CIS computation.
+
+    E_S1: 24.7959 eV
+
     """
     one_mo = np.load(find_datafiles('test/heh+_sto3g_oneint_genzd.npy'))
     two_mo = np.load(find_datafiles('test/heh+_sto3g_twoint_genzd_anti.npy'))
     one_dm = np.load(find_datafiles('test/1dm_heh+_sto3g_genzd.npy'))
     two_dm = np.load(find_datafiles('test/2dm_heh+_sto3g_genzd_anti.npy'))
-
-    # One-electron integral symmetric permutations
-    assert np.allclose(one_mo, one_mo.conj().T)
-    # Two-electron integrals symmetric permutations
-    assert np.allclose(two_mo, two_mo.conj().transpose((2,3,0,1)))
-    assert np.allclose(two_mo, two_mo.transpose((3,2,1,0)))
-    assert np.allclose(two_mo, two_mo.transpose((1,0,3,2)))
-    # 1DM symmetric permutations
-    assert np.allclose(one_dm, one_dm.conj().T)
-    # 2DM symmetric permutations
-    assert np.allclose(two_dm, two_dm.transpose((1,0,3,2)))
-    assert np.allclose(two_dm, two_dm.transpose((3,2,1,0)))
-    assert np.allclose(two_dm, two_dm.transpose((2,3,0,1)))
-    # 2DM antisymmetric permutations
-    assert np.allclose(two_dm, -two_dm.transpose((0,1,3,2)))
-    assert np.allclose(two_dm, -two_dm.transpose((1,0,2,3)))
-    assert np.allclose(two_dm, -two_dm.transpose((2,3,1,0)))
-    assert np.allclose(two_dm, -two_dm.transpose((3,2,0,1)))
+    check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.ExcitationEOM(one_mo, two_mo, one_dm, two_dm)
     aval, avec = eom.solve_dense()
-    # print(eom.lhs)
-    # print(eom.neigs)
     aval = np.sort(aval)
-    # print(aval)
-    # Reference value fom PyCI
-    e = 0.91123311 
-    assert abs(aval[-5] - e) < 1e-6
-    
-
-test_excitation_heh_sto3g()
+    # Lowest excited singlet state fom Gaussian's CIS
+    # E_S1 = 24.7959 eV = 0.91123209 Hartree
+    e = 0.91123209
+    assert abs(aval[-1] - e) < 1e-6
