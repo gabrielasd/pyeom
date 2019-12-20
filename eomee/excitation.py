@@ -1,6 +1,6 @@
 import numpy as np
 
-from scipy.integrate import quad as integrate
+from scipy.integrate import fixed_quad
 
 from eomee.base import EOMState
 
@@ -97,13 +97,20 @@ class ExcitationEOM(EOMState):
         dh = h_1 - h_0
         # V_1 - V_0
         dv = v_1 - v_0
-        # \delta_sq * \gamma_pr
-        dm1_eye = np.einsum('sq,pr->pqrs', np.eye(n), dm1, optimize=True)
+        # \delta_qs * \gamma_pr
+        dm1_eye = np.einsum('qs,pr->pqrs', np.eye(n), dm1, optimize=True)
 
-        # Compute \delta_sq * \gamma_pr - \Gamma_psrq (eq. 29)
+        # Compute \delta_qs * \gamma_pr - \Gamma_psrq (eq. 29)
         rdm_terms = dm1_eye - np.transpose(dm2, axes=(0, 3, 2, 1))
 
+        # Compute linear term (eq. 19)
+        # dh_pq * \gamma_pq + 0.5 * dv_pqrs * {\delta_sq * \gamma_pr - \gamma_ps * \gamma_qr}_pqrs
+        tv = dm1_eye - np.einsum('ps,qr->pqrs', dm1, dm1, optimize=True)
+        linear = np.einsum('pq,pq', dh, dm1, optimize=True) \
+               + 0.5 * np.einsum('pqrs,pqrs', dv, tv, optimize=True)
+
         # Nonlinear term (eq. 19 integrand)
+        @np.vectorize
         def nonlinear(alpha):
             # Compute H^alpha
             h = alpha * dh
@@ -113,18 +120,13 @@ class ExcitationEOM(EOMState):
             # Solve EOM equations
             c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)[1].reshape(n ** 2, n, n)
             # Compute transition RDMs (eq. 29)
-            rdms = np.einsum('mrs,pqrs->mpq', c, rdm_terms)
+            # c_m;sr * {\delta_qs * \gamma_pr - \Gamma_psrq}_pqrs
+            rdms = np.einsum('msr,pqrs->mpq', c, rdm_terms)
             # Compute nonlinear energy term
             tv = np.zeros_like(dm2)
             for rdm in rdms:
                 tv += np.einsum('ps,qr->pqrs', rdm, rdm, optimize=True)
             return np.einsum('pqrs,pqrs', dv, tv, optimize=True)
 
-        # Compute linear term (eq. 19)
-        # dh * \gamma + 0.5 * dv * (\delta_sq * \gamma_pr - \gamma_ps * \gamma_qr)
-        linear = dm1_eye - np.einsum('ps,qr->pqrs', dm1, dm1, optimize=True)
-        linear = np.einsum('pq,pq', dh, dm1, optimize=True) \
-               + 0.5 * np.einsum('pqrs,pqrs', dv, linear, optimize=True)
-
         # Compute ERPA correlation energy (eq. 19)
-        return linear - 0.5 * integrate(nonlinear, 0, 1, limit=nint)[0]
+        return linear - 0.5 * fixed_quad(nonlinear, 0, 1, n=nint)[0]
