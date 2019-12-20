@@ -15,11 +15,11 @@ def test_doubleionization_one_body_term_H2():
     equation of motion are correct.
 
     """
-    one_mo = np.load(find_datafiles('test/h2_sto6g_oneint_genzd.npy'))
+    one_mo = np.load(find_datafiles('h2_sto6g_oneint_genzd.npy'))
     # the two-electron integrals are ignored
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
-    one_dm = np.load(find_datafiles('test/1dm_h2_sto6g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_h2_sto6g_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_h2_sto6g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_h2_sto6g_genzd_anti.npy'))
 
     eom = eomee.DoubleElectronRemovalEOM(one_mo, two_mo, one_dm, two_dm)
     aval, avec = eom.solve_dense()
@@ -35,11 +35,11 @@ def test_doubleionization_two_body_term_H2():
     equation of motion are correct.
 
     """
-    one_mo = np.load(find_datafiles('test/h2_sto6g_oneint_genzd.npy'))
+    one_mo = np.load(find_datafiles('h2_sto6g_oneint_genzd.npy'))
     # the two-electron integrals are ignored
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
-    one_dm = np.load(find_datafiles('test/1dm_h2_sto6g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_h2_sto6g_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_h2_sto6g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_h2_sto6g_genzd_anti.npy'))
 
     eom = eomee.DoubleElectronRemovalEOM(one_mo, two_mo, one_dm, two_dm)
     aval, avec = eom.solve_dense()
@@ -181,10 +181,10 @@ def test_doubleionization_H2_sto6g():
     difference.
 
     """
-    one_mo = np.load(find_datafiles('test/h2_sto6g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/h2_sto6g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_h2_sto6g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_h2_sto6g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('h2_sto6g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('h2_sto6g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_h2_sto6g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_h2_sto6g_genzd_anti.npy'))
 
     eom = eomee.DoubleElectronRemovalEOM(one_mo, two_mo, one_dm, two_dm)
     aval, avec = eom.solve_dense()
@@ -200,10 +200,10 @@ def test_doubleionization_He_ccpvdz():
     difference.
 
     """
-    one_mo = np.load(find_datafiles('test/he_ccpvdz_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/he_ccpvdz_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_he_ccpvdz_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_he_ccpvdz_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('he_ccpvdz_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('he_ccpvdz_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_he_ccpvdz_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_he_ccpvdz_genzd_anti.npy'))
 
     eom = eomee.DoubleElectronRemovalEOM(one_mo, two_mo, one_dm, two_dm)
     aval, avec = eom.solve_dense()
@@ -219,10 +219,10 @@ def test_doubleionization_HeHcation_sto3g():
     difference.
 
     """
-    one_mo = np.load(find_datafiles('test/heh+_sto3g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/heh+_sto3g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_heh+_sto3g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_heh+_sto3g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('heh+_sto3g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('heh+_sto3g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_heh+_sto3g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_heh+_sto3g_genzd_anti.npy'))
 
     eom = eomee.DoubleElectronRemovalEOM(one_mo, two_mo, one_dm, two_dm)
     aval, avec = eom.solve_dense()
@@ -234,10 +234,10 @@ def test_doubleionization_HeHcation_sto3g():
 
 def test_doubleionization_erpa_HeHcation_sto3g():
     """Test DoubleElectronRemovalEOM ERPA for HeH^{+} (STO-3G)"""
-    one_mo = np.load(find_datafiles('test/heh+_sto3g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/heh+_sto3g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_heh+_sto3g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_heh+_sto3g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('heh+_sto3g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('heh+_sto3g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_heh+_sto3g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_heh+_sto3g_genzd_anti.npy'))
 
     n = one_mo.shape[0]
     aa = one_mo[:1, :1]
@@ -261,10 +261,10 @@ def test_doubleionization_erpa_HeHcation_sto3g():
 
 def test_doubleionization_erpa_Ne_321g():
     """Test DoubleElectronRemovalEOM ERPA for Ne 321g"""
-    one_mo = np.load(find_datafiles('test/ne_321g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/ne_321g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_ne_321g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_ne_321g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('ne_321g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('ne_321g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_ne_321g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_ne_321g_genzd_anti.npy'))
 
     n = one_mo.shape[0]
     aa = one_mo[:5, :5]

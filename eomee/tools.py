@@ -1,7 +1,7 @@
 from os import path
 
 
-DIRPATH = path.join(path.dirname(__file__), '..', 'data/')
+DIRPATH = path.join(path.dirname(__file__), 'test/', 'data/')
 
 
 def find_datafiles(file_name):

@@ -12,12 +12,12 @@ from scipy.linalg import eig, svd
 def test_electronaff_h2_sto6g_symmetrized():
     """
     H2 sto6g
-    
+
     """
-    one_mo = np.load(find_datafiles('test/h2_sto6g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/h2_sto6g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_h2_sto6g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_h2_sto6g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('h2_sto6g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('h2_sto6g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_h2_sto6g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_h2_sto6g_genzd_anti.npy'))
 
     # One-electron integral symmetric permutations
     assert np.allclose(one_mo, one_mo.conj().T)
@@ -52,12 +52,12 @@ def test_electronaff_h2_sto6g_symmetrized():
 def test_electronaff_heh_sto3g_symmetrized():
     """
     HeH+ sto3g
-    
+
     """
-    one_mo = np.load(find_datafiles('test/heh+_sto3g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/heh+_sto3g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_heh+_sto3g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_heh+_sto3g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('heh+_sto3g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('heh+_sto3g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_heh+_sto3g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_heh+_sto3g_genzd_anti.npy'))
 
     # One-electron integral symmetric permutations
     assert np.allclose(one_mo, one_mo.conj().T)
@@ -91,12 +91,12 @@ def test_electronaff_heh_sto3g_symmetrized():
 def test_electronaff_he_ccpvdz_symmetrized():
     """
     He ccpvdz antisymmetrized
-    
+
     """
-    one_mo = np.load(find_datafiles('test/he_ccpvdz_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/he_ccpvdz_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_he_ccpvdz_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_he_ccpvdz_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('he_ccpvdz_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('he_ccpvdz_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_he_ccpvdz_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_he_ccpvdz_genzd_anti.npy'))
 
     # One-electron integral symmetric permutations
     assert np.allclose(one_mo, one_mo.conj().T)
@@ -129,12 +129,12 @@ def test_electronaff_he_ccpvdz_symmetrized():
 def test_electronaff_ne_321g_symmetrized():
     """
     Ne 3-21g
-    
+
     """
-    one_mo = np.load(find_datafiles('test/ne_321g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/ne_321g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_ne_321g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_ne_321g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('ne_321g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('ne_321g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_ne_321g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_ne_321g_genzd_anti.npy'))
 
     # One-electron integral symmetric permutations
     assert np.allclose(one_mo, one_mo.conj().T)
@@ -171,10 +171,10 @@ def test_electronaff_be_sto3g_symmetrized():
     Be sto-3g antisymmetrized
 
     """
-    one_mo = np.load(find_datafiles('test/be_sto3g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/be_sto3g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_be_sto3g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_be_sto3g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('be_sto3g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('be_sto3g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_be_sto3g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_be_sto3g_genzd_anti.npy'))
 
     # One-electron integral symmetric permutations
     assert np.allclose(one_mo, one_mo.conj().T)
@@ -208,12 +208,12 @@ def test_electronaff_be_sto3g_symmetrized():
 def test_electronaff_b_sto3g_symmetrized():
     """
     B sto-3g
-    
+
     """
-    one_mo = np.load(find_datafiles('test/1mo_b_sto3g_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/2mo_b_sto3g_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_b_sto3g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_b_sto3g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('1mo_b_sto3g_genzd.npy'))
+    two_mo = np.load(find_datafiles('2mo_b_sto3g_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_b_sto3g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_b_sto3g_genzd_anti.npy'))
 
     # One-electron integral symmetric permutations
     assert np.allclose(one_mo, one_mo.conj().T)

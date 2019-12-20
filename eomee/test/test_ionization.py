@@ -34,10 +34,10 @@ def test_ionizationeomstate_h2_sto6g():
     Experiment: 15.42593 eV
 
     """
-    one_mo = np.load(find_datafiles('test/h2_sto6g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/h2_sto6g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_h2_sto6g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_h2_sto6g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('h2_sto6g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('h2_sto6g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_h2_sto6g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_h2_sto6g_genzd_anti.npy'))
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.IonizationEOMState(one_mo, two_mo, one_dm, two_dm)
@@ -61,10 +61,10 @@ def test_ionizationeomstate_heh_sto3g():
     HF MO_i: -1.52378328
 
     """
-    one_mo = np.load(find_datafiles('test/heh+_sto3g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/heh+_sto3g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_heh+_sto3g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_heh+_sto3g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('heh+_sto3g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('heh+_sto3g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_heh+_sto3g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_heh+_sto3g_genzd_anti.npy'))
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.IonizationEOMState(one_mo, two_mo, one_dm, two_dm)
@@ -84,10 +84,10 @@ def test_ionizationeomstate_he_ccpvdz():
     Experiment: 24.58738880 eV
 
     """
-    one_mo = np.load(find_datafiles('test/he_ccpvdz_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/he_ccpvdz_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_he_ccpvdz_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_he_ccpvdz_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('he_ccpvdz_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('he_ccpvdz_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_he_ccpvdz_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_he_ccpvdz_genzd_anti.npy'))
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.IonizationEOMState(one_mo, two_mo, one_dm, two_dm)
@@ -110,10 +110,10 @@ def test_ionizationeomstate_ne_321g():
     Experiment: 21.564540 eV
 
     """
-    one_mo = np.load(find_datafiles('test/ne_321g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/ne_321g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_ne_321g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_ne_321g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('ne_321g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('ne_321g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_ne_321g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_ne_321g_genzd_anti.npy'))
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.IonizationEOMState(one_mo, two_mo, one_dm, two_dm)
@@ -138,10 +138,10 @@ def test_ionizationeomstate_be_sto3g():
     Experiment: 9.322699 eV
 
     """
-    one_mo = np.load(find_datafiles('test/be_sto3g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/be_sto3g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_be_sto3g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_be_sto3g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('be_sto3g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('be_sto3g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_be_sto3g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_be_sto3g_genzd_anti.npy'))
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.IonizationEOMState(one_mo, two_mo, one_dm, two_dm)
@@ -165,10 +165,10 @@ def test_ionizationeomstate_b_sto3g():
     HF MO_i: -0.20051823
 
     """
-    one_mo = np.load(find_datafiles('test/1mo_b_sto3g_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/2mo_b_sto3g_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_b_sto3g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_b_sto3g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('1mo_b_sto3g_genzd.npy'))
+    two_mo = np.load(find_datafiles('2mo_b_sto3g_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_b_sto3g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_b_sto3g_genzd_anti.npy'))
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.IonizationEOMState(one_mo, two_mo, one_dm, two_dm)
@@ -192,10 +192,10 @@ def test_ionizationdoublecommutator_he_ccpvdz():
     Experiment: 24.58738880 eV
 
     """
-    one_mo = np.load(find_datafiles('test/he_ccpvdz_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/he_ccpvdz_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_he_ccpvdz_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_he_ccpvdz_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('he_ccpvdz_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('he_ccpvdz_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_he_ccpvdz_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_he_ccpvdz_genzd_anti.npy'))
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.IonizationDoubleCommutator(one_mo, two_mo, one_dm, two_dm)
@@ -218,10 +218,10 @@ def test_ionizationdoublecommutator_ne_321g():
     Experiment: 21.564540 eV
 
     """
-    one_mo = np.load(find_datafiles('test/ne_321g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/ne_321g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_ne_321g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_ne_321g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('ne_321g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('ne_321g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_ne_321g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_ne_321g_genzd_anti.npy'))
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.IonizationDoubleCommutator(one_mo, two_mo, one_dm, two_dm)
@@ -245,10 +245,10 @@ def test_ionizationdoublecommutator_b_sto3g():
     Experiment: 8.29803 eV
 
     """
-    one_mo = np.load(find_datafiles('test/1mo_b_sto3g_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/2mo_b_sto3g_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_b_sto3g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_b_sto3g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('1mo_b_sto3g_genzd.npy'))
+    two_mo = np.load(find_datafiles('2mo_b_sto3g_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_b_sto3g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_b_sto3g_genzd_anti.npy'))
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.IonizationDoubleCommutator(one_mo, two_mo, one_dm, two_dm)

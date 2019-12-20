@@ -32,10 +32,10 @@ def test_excitationeom_heh_sto3g():
     E_S1: 24.7959 eV
 
     """
-    one_mo = np.load(find_datafiles('test/heh+_sto3g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/heh+_sto3g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_heh+_sto3g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_heh+_sto3g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('heh+_sto3g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('heh+_sto3g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_heh+_sto3g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_heh+_sto3g_genzd_anti.npy'))
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.ExcitationEOM(one_mo, two_mo, one_dm, two_dm)
@@ -50,10 +50,10 @@ def test_excitationeom_erpa_heh_sto3g():
     """Test Excitation ERPA for HeH+ (STO-3G)
 
     """
-    one_mo = np.load(find_datafiles('test/heh+_sto3g_oneint_genzd.npy'))
-    two_mo = np.load(find_datafiles('test/heh+_sto3g_twoint_genzd_anti.npy'))
-    one_dm = np.load(find_datafiles('test/1dm_heh+_sto3g_genzd.npy'))
-    two_dm = np.load(find_datafiles('test/2dm_heh+_sto3g_genzd_anti.npy'))
+    one_mo = np.load(find_datafiles('heh+_sto3g_oneint_genzd.npy'))
+    two_mo = np.load(find_datafiles('heh+_sto3g_twoint_genzd_anti.npy'))
+    one_dm = np.load(find_datafiles('1dm_heh+_sto3g_genzd.npy'))
+    two_dm = np.load(find_datafiles('2dm_heh+_sto3g_genzd_anti.npy'))
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     n = one_mo.shape[0]
