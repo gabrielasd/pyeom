@@ -6,7 +6,8 @@ from eomee.base import EOMState
 __all__ = [
     'IonizationEOMState',
     'IonizationDoubleCommutator',
-    ]
+    'IonizationAntiCommutator',
+]
 
 
 class IonizationEOMState(EOMState):
@@ -100,4 +101,48 @@ class IonizationDoubleCommutator(EOMState):
         # M_mn = 2 * \gamma_mn - \delta_mn
         m = 2 * np.copy(self._dm1)
         m -= np.eye(self._n, dtype=self._dm1.dtype)
+        return m
+
+
+class IonizationAntiCommutator(EOMState):
+    """
+    Ionization EOM state for operator Q = \sum_n { c_n a_n }.
+    .. math::
+        \left< \Psi^{(N)}_0 \middle| \Big\{ a^{\dagger}_m, \left[ \hat{H}, \hat{Q} \right] \Big\} \middle| \Psi^{(N)}_0 \right>
+        &= \Delta_k \left< \Psi^{(N)}_0 \middle| \Big\{[a^{\dagger}_m, \hat{Q} \Big\} \middle| \Psi^{(N)}_0 \right>
+
+    """
+
+    @property
+    def neigs(self):
+        """
+        Return the size of the eigensystem.
+
+        Returns
+        -------
+        neigs : int
+            Size of eigensystem.
+
+        """
+        # Number of q_n terms = n_{\text{basis}}
+        return self._n
+
+    def _compute_lhs(self):
+        """
+        Compute A = -h_{nm} + \sum_{qr} { \left< qn||mr \right> \gamma_{qr} }.
+
+        """
+        # A_mn = -h_mn
+        a = -np.copy(self._h)
+        # A_mn += <v_qnmr> \gamma_qr
+        a += np.einsum('qnmr,qr', self._v, self._dm1, optimize=True)
+        return a
+
+    def _compute_rhs(self):
+        """
+        Compute M = \delta_{nm}.
+
+        """
+        # M_mn = \delta_mn
+        m = np.eye(self._n, dtype=self._dm1.dtype)
         return m
