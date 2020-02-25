@@ -11,8 +11,9 @@ __all__ = [
     'IonizationDoubleCommutator',
     'DoubleElectronRemovalEOM',
     'ExcitationEOM',
-    'ElectronAffinitiesEOM2'
+    'ElectronAffinitiesEOM2',
     'IonizationAntiCommutator',
+    'ElectronAffinitiesEOM3'
 ]
 
 
@@ -24,3 +25,4 @@ from eomee.doubleionization import DoubleElectronRemovalEOM
 from eomee.excitation import ExcitationEOM
 from eomee.electronaff import ElectronAffinitiesEOM2
 from eomee.ionization import IonizationAntiCommutator
+from eomee.electronaff import ElectronAffinitiesEOM3
