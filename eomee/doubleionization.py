@@ -70,7 +70,7 @@ class DoubleElectronRemovalEOM(EOMState):
         """
 
         # M_klji = \Gamma_klji
-        m = self._dm2
+        m = np.copy(self._dm2)
         return m.reshape(self._n**2, self._n**2)
 
     @classmethod
