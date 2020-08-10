@@ -12,7 +12,7 @@ from scipy.sparse.linalg import eigs
 
 
 __all__ = [
-    'EOMState',
+    "EOMState",
 ]
 
 
@@ -42,17 +42,23 @@ class EOMState(metaclass=ABCMeta):
         """
         # Basic system attributes
         if not (isinstance(h, np.ndarray) and h.ndim == 2):
-            raise ValueError('One-particle integrals should be a 2-dimensional '
-                             'numpy array')
+            raise ValueError(
+                "One-particle integrals should be a 2-dimensional " "numpy array"
+            )
         if not (isinstance(v, np.ndarray) and v.ndim == 4):
-            raise ValueError('Two-particle integrals should be a 4-dimensional '
-                             'numpy array')
+            raise ValueError(
+                "Two-particle integrals should be a 4-dimensional " "numpy array"
+            )
         if not (isinstance(dm1, np.ndarray) and dm1.ndim == 2):
-            raise ValueError('One-particle reduced density matrix should be a '
-                             '2-dimensional numpy array')
+            raise ValueError(
+                "One-particle reduced density matrix should be a "
+                "2-dimensional numpy array"
+            )
         if not (isinstance(dm2, np.ndarray) and dm2.ndim == 4):
-            raise ValueError('Two-particle reduced density matrix should be a '
-                             '2-dimensional numpy array')
+            raise ValueError(
+                "Two-particle reduced density matrix should be a "
+                "2-dimensional numpy array"
+            )
         self._n = h.shape[0]
         self._h = h
         self._v = v
@@ -167,7 +173,7 @@ class EOMState(metaclass=ABCMeta):
         """
         return self._rhs
 
-    def solve_dense(self, tol=1.0e-10, *args, **kwargs):
+    def solve_dense(self, tol=1.0e-5, mode="asymmetric", *args, **kwargs):
         """
         Solve the EOM eigenvalue system.
 
@@ -175,7 +181,10 @@ class EOMState(metaclass=ABCMeta):
         ----------
         tol : float, optional
             Tolerance for small singular values. Default: 1.0e-10
-
+        mode : str, optional
+            Transformation from generalized to conventional eigen problem mode.
+            Default is symmetric in which the sqare root of the right hand side 
+            matrix is taken.
         Returns
         -------
         w : np.ndarray((m,))
@@ -185,21 +194,35 @@ class EOMState(metaclass=ABCMeta):
 
         """
         if not isinstance(tol, float):
-            raise TypeError('Argument tol must be a float')
+            raise TypeError("Argument tol must be a float")
+
         # Invert RHS matrix
         # RHS matrix SVD
         U, s, V = svd(self._rhs)
-        # Check singular value threshold
-        s = s ** (-1)
-        s[s >= 1 / tol] = 0.
-        # S^(-1)
+        if mode == "symmetric":
+            # Check singular value threshold
+            s = s ** (-0.5)
+            s[s >= 1 / tol] = 0.0
+        elif mode == "asymmetric":
+            # Check singular value threshold
+            s = s ** (-1)
+            s[s >= 1 / tol] = 0.0
+        else:
+            raise ValueError(
+                "Invalid mode parameter. Valid options are symmetric or asymmetric."
+            )
+
+        # S^(-x); x = 0.5, 1
         S_inv = np.diag(s)
-        # rhs^(-1)
+        # rhs^(-x); x = 0.5, 1
         rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
-        # Apply RHS^-1 * LHS
+
+        # Apply RHS^-x * LHS; x = 0.5, 1
         A = np.dot(rhs_inv, self._lhs)
         # Run scipy `linalg.eig` eigenvalue solver
         w, v = eig(A, *args, **kwargs)
+        # Transform back to true eigenvectors
+        # v = np.dot(rhs_inv, v)
         # Return w (eigenvalues)
         #    and v (eigenvector column matrix -- so transpose it!)
         return np.real(w), np.real(v.T)
@@ -224,13 +247,13 @@ class EOMState(metaclass=ABCMeta):
 
         """
         if not isinstance(tol, float):
-            raise TypeError('Argument tol must be a float')
+            raise TypeError("Argument tol must be a float")
         # Invert RHS matrix
         # RHS matrix SVD
         U, s, V = svd(self._rhs)
         # Check singular value threshold
         s = s ** (-1)
-        s[s >= 1 / tol] = 0.
+        s[s >= 1 / tol] = 0.0
         # S^(-1)
         S_inv = np.diag(s)
         # rhs^(-1)
@@ -238,7 +261,7 @@ class EOMState(metaclass=ABCMeta):
         # Apply RHS^-1 * LHS
         A = np.dot(rhs_inv, self._lhs)
         # Run scipy `linalg.eigs` eigenvalue solver
-        w, v = eigs(A, k=eigvals, which='SR', *args, **kwargs)
+        w, v = eigs(A, k=eigvals, which="SR", *args, **kwargs)
         # Return w (eigenvalues)
         #    and v (eigenvector column matrix -- so transpose it!)
         return np.real(w), np.real(v.T)
