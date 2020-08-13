@@ -173,7 +173,7 @@ class EOMState(metaclass=ABCMeta):
         """
         return self._rhs
 
-    def solve_dense(self, tol=1.0e-5, mode="asymmetric", *args, **kwargs):
+    def solve_dense(self, tol=1.0e-7, orthog="symmetric", *args, **kwargs):
         """
         Solve the EOM eigenvalue system.
 
@@ -181,10 +181,9 @@ class EOMState(metaclass=ABCMeta):
         ----------
         tol : float, optional
             Tolerance for small singular values. Default: 1.0e-10
-        mode : str, optional
-            Transformation from generalized to conventional eigen problem mode.
-            Default is symmetric in which the sqare root of the right hand side 
-            matrix is taken.
+        orthog : str, optional
+            Matrix orthogonalization method. Default is symmetric orthogonalization
+            in which the inverse square root of the right hand side matrix is taken.
         Returns
         -------
         w : np.ndarray((m,))
@@ -199,33 +198,44 @@ class EOMState(metaclass=ABCMeta):
         # Invert RHS matrix
         # RHS matrix SVD
         U, s, V = svd(self._rhs)
-        if mode == "symmetric":
-            # Check singular value threshold
+        if orthog == "symmetric":
+            # Apply inverse square root to eigvals of RHS
             s = s ** (-0.5)
+            # Check singular value threshold
             s[s >= 1 / tol] = 0.0
-        elif mode == "asymmetric":
+            # Transform back to RHS^(-0.5)
+            S_inv = np.diag(s)
+            rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
+
+            # Apply RHS^-0.5 * LHS * RHS^-0.5
+            A = np.dot(rhs_inv, np.dot(self._lhs, rhs_inv))
+            # Run scipy `linalg.eig` eigenvalue solver
+            w, v = eig(A, *args, **kwargs)
+            # Transform back to original eigenvector matrix
+            v = np.dot(rhs_inv, v)
+            # Return w (eigenvalues)
+            #    and v (eigenvector column matrix -- so transpose it!)
+            return np.real(w), np.real(v.T)
+        elif orthog == "asymmetric":
             # Check singular value threshold
             s = s ** (-1)
             s[s >= 1 / tol] = 0.0
+            # S^(-1)
+            S_inv = np.diag(s)
+            # rhs^(-1)
+            rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
+
+            # Apply RHS^-1 * LHS
+            A = np.dot(rhs_inv, self._lhs)
+            # Run scipy `linalg.eig` eigenvalue solver
+            w, v = eig(A, *args, **kwargs)
+            # Return w (eigenvalues)
+            #    and v (eigenvector column matrix -- so transpose it!)
+            return np.real(w), np.real(v.T)
         else:
             raise ValueError(
-                "Invalid mode parameter. Valid options are symmetric or asymmetric."
+                "Invalid orthogonalization parameter. Valid options are symmetric or asymmetric."
             )
-
-        # S^(-x); x = 0.5, 1
-        S_inv = np.diag(s)
-        # rhs^(-x); x = 0.5, 1
-        rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
-
-        # Apply RHS^-x * LHS; x = 0.5, 1
-        A = np.dot(rhs_inv, self._lhs)
-        # Run scipy `linalg.eig` eigenvalue solver
-        w, v = eig(A, *args, **kwargs)
-        # Transform back to true eigenvectors
-        # v = np.dot(rhs_inv, v)
-        # Return w (eigenvalues)
-        #    and v (eigenvector column matrix -- so transpose it!)
-        return np.real(w), np.real(v.T)
 
     def solve_sparse(self, eigvals=6, tol=1.0e-10, *args, **kwargs):
         """
