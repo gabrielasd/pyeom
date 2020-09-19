@@ -2,7 +2,13 @@
 
 
 import eomee
-from eomee.tools import find_datafiles
+from eomee.tools import (
+    find_datafiles,
+    spinize,
+    symmetrize,
+    antisymmetrize,
+    hartreefock_rdms,
+)
 
 import numpy as np
 import numpy.testing as npt
@@ -32,11 +38,12 @@ def test_doubleelectronaff_one_body_term_H2():
     electron affinity equation of motion .
 
     """
-    one_mo = np.load(find_datafiles("h2_sto6g_oneint_genzd.npy"))
+    nbasis = 2
+    one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
+    one_mo = spinize(one_mo)
     # the two-electron integrals are ignored
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
-    one_dm = np.load(find_datafiles("1dm_h2_sto6g_genzd.npy"))
-    two_dm = np.load(find_datafiles("2dm_h2_sto6g_genzd_anti.npy"))
+    one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
     eomea = eomee.DoubleElectronAttachmentEOM(one_mo, two_mo, one_dm, two_dm)
     avalea, avecea = eomea.solve_dense()
@@ -155,8 +162,8 @@ def test_doubleelectronaff_beIV_sto6g():
     lhs += two_mo
     lhs = lhs.reshape(nspin ** 2, nspin ** 2)
     # RHS = < | k l m+ n+ | >
-    rhs = np.einsum('kn,lm->klnm', I, I)
-    rhs -= np.einsum('km,ln->klnm', I, I)
+    rhs = np.einsum("kn,lm->klnm", I, I)
+    rhs -= np.einsum("km,ln->klnm", I, I)
     rhs = rhs.reshape(nspin ** 2, nspin ** 2)
 
     # Diagonalization
@@ -193,16 +200,16 @@ def test_doubleelectronaff_beII_sto6g():
     nspin = 2 * nspatial
     npart = 2
     nhole = nspin - npart
-    occs = np.array([1., 0., 0., 0., 0.])
+    occs = np.array([1.0, 0.0, 0.0, 0.0, 0.0])
     temp = np.diag(occs)
     one_dm = np.zeros((nspin, nspin))
     one_dm[:nspatial, :nspatial] = temp
     one_dm[nspatial:, nspatial:] = temp
-    two_dm = np.einsum('pr,qs->pqrs', one_dm, one_dm)
-    two_dm -= np.einsum('ps,qr->pqrs', one_dm, one_dm)
+    two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
+    two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
     assert np.trace(one_dm) == 2
-    assert np.einsum('klkl', two_dm) == 2
+    assert np.einsum("klkl", two_dm) == 2
 
     eomea = eomee.DoubleElectronAttachmentEOM(one_mo, two_mo, one_dm, two_dm)
     avalea, avecea = eomea.solve_dense()

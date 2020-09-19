@@ -2,7 +2,13 @@
 
 
 import eomee
-from eomee.tools import find_datafiles
+from eomee.tools import (
+    find_datafiles,
+    spinize,
+    symmetrize,
+    antisymmetrize,
+    hartreefock_rdms,
+)
 
 import numpy as np
 from scipy.linalg import eig, svd
@@ -29,11 +35,12 @@ def test_electronffinities_one_body_term_H2():
     equations of motion are correct.
 
     """
-    one_mo = np.load(find_datafiles("h2_sto6g_oneint_genzd.npy"))
+    nbasis = 2
+    one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
+    one_mo = spinize(one_mo)
     # the two-electron integrals are ignored
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
-    one_dm = np.load(find_datafiles("1dm_h2_sto6g_genzd.npy"))
-    two_dm = np.load(find_datafiles("2dm_h2_sto6g_genzd_anti.npy"))
+    one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
     eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
     aval1, avec = eom.solve_dense()
@@ -58,10 +65,13 @@ def test_electronaff_h2_sto6g():
     HF MO_a: 0.66587228
 
     """
-    one_mo = np.load(find_datafiles("h2_sto6g_oneint_genzd.npy"))
-    two_mo = np.load(find_datafiles("h2_sto6g_twoint_genzd_anti.npy"))
-    one_dm = np.load(find_datafiles("1dm_h2_sto6g_genzd.npy"))
-    two_dm = np.load(find_datafiles("2dm_h2_sto6g_genzd_anti.npy"))
+    nbasis = 2
+    one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
+    one_mo = spinize(one_mo)
+    two_mo = np.load(find_datafiles("h2_hf_sto6g_twoint.npy"))
+    two_mo = symmetrize(spinize(two_mo))
+    two_mo = antisymmetrize(two_mo)
+    one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
@@ -80,9 +90,9 @@ def test_electronaff_h2_sto6g():
     # HORTON RHF
     # horton_emo = [-0.58205888, 0.66587228]
     ea = 0.66587228
-    assert abs(sorted(aval1)[-1] - ea) < 1e-8
-    assert abs(sorted(aval2)[-1] - ea) < 1e-8
-    assert abs(sorted(aval3)[-1] - ea) < 1e-8
+    assert abs(sorted(aval1)[-1] - ea) < 1e-7
+    assert abs(sorted(aval2)[-1] - ea) < 1e-7
+    assert abs(sorted(aval3)[-1] - ea) < 1e-7
 
 
 def test_electronaff_heh_sto3g():
@@ -92,10 +102,13 @@ def test_electronaff_heh_sto3g():
     HF MO_a: -0.26764028
 
     """
-    one_mo = np.load(find_datafiles("heh+_sto3g_oneint_genzd.npy"))
-    two_mo = np.load(find_datafiles("heh+_sto3g_twoint_genzd_anti.npy"))
-    one_dm = np.load(find_datafiles("1dm_heh+_sto3g_genzd.npy"))
-    two_dm = np.load(find_datafiles("2dm_heh+_sto3g_genzd_anti.npy"))
+    nbasis = 2
+    one_mo = np.load(find_datafiles("heh+_sto3g_oneint.npy"))
+    one_mo = spinize(one_mo)
+    two_mo = np.load(find_datafiles("heh+_sto3g_twoint.npy"))
+    two_mo = symmetrize(spinize(two_mo))
+    two_mo = antisymmetrize(two_mo)
+    one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
@@ -126,10 +139,13 @@ def test_electronaff_he_ccpvdz():
     HF MO_a: 1.39744193
 
     """
-    one_mo = np.load(find_datafiles("he_ccpvdz_oneint_genzd.npy"))
-    two_mo = np.load(find_datafiles("he_ccpvdz_twoint_genzd_anti.npy"))
-    one_dm = np.load(find_datafiles("1dm_he_ccpvdz_genzd.npy"))
-    two_dm = np.load(find_datafiles("2dm_he_ccpvdz_genzd_anti.npy"))
+    nbasis = 5
+    one_mo = np.load(find_datafiles("he_ccpvdz_oneint.npy"))
+    one_mo = spinize(one_mo)
+    two_mo = np.load(find_datafiles("he_ccpvdz_twoint.npy"))
+    two_mo = symmetrize(spinize(two_mo))
+    two_mo = antisymmetrize(two_mo)
+    one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
@@ -160,10 +176,13 @@ def test_electronaff_ne_321g():
     HF MO_a: 2.68726251
 
     """
-    one_mo = np.load(find_datafiles("ne_321g_oneint_genzd.npy"))
-    two_mo = np.load(find_datafiles("ne_321g_twoint_genzd_anti.npy"))
-    one_dm = np.load(find_datafiles("1dm_ne_321g_genzd.npy"))
-    two_dm = np.load(find_datafiles("2dm_ne_321g_genzd_anti.npy"))
+    nbasis = 9
+    one_mo = np.load(find_datafiles("ne_321g_oneint.npy"))
+    one_mo = spinize(one_mo)
+    two_mo = np.load(find_datafiles("ne_321g_twoint.npy"))
+    two_mo = symmetrize(spinize(two_mo))
+    two_mo = antisymmetrize(two_mo)
+    one_dm, two_dm = hartreefock_rdms(nbasis, 5, 5)
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
@@ -180,7 +199,17 @@ def test_electronaff_ne_321g():
 
     # Reference value from
     # HORTON RHF
-    # horton_emo = [-32.56471038, -1.8651519, -0.79034293, -0.79034293, -0.79034293, 2.68726251, 2.68726251, 2.68726251, 4.08280903]
+    # horton_emo = [
+    #     -32.56471038,
+    #     -1.8651519,
+    #     -0.79034293,
+    #     -0.79034293,
+    #     -0.79034293,
+    #     2.68726251,
+    #     2.68726251,
+    #     2.68726251,
+    #     4.08280903,
+    # ]
     ea = 2.68726251
     assert abs(sorted(aval1)[-3] - ea) < 1e-5
     assert abs(sorted(aval2)[-3] - ea) < 1e-5
@@ -194,10 +223,13 @@ def test_electronaff_be_sto3g():
     HF MO_a: 0.22108596
 
     """
-    one_mo = np.load(find_datafiles("be_sto3g_oneint_genzd.npy"))
-    two_mo = np.load(find_datafiles("be_sto3g_twoint_genzd_anti.npy"))
-    one_dm = np.load(find_datafiles("1dm_be_sto3g_genzd.npy"))
-    two_dm = np.load(find_datafiles("2dm_be_sto3g_genzd_anti.npy"))
+    nbasis = 5
+    one_mo = np.load(find_datafiles("be_sto3g_oneint.npy"))
+    one_mo = spinize(one_mo)
+    two_mo = np.load(find_datafiles("be_sto3g_twoint.npy"))
+    two_mo = symmetrize(spinize(two_mo))
+    two_mo = antisymmetrize(two_mo)
+    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
@@ -230,10 +262,13 @@ def test_electronaff_b_sto3g():
     HF MO_a: 0.29136562, 0.32299525, 0.38625451
 
     """
-    one_mo = np.load(find_datafiles("1mo_b_sto3g_genzd.npy"))
-    two_mo = np.load(find_datafiles("2mo_b_sto3g_genzd_anti.npy"))
-    one_dm = np.load(find_datafiles("1dm_b_sto3g_genzd.npy"))
-    two_dm = np.load(find_datafiles("2dm_b_sto3g_genzd_anti.npy"))
+    nbasis = 5
+    one_mo = np.load(find_datafiles("b_sto3g_oneint.npy"))
+    one_mo = spinize(one_mo)
+    two_mo = np.load(find_datafiles("b_sto3g_twoint.npy"))
+    two_mo = symmetrize(spinize(two_mo))
+    two_mo = antisymmetrize(two_mo)
+    one_dm, two_dm = hartreefock_rdms(nbasis, 3, 2)
     check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
     eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
