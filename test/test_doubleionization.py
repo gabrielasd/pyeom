@@ -2,10 +2,9 @@
 
 
 import eomee
-from eomee.tools import find_datafiles
 
 import numpy as np
-from eomee.tools import (
+from .tools import (
     find_datafiles,
     spinize,
     symmetrize,

@@ -102,3 +102,16 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# vim
+*.swp
+
+# tex
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.toc
+
+# PyCharm
+.idea/

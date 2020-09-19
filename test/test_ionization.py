@@ -7,7 +7,7 @@ from eomee import (
     IonizationDoubleCommutator,
     IonizationAntiCommutator,
 )
-from eomee.tools import (
+from .tools import (
     find_datafiles,
     spinize,
     symmetrize,
