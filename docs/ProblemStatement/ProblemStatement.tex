@@ -3,8 +3,8 @@
 \usepackage{tabularx}
 \usepackage{booktabs}
 
-\usepackage{biblatex}
-\bibliography{../../refs/References}
+\usepackage[backend=biber,style=verbose-ibid]{biblatex}
+\bibliography{../../refs/References.bib}
 
 
 \title{CAS 741: Problem Statement\\Equation-of-motion methods}
@@ -32,16 +32,28 @@
 \end{tabularx}
 \end{table}
 
-Equation-of-motion (EOM) methods are an alternative approach to the prediction of molecular spectroscopic properties (excitation energies, ionization potentials, electron affinities, and their corresponding oscillator strengths). In these methods, a transition operator transfers betweens two stationary states, and their energy difference is evaluated directly. As a result of the transition, the number of electrons in the initial reference system and the final one might differ.
+Equation-of-motion (EOM) methods are an alternative approach to the prediction 
+of molecular spectroscopic properties (excitation energies, ionization 
+potentials, electron affinities, and their corresponding oscillator strengths). 
+In these methods, a transition operator transfers betweens two stationary 
+states, and their energy difference is evaluated directly. As a result of the 
+transition, the number of electrons in the initial reference system and the 
+final one might differ.
 
-In addition to spectroscopic applications of the EOMs, their solutions can be used to approximate the transition density matrices (TDMs). TDMs are an important ingredient in a recent method proposed by Katarzyna Pernal~\footcite{Pernal2018} for computing the electron correlation energy, which is the preeminent objective of electronic structure methods.  
+In addition to spectroscopic applications of the EOMs, their solutions can be 
+used to approximate the transition density matrices (TDMs). TDMs are an 
+important ingredient in a recent method proposed by Katarzyna 
+Pernal \footcite{Pernal2018} for computing the electron correlation energy, 
+which is the preeminent objective of electronic structure methods.  
 
-This code develops a common framework for implementing and solving EOM equations, starting from the reduced density matrices (RDMs) and the 1- and 2-electron integrals for the reference N-electron system. 
+This code develops a common framework for implementing and solving EOM 
+equations, starting from the reduced density matrices (RDMs) and the 1- and 
+2-electron integrals for the reference N-electron system. 
 
-This tool should be useful to students and researchers in the field of computational quantum chemistry. It will be developed for Linux based systems, however, compatibility with other environments such as Windows and Mac OS should be possible inasmuch as it is a pure Python program using mostly standard libraries.
-
-\printbibliography
-
-\an{The citation isn't being generated correctly}
+This tool should be useful to students and researchers in the field of 
+computational quantum chemistry. It will be developed for Linux based systems, 
+however, compatibility with other environments such as Windows and Mac OS 
+should be possible inasmuch as it is a pure Python program using mostly 
+standard libraries.
 
 \end{document}
