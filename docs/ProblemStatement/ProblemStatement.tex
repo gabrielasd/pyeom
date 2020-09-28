@@ -26,7 +26,7 @@
 \textbf{Date} & \textbf{Developer(s)} & \textbf{Change}\\
 \midrule
 21-09-2020 & Sanchez-Diaz & Describe the problem statement\\
-%Date2 & Name(s) & Description of changes\\
+28-09-2020 & Sanchez-Diaz & Clarify inputs/outputs \\
 %... & ... & ...\\
 \bottomrule
 \end{tabularx}
@@ -35,7 +35,7 @@
 Equation-of-motion (EOM) methods are an alternative approach to the prediction 
 of molecular spectroscopic properties (excitation energies, ionization 
 potentials, electron affinities, and their corresponding oscillator strengths). 
-In these methods, a transition operator transfers betweens two stationary 
+In these methods, a transition operator transfers between two stationary 
 states, and their energy difference is evaluated directly. As a result of the 
 transition, the number of electrons in the initial reference system and the 
 final one might differ.
@@ -47,8 +47,13 @@ Pernal \footcite{Pernal2018} for computing the electron correlation energy,
 which is the preeminent objective of electronic structure methods.  
 
 This code develops a common framework for implementing and solving EOM 
-equations, starting from the reduced density matrices (RDMs) and the 1- and 
-2-electron integrals for the reference N-electron system. 
+equations, taking as inputs the reduced density matrices (RDMs) and the 1- and 
+2-electron integrals for the reference N-electron system. The software's main 
+outcomes are the energies and TDMs of an "excitation" process 
+(represented by an approximated transition operator), though future extensions 
+will cover the evaluation of properties related to the TDMs, such as the 
+oscillator strengths and the electron correlation energy.
+
 
 This tool should be useful to students and researchers in the field of 
 computational quantum chemistry. It will be developed for Linux based systems, 
