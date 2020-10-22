@@ -99,6 +99,9 @@ set of tools for implementing and solving EOMs}
 \toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
 \midrule
 08-10-2020 & 1.0 & Creation of SRS \\
+21-10-2020 & 1.1 & Address issues \#5, \#7 and \#8 regarding package name 
+abbreviation 
+and Traceability matrices section.\\
 %Date 2 & 1.1 & Notes\\
 \bottomrule
 \end{tabularx}
@@ -296,14 +299,23 @@ $\hat{Q}$ & unitless & Transition operator\\
 %expect in the Introduction section.}
 
 The spectroscopic characterization of atomic and molecular systems is one 
-of the fundamental techniques in the fields related to Chemistry. As part of 
+of the fundamental techniques in the fields related to Chemistry. \\
+%\an{Agregar figura con un espectro UV y su molécula, explicar que el espectro 
+%es el resultado de la transicion de la molecula del estado estacionario base 
+%$\Psi_0$ al esxcitado $\Psi_1$. Agregar los diagramas de la TOM 
+%correspondientes aclarando que estos son una representacion valida de $\Psi_0$ 
+%y $\Psi_1$ si estos estados son predominantemente monoconfiguracionales. 
+%Alternativamente agregar solo un esquema de las energias relativas de ambos 
+%estados y el delta de energia entre ellos que seria lo que EOM va a calcular.}
+As part of 
 the methods developed in computational quantum chemistry, Equation-of-motion 
 (EOM) methods offer an alternative approach to the prediction of molecular 
 properties such as excitation energies, ionization potentials or electron 
 affinities by directly targeting the evaluation of these magnitudes.\\ 
 The present document introduces the requirements description for the 
-development of a set of tools (EOMEE) for implementing and solving of EOM 
-equations. The formatting of this document will follow the SRS templates 
+development of a set of tools for implementing and solving EOM 
+equations (package name: Equation-of-motion for excited states, abbreviated as 
+EOMEE). The formatting of this document will follow the SRS templates 
 introduced 
 by 
 \cite{Smith2016} and \cite{SmithEtAl2007}.
@@ -1781,86 +1793,112 @@ other. Table~\ref{Table:A_trace} shows the dependencies of theoretical models,
 general definitions, data definitions, instance models, and likely changes on
 the assumptions.
 
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+		\hline
+		& \aref{A_transition_op_approx}& \aref{A_dms_mointeg}& 
+		\aref{A_int_mos}& \aref{A_symmetry}& \aref{A_killercond}& 
+		\aref{A_sproj}\\
+		\hline
+		\tref{T_SchrodingerEq}        & & & & & & \\ \hline
+		\tref{T_ExcState}        & X& & & & &  \\ \hline
+		\tref{T_DeltaE}        & & & & & &  \\ \hline
+		\tref{T_transitionDM}           & & & & & &  \\ \hline
+		\dref{G_approxQ}           & X& & & & &  \\ \hline
+		\dref{G_EOM}           & & & & & X&  X \\  \hline
+		\ddref{D_hamiltonian}           & & & & & &   \\  \hline
+		\ddref{D_oneints}           & & & X& X& &  \\  \hline
+		\ddref{D_twoints}           & & & X& X& &  \\  \hline
+		\ddref{D_1rdm}           & & & & X& &  \\  \hline
+		\ddref{D_2rdm}           & & & & X& &  \\  \hline
+		\iref{IM_IP}           & & X& & & &X  \\  \hline
+		\iref{IM_EA}           & & X& & & &X  \\  \hline
+		\iref{IM_Exc}           & & X& & & &X  \\  \hline
+		\iref{IM_DIP}           & & X& & & &X  \\  \hline
+		\iref{IM_DEA}           & & X& & & &X  \\  \hline
+		\iref{I_transDM}           & & & & & & \\  \hline
+		\hline
+	\end{tabular}
+	\caption{Traceability Matrix Showing the Connections Between 
+		Assumptions and Other Items}
+	\label{Table:A_trace}
+\end{table}
+
 \afterpage{
 	\begin{landscape}
 		\begin{table}[h!]
 			\centering
-			\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+			\hspace*{-2.55cm}
+			\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+				\hline       
+				& \tref{T_SchrodingerEq}& \tref{T_ExcState}& \tref{T_DeltaE}& 
+				\tref{T_transitionDM}& \dref{G_approxQ} & \dref{G_EOM} & 
+				\ddref{D_hamiltonian}& \ddref{D_oneints} & \ddref{D_twoints}& 
+				\ddref{D_1rdm}& \ddref{D_2rdm}& \iref{IM_IP}& \iref{IM_EA}& 
+				\iref{IM_Exc}& \iref{IM_DIP} & \iref{IM_DEA}  & 
+				\iref{I_transDM} \\
 				\hline
-				& \aref{A_transition_op_approx}& \aref{A_dms_mointeg}& 
-				\aref{A_int_mos}& \aref{A_symmetry}& \aref{A_killercond}& 
-				\aref{A_sproj}\\
+				\tref{T_SchrodingerEq}     & & & & & & X& X& & & & & &  & & & 
+				&\\ 
 				\hline
-				\tref{T_SchrodingerEq}        & & & & & & \\ \hline
-				\tref{T_ExcState}        & X& & & & &  \\ \hline
-				\tref{T_DeltaE}        & & & & & &  \\ \hline
-				\tref{T_transitionDM}           & & & & & &  \\ \hline
-				\dref{G_appro5xQ}           & X& & & & &  \\ \hline
-				\dref{G_EOM}           & & & & & X&  X \\  \hline
-				\ddref{D_hamiltonian}           & & & & & &   \\  \hline
-				\ddref{D_oneints}           & & & X& X& &  \\  \hline
-				\ddref{D_twoints}           & & & X& X& &  \\  \hline
-				\ddref{D_1rdm}           & & & & X& &  \\  \hline
-				\ddref{D_2rdm}           & & & & X& &  \\  \hline
-				\iref{IM_IP}           & & X& & & &X  \\  \hline
-				\iref{IM_EA}           & & X& & & &X  \\  \hline
-				\iref{IM_Exc}           & & X& & & &X  \\  \hline
-				\iref{IM_DIP}           & & X& & & &X  \\  \hline
-				\iref{IM_DEA}           & & X& & & &X  \\  \hline
-				\iref{I_transDM}           & & & & & & \\  \hline
+				\tref{T_ExcState}& & & & X& X& X& & & & & & &  & & 
+				&&\\ 
+				\hline
+				\tref{T_DeltaE}                 & & & & & & X& & & & & & & & & 
+				&&\\ 
+				\hline
+				\tref{T_transitionDM} & & X& & & X& & & & & & & &  & & 
+				&&\\ 
+				\hline
+				\dref{G_approxQ}           & &X & &X & & & & & & & & X& X& X& 
+				X& 
+				X&X\\ 
+				\hline
+				\dref{G_EOM}                   & X&X &X & & & & & & & & & X& X& 
+				X& 
+				X& 
+				X&\\ \hline
+				\ddref{D_hamiltonian} & X& & & & & & & X& X& & & & & & &&\\ 
+				\hline
+				\ddref{D_oneints}  & & & & & & & X& & & & & X& X& X& 
+				X& 
+				X&\\ 
+				\hline
+				\ddref{D_twoints}            & & & & & & & X& & & & & X& X& X& 
+				X& 
+				X&\\ 
+				\hline
+				\ddref{D_1rdm}               & & & & & & & & & & & & X& X& X& 
+				X& 
+				X&X\\ 
+				\hline
+				\ddref{D_2rdm}               & & & & & & & & & & & & X& X& X& 
+				X& 
+				X&X\\ 
+				\hline
+				\iref{IM_IP}           & & & & & X& X& & X& X& X& X& & & &  
+				&&\\ 
+				\hline
+				\iref{IM_EA}          & & & & & X& X& & X& X& X& X& &  & & &&\\ 
+				\hline
+				\iref{IM_Exc}        & & & & & X& X& & X& X& X& X& & & & &&\\ 
+				\hline
+				\iref{IM_DIP}        & & & & & X& X& & X& X& X& X& & & &  &&\\ 
+				\hline
+				\iref{IM_DEA}       & & & & & X&X & & X&X & X& X& & & & &&\\ 
+				\hline
+				\iref{I_transDM}   & & & & & X& & && & X& X& & & & &&\\
 				\hline
 			\end{tabular}
-			\caption{Traceability Matrix Showing the Connections Between 
-				Assumptions and Other Items}
-			\label{Table:A_trace}
+			\hspace*{-2.55cm}
+			\caption{Traceability Matrix Showing the Connections Between Items 
+			of 
+				Different Sections}
+			\label{Table:trace}
 		\end{table}
 	\end{landscape}
 }
-
-
-\begin{table}[h!]
-	\centering
-	\hspace*{-2.55cm}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
-		\hline       
-		& \tref{T_SchrodingerEq}& \tref{T_ExcState}& \tref{T_DeltaE}& 
-		\tref{T_transitionDM}& \dref{G_appro5xQ} & \dref{G_EOM} & 
-		\ddref{D_hamiltonian}& \ddref{D_oneints} & \ddref{D_twoints}& 
-		\ddref{D_1rdm}& \ddref{D_2rdm}& \iref{IM_IP}& \iref{IM_EA}& 
-		\iref{IM_Exc}& \iref{IM_DIP} & \iref{IM_DEA}  & \iref{I_transDM} \\
-		\hline
-		\tref{T_SchrodingerEq}     & & & & & & X& X& & & & & &  & & & &\\ \hline
-		\tref{T_ExcState}              & & & & & & X& & & & & & &  & & &&\\ 
-		\hline
-		\tref{T_DeltaE}                 & & & & & & X& & & & & & & & & &&\\ 
-		\hline
-		\tref{T_transitionDM}       & & X& & & & & & & & & & &  & & &&\\ \hline
-		\dref{G_appro5xQ}           & &X & &X & & & & & & & & X& X& X& X& X&X\\ 
-		\hline
-		\dref{G_EOM}                   & X&X &X & & & & & & & & & X& X& X& X& 
-		X&\\ \hline
-		\ddref{D_hamiltonian}     & & & & & & & & X& X& & & & & & &&\\ \hline
-		\ddref{D_oneints}            & & & & & & & X& & & & & X& X& X& X& X&\\ 
-		\hline
-		\ddref{D_twoints}            & & & & & & & X& & & & & X& X& X& X& X&\\ 
-		\hline
-		\ddref{D_1rdm}               & & & & & & & & & & & & X& X& X& X& X&X\\ 
-		\hline
-		\ddref{D_2rdm}               & & & & & & & & & & & & X& X& X& X& X&X\\ 
-		\hline
-		\iref{IM_IP}           & & & & & X& X& & X& X& X& X& & & &  &&\\ \hline
-		\iref{IM_EA}          & & & & & X& X& & X& X& X& X& &  & & &&\\ \hline
-		\iref{IM_Exc}        & & & & & X& X& & X& X& X& X& & & & &&\\ \hline
-		\iref{IM_DIP}        & & & & & X& X& & x& X& X& X& & & &  &&\\ \hline
-		\iref{IM_DEA}       & & & & & X&X & & X&X & X& X& & & & &&\\ \hline
-		\iref{I_transDM}   & & & & & X& & && & X& X& & & & &&\\
-		\hline
-	\end{tabular}
-	\hspace*{-2.55cm}
-	\caption{Traceability Matrix Showing the Connections Between Items of 
-	Different Sections}
-	\label{Table:trace}
-\end{table}
 
 \begin{table}[h!]
 \centering
@@ -1886,15 +1924,16 @@ the assumptions.
 \label{Table:R_trace}
 \end{table}
 
-The purpose of the traceability graphs is also to provide easy references on
-what has to be additionally modified if a certain component is changed.  The
-arrows in the graphs represent dependencies. The component at the tail of an
-arrow is depended on by the component at the head of that arrow. Therefore, if a
-component is changed, the components that it points to should also be
-changed. Figure~\ref{Fig_ATrace} shows the dependencies of theoretical models,
-general definitions, data definitions, instance models, likely changes, and
-assumptions on each other. Figure~\ref{Fig_RTrace} shows the dependencies of
-instance models, requirements, and data constraints on each other.
+%The purpose of the traceability graphs is also to provide easy references on
+%what has to be additionally modified if a certain component is changed.  The
+%arrows in the graphs represent dependencies. The component at the tail of an
+%arrow is depended on by the component at the head of that arrow. Therefore, if 
+%a
+%component is changed, the components that it points to should also be
+%changed. Figure~\ref{Fig_ATrace} shows the dependencies of theoretical models,
+%general definitions, data definitions, instance models, likely changes, and
+%assumptions on each other. Figure~\ref{Fig_RTrace} shows the dependencies of
+%instance models, requirements, and data constraints on each other.
 
 % \begin{figure}[h!]
 % 	\begin{center}
@@ -1902,7 +1941,8 @@ instance models, requirements, and data constraints on each other.
 % 		{
 % 			\includegraphics[width=\textwidth]{ATrace.png}
 % 		}
-% 		\caption{\label{Fig_ATrace} Traceability Matrix Showing the Connections Between Items of Different Sections}
+% 		\caption{\label{Fig_ATrace} Traceability Matrix Showing the Connections 
+%Between Items of Different Sections}
 % 	\end{center}
 % \end{figure}
 
@@ -1913,7 +1953,8 @@ instance models, requirements, and data constraints on each other.
 % 		{
 % 			\includegraphics[width=0.7\textwidth]{RTrace.png}
 % 		}
-% 		\caption{\label{Fig_RTrace} Traceability Matrix Showing the Connections Between Requirements, Instance Models, and Data Constraints}
+% 		\caption{\label{Fig_RTrace} Traceability Matrix Showing the Connections 
+%Between Requirements, Instance Models, and Data Constraints}
 % 	\end{center}
 % \end{figure}
 
