@@ -180,6 +180,8 @@ $\gamma_{pq}$ & unitless & 1-electron reduced density matrix\\
 $\Gamma_{pqrs}$ & unitless & 2-electron reduced density matrix\\
 $h_{pq}$ & \si{\joule} & 1-electron integral\\
 $v_{pqrs}$ & \si{\joule} & 2-electron integral\\
+$\gamma_{pq}$ & unitless&1-electron reduced density matrix\\
+$\Gamma_{pqrs}$ &unitless& 2-electron reduced density matrix\\
 $N$ & unitless & number of electrons in a system\\
 $\Psi$ & unitless & stationary state wavefunction\\
 $\Psi^{(N)}_0$ & unitless & N-electron ground state wavefunction\\
@@ -1748,10 +1750,15 @@ have physical meaning for their system of interest.
 %\plt{List your nonfunctional requirements.  You may consider using a fit
 %  criterion to make them verifiable.}
 \begin{itemize}
-\item The code should be modular so that future improvements (like the 
-implementation of new EOMs) don't imply major structural changes.
-\item It should be tested using as reference of correctness available 
-literature data for atomic IP and electronic excitation energies. 
+\item Reusable: The code should be modular so that future improvements (like 
+the implementation of new EOMs) don't imply major feature changes.
+\item Portable: The software should run in multiple platforms.
+\item Usable: The software should be well documented so that an intermediate 
+user doesn't need more than a day to understand the code's purpose and not more 
+than three hours to prepare and run a calculation.
+\item Correct: It should follow the inputs and outputs requirements. It can be 
+tested using as reference available literature data for atomic IP and 
+electronic excitation energies. 
 \end{itemize}
 
 \section{Likely Changes}    

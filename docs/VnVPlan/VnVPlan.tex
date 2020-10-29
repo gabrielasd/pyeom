@@ -1,0 +1,886 @@
+\documentclass[12pt, titlepage]{article}
+
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=blue,
+    filecolor=black,
+    linkcolor=red,
+    urlcolor=blue
+}
+\usepackage[round]{natbib}
+\usepackage{amsmath, mathtools}
+\usepackage{amssymb}
+
+\input{../Comments}
+\input{../Common}
+
+\begin{document}
+
+\title{Project Title: System Verification and Validation Plan for EOMEE} 
+\author{Gabriela S\'anchez D\'iaz}
+\date{\today}
+	
+\maketitle
+
+\pagenumbering{roman}
+
+\section{Revision History}
+
+\begin{tabularx}{\textwidth}{p{3cm}p{2cm}X}
+\toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
+\midrule
+29-10-2020 & 1.0 & Created VnV first draft \\
+%Date 2 & 1.1 & Notes\\
+\bottomrule
+\end{tabularx}
+
+\newpage
+
+\tableofcontents
+
+\listoftables
+
+\listoffigures
+
+\newpage
+
+\section{Symbols, Abbreviations and Acronyms}
+
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{l l} 
+  \toprule		
+  \textbf{symbol} & \textbf{description}\\
+  \midrule 
+  T & Test\\
+  VnV & Verification and Validation\\
+  DD & Data Definition\\
+  EOMEE& Equation-of-motion for excited states\\
+  IM & Instance Model\\
+  MO & Molecular orbital(s)\\
+  HOMO& Highest Occupied Molecular Orbital\\
+  LUMO& Lowest Unoccupied Molecular Orbital\\
+  R & Requirement\\
+  SRS & Software Requirements Specification\\
+  RDM & Reduced density matrix\\
+  TDM & Transition density matrix\\
+  $h_{pq}$ & 1-electron integral\\
+  $v_{pqrs}$ & 2-electron integral\\
+  $\gamma_{pq}$ & 1-electron reduced density matrix\\
+  $\Gamma_{pqrs}$ & 2-electron reduced density matrix\\
+  \bottomrule
+\end{tabular}\\
+
+%\wss{symbols, abbreviations or acronyms -- you can simply reference the SRS
+%  \citep{SRS} tables, if appropriate}
+
+\newpage
+
+\pagenumbering{arabic}
+
+This document presents the VnV plan for EOMEE. First, the strategies for the 
+verifycation of the SRS, code desing and implementation will be described, 
+followed by the software validation plan. The later one will present the system 
+and unit tests that will verify the functional and nonfunctional requirements 
+of the package.
+%\wss{provide an introductory blurb and roadmap of the  Verification and 
+%Validation plan}
+
+\section{General Information}
+
+\subsection{Summary}
+
+%\wss{Say what software is being tested.  Give its name and a brief overview of
+%  its general functions.}\\
+The present document presents the validation plan of the package Equation of 
+Motion for Excited States (EOMEE). This program is intended as a research tool 
+for evaluating excited states (including ionizad states) and their related 
+spectroscopic properties such as the oscillator strengths. It also strives to 
+assess the effect of the electron correlation on these properties.
+
+\subsection{Objectives}
+
+%\wss{State what is intended to be accomplished.  The objective will be around
+%  the qualities that are most important for your project.  You might have
+%  something like: ``build confidence in the software correctness,''
+%  ``demonstrate adequate usability.'' etc.  You won't list all of the 
+%qualities,
+%  just those that are most important.}\\
+The present document's aim is to build confidence in the software by designing 
+tests that verify its correctness (compliance with the requirements). 
+Validation of the inputs and outputs or the 
+code usability will be among the main tests this plan will be focusing on.
+
+\subsection{Relevant Documentation}
+
+%\wss{Reference relevant documentation.  This will definitely include your SRS
+%  and your other project documents (MG, MIS, etc)}
+
+Through this document we will be refering to the requirement specifications for 
+EOMEE[\citet{SRS2020}], in particular to its functional and nonfunctional 
+requirements.
+
+\section{Plan}
+	
+\subsection{Verification and Validation Team}
+
+%\wss{You, your classmates and the course instructor.  Maybe your supervisor.}\\
+The review of EOMEE will be conducted by the following parties:
+\begin{itemize}
+	\item The Ayers Lab members, in particular Michael Rischer, Dr.\ Paul Ayers 
+	and Gabriela S\'anchez D\'iaz.
+	\item Dr.\ Spencer Smith.
+	\item Members of 2020 CAS741 course; in particular the following 
+	responsibilities have been defined:
+	\subitem Mohamed AbuElAla (Primary Reviewer)
+	\subitem Seyed Parsa Tayefeh Morsal (SRS Reviewer)
+	\subitem Ting-Yu Wu (VnV Reviewer)
+	\subitem Xuanming Yan (MG and MIS Reviewer)
+\end{itemize}
+
+\subsection{SRS Verification Plan}
+
+%\wss{List any approaches you intend to use for SRS verification.  This may just
+%  be ad hoc feedback from reviewers, like your classmates, or you may have
+%  something more rigorous/systematic in mind..}
+The software requirement specifications (SRS) verification will be carried by 
+the reviewers following the indications describes in the SRS verification test. 
+This test is intended as a guide in the revision process.
+
+\subsection{Design Verification Plan}
+
+%\wss{Plans for design verification}
+The modules design will be discussed with the review team members Dr.\ Paul 
+Ayers and Michael Richer. It will also be presented to/evaluated by Dr.\ Smith 
+and the members of 2020 CAS741 course.
+
+\subsection{Implementation Verification Plan}
+
+%\wss{You should at least point to the tests listed in this document and the 
+%unit
+%  testing plan.}
+%
+%\wss{In this section you would also give any details of any plans for static 
+%verification of
+%  the implementation.  Potential techniques include code walkthroughs, code
+%  inspection, static analyzers, etc.}\\
+The implementation will be verified through system and unit testing. The 
+following test areas will be defined:
+\begin{itemize}
+	\item \textbf{Subsection} \ref{section:inputs} Input Verification : 
+	includes 
+	checks for the input variables types and values.
+	\item \textbf{Subsection} 
+	\ref{section:calculations} Energies and TDMs Evaluation: tests in 
+	which the properties represented by the instance models (IM1-IM6) are 
+	evaluated and compared against literature or pseudo-oracle results.
+	\item \textbf{Subsection} \ref{section:srsreview} SRS Review: 
+	introduces a questionnaire to guide the SRS review team.
+	\item \textbf{Subsection} \ref{section:usability} Usability Verification 
+	Plan: 
+	tests with the purpose of identifying potential deficiencies in the 
+	user-software interaction.
+	\item \textbf{Subsection} \ref{section:performance} Performance: an 
+	assesment 
+	atemp at the numerical stability limits of the implemented IM1-IM5.
+\end{itemize}
+
+\an{The corresponding sections for the unit tests will be added once that 
+section of 
+the VnV plan is completed}
+
+\subsection{Automated Testing and Verification Tools}
+
+%\wss{What tools are you using for automated testing.  Likely a unit testing
+%  framework and maybe a profiling tool, like ValGrind.  Other possible tools
+%  include a static analyzer, make, continuous integration tools, test coverage
+%  tools, etc.  Explain your plans for summarizing code coverage metrics.
+%  Linters are another important class of tools.  For the programming language
+%  you select, you should look at the available linters.  There may also be 
+%tools
+%  that verify that coding standards have been respected, like flake9 for
+%  Python.}
+%\wss{The details of this section will likely evolve as you get closer to the
+%  implementation.}\\  
+We will be using \href{https://docs.pytest.org/en/stable/} 
+{Pytest} testing framework for tests automation  with the plugin 
+\href{https://pytest-cov.readthedocs.io/en/latest/} {pytest-cov} to 
+determine the code coverage percentage. Additionally, the following tools 
+will be 
+used to enforce compliance with Python style 
+conventions for code and documentation:
+\begin{itemize}
+\item \href{https://www.pylint.org/} {Pylint}, 
+\href{https://flake8.pycqa.org/en/latest/} {Flake8} and 
+\href{https://black.readthedocs.io/en/stable/#} {Black} as Python linters. The 
+last one is also a code auto-formatter. 
+\item \href{https://pypi.org/project/flake8-docstrings/} {flake8-docstrings} as 
+a static analysis for Python docstring conventions.
+\end{itemize}
+For continuous integration we will use the \href{https://travis-ci.org/} 
+{Travis-CI} tool.
+
+\subsection{Software Validation Plan}
+
+%\wss{If there is any external data that can be used for validation, you should
+%  point to it here.  If there are no plans for validation, you should state 
+%that
+%  here.}
+To assess the validity of EOMEE results, in particular during the system tests, 
+these will be compared against the ones obtained with the package for 
+electronic structure calculations Gaussian[\cite{g16}]. Another source for 
+validation can be the NIST Atomic Spectra 
+Database[\cite{NIST_ASD}].
+
+\section{System Test Description}
+	
+\subsection{Tests for Functional Requirements}
+
+%\wss{Subsets of the tests may be in related, so this section is divided into
+%  different areas.  If there are no identifiable subsets for the tests, this
+%  level of document structure can be removed.}
+%
+%\wss{Include a blurb here to explain why the subsections below
+%  cover the requirements.  References to the SRS would be good.}
+The tests described in the following subsections check functional requirements 
+listed in the subsection 5.1 of the 
+\href{https://github.com/gabrielasd/eomee/tree/cas741/docs/SRS} {SRS}, in 
+particular requirements R1 and R2 about the input variables and R4 and R5 
+related to the spectroscopic properties evaluated by EOMEE.
+
+\subsubsection{Input Verification}
+\label{section:inputs}
+
+%\wss{It would be nice to have a blurb here to explain why the subsections below
+%  cover the requirements.  References to the SRS would be good.  If a section
+%  covers tests for input constraints, you should reference the data constraints
+%  table in the SRS.}
+		
+\paragraph{Input type and value}
+
+\begin{enumerate}
+
+\item{input-type:IT\\}
+
+Control: Automatic
+					
+Initial State: N/A
+					
+Input: Two sets of inputs, corresponding to the one-electron integral, 
+two-electron integral, one-electron reduced density matrix and two-electron 
+reduced density matrix, will be provided according to 
+Table~\ref{Table:typeerror}:
+
+\begin{table}[h!]
+	\centering
+	\noindent \begin{tabular}{l l l } 
+		\toprule		
+		\textbf{Input set} & \textbf{S1} & \textbf{S2}\\
+		\midrule 
+		$h_{pq}$& tuple & 2-idx numpy array\\
+		$v_{pqrs}$& 4-idx numpy array& 4-idx numpy array\\
+		$\gamma_{pq}$& 2-idx numpy array& 2-idx list\\
+		$\Gamma_{pqrs}$& 4-idx numpy array& 4-idx numpy array\\
+		\textbf{Wrong}& tuple variable& list variable\\
+		\bottomrule
+	\end{tabular}
+	\caption{Type of the input variables}
+	\label{Table:typeerror}
+\end{table}
+
+The variables in the table will be defined as:\\
+tuple: ((1,2), (3,4))\\
+2-idx numpy array: numpy.random.rand(4, 4).astype(float)\\
+2-idx list: [[1.0, 2.0],[3.0, 4.0]]\\
+4-idx numpy array: numpy.random.rand(4, 4, 4, 4).astype(float)
+	
+Output: A type-error will be raised in each case. 
+
+Test Case Derivation: N/A
+					
+How test will be performed: The test module will feed the inputs, as specified 
+in Table~\ref{Table:typeerror}, to the EOMEE code and verify that a type-error 
+message is raised.
+
+					
+\item{input-value:IV\\}
+
+Control: Automatic
+					
+Initial State: N/A
+					
+Input: Five input sets, corresponding to the one-electron integral, 
+two-electron integral, one-electron reduced density matrix and two-electron 
+reduced density matrix, as described in Table~\ref{Table:valueerror}.
+\begin{table}[h!]
+	\centering
+	\noindent \begin{tabular}{l c c l l c} 
+		\toprule		
+		\textbf{Input set} & \textbf{S1} & \textbf{S2}& 
+		\textbf{S3} & \textbf{S4}& \textbf{S5}\\
+		\midrule 
+		$h_{pq}$& $v_{pqrs}$ & $h_{pq}$& $A_{(n \times m)}$& 
+		$A_{(m \times m)}$& $\gamma_{pq}$\\
+		$v_{pqrs}$& $h_{pq}$& $v_{pqrs}$&$B_{(n \times m 
+		\times m \times m)}$& $B_{(n \times n 
+		\times n \times n)}$& $\Gamma_{pqrs}$\\
+		$\gamma_{pq}$& $\gamma_{pq}$& $\Gamma_{pqrs}$& $A_{(n \times m)}$& 
+		$C_{(n \times n)}$& $h_{pq}$ 
+		\\
+		$\Gamma_{pqrs}$& $\Gamma_{pqrs}$& $\gamma_{pq}$&$B_{(n \times m \times 
+		m \times m)}$& $D_{(n \times n \times n \times 
+		n)}$& $v_{pqrs}$\\
+		\textbf{Wrong}& \multicolumn{2}{l}{array dimensions} 
+		&\multicolumn{2}{c}{array shape} & RDMs constrains\\
+		\bottomrule
+	\end{tabular}
+	\caption{Test input variables definition.}
+	\label{Table:valueerror}
+\end{table}
+
+The variables in Table~\ref{Table:valueerror} will be defined as:\\
+$h_{pq}$: numpy.random.rand(4, 4).astype(float)\\
+$v_{pqrs}$ and $B_{(n \times n	\times n \times n)}$: numpy.random.rand(4, 4, 
+4, 4).astype(float)\\
+$\gamma_{pq}$ and $C_{n \times n}$: numpy.asarray([[1,0,0,0], [0,0,0,0], 
+[0,0,1,0], [0,0,0,0]])\\
+$\Gamma_{pqrs}$ and $D_{(n \times n	\times n \times n)}$: $\gamma_{pr} \otimes 
+\gamma_{qs} -  \gamma_{ps} \otimes 
+\gamma_{qr}$\\
+$A_{(n \times m)}$: numpy.random.rand(4, 3).astype(float)\\
+$B_{(n \times m	\times m \times m)}$: numpy.random.rand(4, 3, 3, 
+3).astype(float)\\
+$A_{(m \times m)}$: numpy.random.rand(6, 6).astype(float)
+
+Output: The EOMEE code must raise a value error for each case specified in 
+Table~\ref{Table:valueerror}.
+
+Test Case Derivation: Input cases S1 and S2 target incorrect dimensions in the 
+electron integrals or RDMs. S3 verifies that $h_{pq}$ and $\gamma_pq$ are 
+square matrices, while $v_{pqrs}$ and $\Gamma_{pqrs}$ must be tensors, each 
+with equal numbers of rows and columns. Mismatching number of spinorbitals in 
+input parameters (given by the array shapes) is verified by the test case S4. 
+The last column input set targets the requirement R2 in the SRS relative to the 
+physical constraints of the RDMs.
+
+How test will be performed: The test cases in Table~\ref{Table:valueerror} are 
+passed to the EOMEE code by the testing framework which will also verify that a 
+value-error message is raised.
+
+\end{enumerate}
+
+\subsubsection{Energies and TDMs Evaluation}
+\label{section:calculations}
+
+\paragraph{Transition energies\\}
+
+The tests described under this section require the one- and 
+two-electron integrlas for the N-electron, M-atom system to be stored in the 
+directory \textit{test/data} as \href{https://numpy.org/} {NumPy}'s binary 
+files (.npy). Unless otherwise 
+stated, for each implemented EOM method (IM1-IM5, 
+\href{https://github.com/gabrielasd/eomee/tree/cas741/docs/SRS} {SRS} 
+subsection 4.2.5), the lowest (positive valued) 
+transition energy will be taken and compared against an "expected" value 
+(generally from a Gaussian[\cite{g16}] calculation). 
+Because at this point we are not targeting the performance of the 
+methods, only small systems with at most 5 electrons and 10 molecular orbitals 
+(MOs) 
+were included in the test cases bellow. We will use the absolute error 
+($|E_{IM\#} - E_{expected}|$) to measure the method's accuracy.
+%Electronic structure calculations are said to have chemical accuracy if their 
+%prediction error is around 1 kcal/mol (0.043 eV) relative to the experiment. 
+%Reliable methods for excitation energies computation such as 
+%EOM-CCSD~\cite{Stanton1993} provide an accuracy of 
+%0.1–0.2 eV (absolute error) for sinlge-excitations.\\
+
+
+\begin{enumerate}
+	
+	\item{correct-lowest-transition:LT\\}
+	
+	Control: Automatic
+	
+	Initial State: N/A
+	
+	Input: The one- and two-electron integrals corresponding to the systems 
+	presented in Table~\ref{table:energies}, the tolerance value $1.0 \times 
+	10^{-6}$.\\
+	
+	Table~\ref{table:energies} contains the test cases 
+	description. All systems have closed-shell electronic configurations except 
+	the boron atom (B).
+
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{l c c c c}
+			\toprule
+			\textbf{File} & IM &\textbf{Nbasis} & \textbf{Nocc}& 
+			\textbf{Expected}\\
+			\midrule
+			B (STO-3G) & 1 & 5& (3, 2)& $-\epsilon_{HOMO}$\\
+			B (STO-3G) & 2 & 5& (3, 2)& $\epsilon_{LUMO}$\\
+			He (cc-pVDZ)& 1& 5& (1, 1)& $-\epsilon_{HOMO}$\\
+			He (cc-pVDZ)& 2& 5& (1, 1)& $\epsilon_{LUMO}$\\
+			$HeH^{+}$ (STO-3G)& 1 & 2& (1, 1)& $-\epsilon_{HOMO}$\\
+			$HeH^{+}$ (STO-3G)& 2 & 2& (1, 1)& $\epsilon_{LUMO}$\\
+			$HeH^{+}$ (STO-3G)& 3 & 2& (1, 1)& 0.91123209\\
+			$H_2$ (STO-6G)& 4 & 2& (1, 1)& 1.83843430\\			
+		\end{tabular}
+		\caption{Input variables. The reference energy values (last column) are 
+		in Hartree.}
+		\label{table:energies}
+	\end{table}
+
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{l c c}
+			\toprule
+			\textbf{File} & $\epsilon_{HOMO}$ & $\epsilon_{LUMO}$\\
+			\midrule
+			B (STO-3G) &-0.20051823& 0.29136562\\
+			He (cc-pVDZ)& -0.91414765& 1.39744193\\
+			$HeH^{+}$ (STO-3G)& -1.52378328 & -0.26764028\\		
+		\end{tabular}
+		\caption{Frontier molecular orbital energies in Hartree.}
+		\label{table:koopman}
+	\end{table}
+	
+	Output: Eigenvalues (and eigenvectors) solution to the IMs.
+	
+	Test Case Derivation: 
+	The one- and two-reduced density matrices required  as input by the EOMEE 
+	methods will be generated from the number of electrons (Nocc) and MOs 
+	(Nbasis). Because the ground state wavefunction ($\Psi_0$) for the 
+	systems in Table~\ref{table:energies} will be modeled 	by a single Slater 
+	determinant (specifically the lowest energy Hartree-Fock Slater 
+	determinant), the one- and two-RDMs can be defined as:
+	\begin{align*}
+	\gamma_{pq} &=\Bigg\{
+	\begin{matrix}
+	\delta_{pq}& p,q \in \text{occupied MO}\\
+	0 & \text{virtual MO}
+	\end{matrix}\\
+	\Gamma_{pqrs} &= \frac{1}{\sqrt{2}}(\gamma_{pr}\gamma_{qs} - 
+	\gamma_{ps}\gamma_{qr})
+	\end{align*} 
+	
+	How test will be performed:
+	The testing framework will pass the electron integrals and density matrices 
+	to the EOM method (IM column in Table~\ref{table:energies}). From the 
+	solutions, the lowest transition energy will be determined and compared 
+	against the "expected" value. If the absolute error is less or 
+	equal than the tolerance criteria, the test will pass.
+
+	
+\end{enumerate}
+
+
+\paragraph{Transition Density Matrices}
+
+\begin{enumerate}
+	
+	\item{matrix-symmetry:TS\\}
+	
+	Control: Automatic
+	
+	Initial State: The EOM method (IM1-IM5) has been solved.
+	
+	Input: The following input arrays located in the \textit{test/data} folder:
+	\begin{itemize}
+		\item be\_sto3g\_twoint\_genzd\_anti.npy
+		\item 2dm\_be\_sto3g\_genzd\_anti.npy
+		\item be\_sto3g\_oneint\_genzd.npy
+		\item 1dm\_be\_sto3g\_genzd.npy
+	\end{itemize}
+	The expansion coefficients matrix and the lowest nonzero excited state 
+	index. 
+	
+	Output: The TDM for the selected state.
+	
+	Test Case Derivation: The equations to evaluate the TDMs corresponding to 
+	each EOM method can be found in the 
+	\href{https://github.com/gabrielasd/eomee/tree/cas741/docs/SRS} 
+	{SRS} (subsection 4.2.5, IM6).
+	
+	How test will be performed: 
+	The test framework will pass the specified inputs to a function that 
+	evaluates the EOMEE methods and TDMs. The selected TDM and its transpose 
+	will be compared using NumPy's allclose method. The test will pass if the 
+	matrix is asymmetric.
+	
+%	\item{test-id2\\}
+%	
+%	Control: Manual versus Automatic
+%	
+%	Initial State: 
+%	
+%	Input: 
+%	
+%	Output: \wss{The expected result for the given inputs}
+%	
+%	Test Case Derivation: \wss{Justify the expected value given in the Output 
+%		field}
+%	
+%	How test will be performed: 
+	
+\end{enumerate}
+
+
+\subsection{Tests for Nonfunctional Requirements}
+
+%\wss{The nonfunctional requirements for accuracy will likely just reference the
+%  appropriate functional tests from above.  The test cases should mention
+%  reporting the relative error for these tests.}
+%
+%\wss{Tests related to usability could include conducting a usability test and
+%  survey.}
+The tests described in the following subsections verify the nonfunctional 
+requirements listed in the subsection 5.2 of the 
+\href{https://github.com/gabrielasd/eomee/tree/cas741/docs/SRS} {SRS}.
+
+\subsubsection{SRS Review}
+\label{section:srsreview}
+		
+%\paragraph{Title for Test}
+
+\begin{enumerate}
+
+\item{SRS\_questionnaire:SQ}
+
+Type: Manual
+					
+Initial State: N/A
+					
+Input/Condition: 
+The the SRS document[\cite{SRS2020}] will be provided to Dr.\ Ayers, Dr.\ Smith, 
+Mohamed AbuElAla and Gabriela S\'anchez along with a questionnaire (to be found 
+in the \hyperref[section:appendix]{Appendix} section).
+					
+Output/Result: GitHub issues 
+					
+How test will be performed: 
+The reviewers will read the document and questions and  report any problems or 
+inconsistencies.
+
+\end{enumerate}
+
+\subsubsection{Usability verification}
+\label{section:usability}
+
+\paragraph{Portability and usability tests}
+
+\begin{enumerate}
+	
+	\item{installability-test:PT}
+	
+	Type: Manual
+	
+	Initial State: The may or may not be some Python program and modules 
+	already installed.
+	
+	Input/Condition: Internet connection and some web browser available.
+	
+	Output/Result: EOMEE module installed or issue reported in GitHub.
+	
+	How test will be performed: 
+	The GitHub repository will be cloned by Gabriela S\'anchez in different 
+	platforms (Ubuntu Focal 
+	Fossa, Mac OS Catalina and Windows 10). The installation will follow the 
+	instructions in the README.md file located on the repository root folder. 
+	Upon installation completion the system and unit tests will be ran. 
+
+	\item{usability-test:UT\\}
+	\label{sec:usability}
+	
+	Type: Manual.
+	
+	Initial State: The EOMEE code may or not be installed on the user's 
+	computer.
+	
+	Input/Condition: Members of the test team, the link to the project's GitHub 
+	repository and the following example input files for the beryllium atom:
+	\begin{itemize}
+		\item be\_sto3g\_twoint\_genzd\_anti.npy
+		\item 2dm\_be\_sto3g\_genzd\_anti.npy
+		\item be\_sto3g\_oneint\_genzd.npy
+		\item 1dm\_be\_sto3g\_genzd.npy
+	\end{itemize}
+	These files will be located in the \textit{test/data} folder.
+	
+	Output/Result: Users response to the usability survey found in the Appendix 
+	section.
+	
+	How test will be performed: The users will clone the repository and install 
+	the program. Using the provided input files they will choose to evaluate 
+	one of the following properties for Be: ionization potential, electron 
+	affinity or electron excitation. Additionally, they will determine the TDMs 
+	for their selected method. After completing these tasks the test team will 
+	fill out the survey.
+	
+	
+\end{enumerate}
+
+
+\subsubsection{Performance}
+\label{section:performance}
+
+\paragraph{Numerical instability}
+
+\begin{enumerate}
+	
+	\item{illconditioning-test:NIT}
+	
+	Type: automatic
+	
+	Initial State: N/A
+	
+	Input/Condition: A matrix orthogonalization methods (strings 
+	\textit{symmetric} or \textit{asymmetric}), threshold values in the range 
+	$1.0 \times 10^{-4} - 1.0 \times 10^{-9}$, the example input files from the
+	\hyperref[section:usability]{usability-test} and the instance models IM1 to 
+	IM5 (\href{https://github.com/gabrielasd/eomee/tree/cas741/docs/SRS} {SRS} 
+	subsection 4.2.5).
+	
+	Output/Result: A graph showing how the lowest nonzero value for instance 
+	models IM1-IM5 changes with the tolerance value.
+	
+	How test will be performed: The test framework will pass the inputs to 
+	EOMEE and a graph will be generated.
+	
+\end{enumerate}
+
+
+\subsection{Traceability Between Test Cases and Requirements}
+
+%\wss{Provide a table that shows which test cases are supporting which
+%  requirements.}
+Table~\ref{table:traceab} shows what requirement specificationns the functional and nonnfunnctional system tests address:
+
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{|l|c|c|c|c|c|c|c|c|}
+		\hline
+		& IT& IV& LT& TS& SQ& PT& UT& NIT\\	\hline	
+	  R1& X& X& & & & & &\\ \hline
+	  R2&  & X& & & & & &\\ \hline
+	  R3&  & & & & & & &\\ \hline
+	  R4&  &  & X& X& & & &\\ \hline
+	  R5&  &  & X& X& & & &\\ \hline
+	  R6&  &  & & & & & &\\ \hline
+	  Reusable& & & & & & & & \\ \hline
+	  Usable& & & & &  & X& X& \\ \hline
+	  Portable& & & & &  & X& & \\ \hline
+	  Correct& & & X& X&  X&  & & \\ \hline
+	\end{tabular}
+	\caption{Traceability for system tests and requirements}
+	\label{table:traceab}
+\end{table}
+
+\section{Unit Test Description}
+
+\wss{Reference your MIS and explain your overall philosophy for test case
+  selection.}  
+\wss{This section should not be filled in until after the MIS has
+  been completed.}
+
+\subsection{Unit Testing Scope}
+
+\wss{What modules are outside of the scope.  If there are modules that are
+  developed by someone else, then you would say here if you aren't planning on
+  verifying them.  There may also be modules that are part of your software, but
+  have a lower priority for verification than others.  If this is the case,
+  explain your rationale for the ranking of module importance.}
+
+\subsection{Tests for Functional Requirements}
+
+\wss{Most of the verification will be through automated unit testing.  If
+  appropriate specific modules can be verified by a non-testing based
+  technique.  That can also be documented in this section.}
+
+\subsubsection{Module 1}
+
+\wss{Include a blurb here to explain why the subsections below cover the module.
+  References to the MIS would be good.  You will want tests from a black box
+  perspective and from a white box perspective.  Explain to the reader how the
+  tests were selected.}
+
+\begin{enumerate}
+
+\item{test-id1\\}
+
+Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
+  be automatic}
+					
+Initial State: 
+					
+Input: 
+					
+Output: \wss{The expected result for the given inputs}
+
+Test Case Derivation: \wss{Justify the expected value given in the Output field}
+
+How test will be performed: 
+					
+\item{test-id2\\}
+
+Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
+  be automatic}
+					
+Initial State: 
+					
+Input: 
+					
+Output: \wss{The expected result for the given inputs}
+
+Test Case Derivation: \wss{Justify the expected value given in the Output field}
+
+How test will be performed: 
+
+\item{...\\}
+    
+\end{enumerate}
+
+\subsubsection{Module 2}
+
+...
+
+\subsection{Tests for Nonfunctional Requirements}
+
+\wss{If there is a module that needs to be independently assessed for
+  performance, those test cases can go here.  In some projects, planning for
+  nonfunctional tests of units will not be that relevant.}
+
+\wss{These tests may involve collecting performance data from previously
+  mentioned functional tests.}
+
+\subsubsection{Module ?}
+		
+\begin{enumerate}
+
+\item{test-id1\\}
+
+Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
+  be automatic}
+					
+Initial State: 
+					
+Input/Condition: 
+					
+Output/Result: 
+					
+How test will be performed: 
+					
+\item{test-id2\\}
+
+Type: Functional, Dynamic, Manual, Static etc.
+					
+Initial State: 
+					
+Input: 
+					
+Output: 
+					
+How test will be performed: 
+
+\end{enumerate}
+
+\subsubsection{Module ?}
+
+...
+
+\subsection{Traceability Between Test Cases and Modules}
+
+\wss{Provide evidence that all of the modules have been considered.}
+				
+\bibliographystyle{plainnat}
+
+\bibliography{../../refs/References}
+
+\newpage
+
+\section{Appendix}
+\label{section:appendix}
+
+%This is where you can place additional information.
+
+\subsection{Symbolic Parameters}
+
+The definition of the test cases will call for SYMBOLIC\_CONSTANTS.
+Their values are defined in this section for easy maintenance.
+
+\subsection{Usability Survey Questions}
+
+\begin{enumerate}
+	\item Were the installation instructions for your platform clear? Could you 
+	successfully install EOMEE by following them?
+	\item Was the code's documentation helpful when learning how to run the 
+	calculations?
+	\item Did you look at the tests files when learning how to run the 
+	calculations? Were they helpful?
+	\item Could you successfully run an excited state calculation?
+	\item Could you successfully determine the transition density matrices for 
+	your chosen EOM method?
+	\item Was the naming of the functions descriptive (it was clear the 
+	task they were supposed to perform)?
+	\item Do you have any improvement suggestions regarding the documentation 
+	or code?
+	\item How would you rate the learning curve for this software?(Very easy, 
+	easy, hard, very hard)
+\end{enumerate}
+
+\subsection{SRS Questionnaire}
+Because the members of the VnV team might have limited time to review the 
+document some of the question bellow have been specifically assigned:
+\begin{enumerate}
+	\item Are the energy units in the Table of units (section 1.2) appropriate 
+	for the physical problems EOMEE addresses?
+	\item Was the Table of Symbols (section 1.2) complete? 
+	\item Does the used notation in the Table of Symbols (section 1.2) matches 
+	the one generally used in the literature? [Dr.\ Ayers]
+	\item Were the abbreviations and acronyms (section 1.3) properly used 
+	through the document?
+	\item Is Figure 1 for the system context (section 3.1) along with its 
+	description correct? Do the listed user and software responsibilities make 
+	sense? [Dr. Smith and Mohamed AbuElAla]
+	\item Was the description of the problem EOMEE intends to solve clear? Were 
+	all the terminology definitions needed for the understanding of subsequent 
+	sections included? (sections 4.1 and 4.1.1) [Dr.\ Smith 
+	and Mohamed AbuElAla]
+	\item Were the terminology definitions listed in section 4.1.1 correct? 
+	[Dr.\ Ayers]
+	\item Is section 4.1.2 (Physical System Description) clear? Do you have any 
+	suggestions that might help improve the understanding of EOMEE's physical 
+	system? [Mohamed AbuElAla]
+	\item Were all assumptions pertinent to the EOM models included? Are the 
+	ones listed correct?(section 4.2.1) [Dr.\ Ayers]
+	\item Were the connections between the assumptions and the appropriate IM, 
+	GS, DD, T or LC included? (section 4.2.1)
+	\item Were the defined theoretical models the correct general equations 
+	that EOMEE is based on? Were the descriptions and derivations appropriate? 
+	(section 4.2.2) [Dr.\ Ayers]
+	\item In section 4.2.3, are the definitions of the transition operator and 
+	EOM approximations correct? Are the descriptions and derivations 
+	appropriate? [Dr.\ Ayers]
+	\item Are DD2, DD3, DD4 and DD5 properly described? Are the presented 
+	symmetry properties of DD3 and DD5 correct? (section 4.2.4) [Dr.\ Ayers]
+	\item Are the IMs inputs and outputs appropriate? (section 4.2.5) [Dr.\ 
+	Smith]
+	\item After reading the Input Data Constraints section (4.2.6), are the 
+	physical constraints presented in the Table 1 correct? Are the typical 
+	values assigned to the one- and two-electron integrals reasonable? What 
+	changes do you suggested making to the values presented in this table? 
+	[Dr.\ Ayers]
+	\item Do the output constraints presented in Table 3 (section 4.2.7) make 
+	sense? If not, could you suggest changes to be made? [Dr.\ Ayers]
+	\item Do the listed Functional and Nonfunctional Requirements make sense 
+	(sections 5.1 and 5.2 respectively) [Dr.\ Smith]
+	\item Were the cross-references made correctly through the document? 
+	[Mohamed AbuElAla]
+	
+\end{enumerate}
+These questions are inspired on the SRS review plans by Malavika Srinivasan and 
+Spencer Smith[\cite{malavika}]. 
+\end{document}
