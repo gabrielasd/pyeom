@@ -81,7 +81,7 @@
 \pagenumbering{arabic}
 
 This document presents the VnV plan for EOMEE. First, the strategies for the 
-verifycation of the SRS, code desing and implementation will be described, 
+verification of the SRS, code design and implementation will be described, 
 followed by the software validation plan. The later one will present the system 
 and unit tests that will verify the functional and nonfunctional requirements 
 of the package.
@@ -96,7 +96,7 @@ of the package.
 %  its general functions.}\\
 The present document presents the validation plan of the package Equation of 
 Motion for Excited States (EOMEE). This program is intended as a research tool 
-for evaluating excited states (including ionizad states) and their related 
+for evaluating excited states (including ionized states) and their related 
 spectroscopic properties such as the oscillator strengths. It also strives to 
 assess the effect of the electron correlation on these properties.
 
@@ -118,7 +118,7 @@ code usability will be among the main tests this plan will be focusing on.
 %\wss{Reference relevant documentation.  This will definitely include your SRS
 %  and your other project documents (MG, MIS, etc)}
 
-Through this document we will be refering to the requirement specifications for 
+Through this document we will be referring to the requirement specifications for 
 EOMEE[\citet{SRS2020}], in particular to its functional and nonfunctional 
 requirements.
 
@@ -183,8 +183,8 @@ following test areas will be defined:
 	tests with the purpose of identifying potential deficiencies in the 
 	user-software interaction.
 	\item \textbf{Subsection} \ref{section:performance} Performance: an 
-	assesment 
-	atemp at the numerical stability limits of the implemented IM1-IM5.
+	assessment 
+	attempt at the numerical stability limits of the implemented IM1-IM5.
 \end{itemize}
 
 \an{The corresponding sections for the unit tests will be added once that 
@@ -360,7 +360,7 @@ Table~\ref{Table:valueerror}.
 Test Case Derivation: Input cases S1 and S2 target incorrect dimensions in the 
 electron integrals or RDMs. S3 verifies that $h_{pq}$ and $\gamma_pq$ are 
 square matrices, while $v_{pqrs}$ and $\Gamma_{pqrs}$ must be tensors, each 
-with equal numbers of rows and columns. Mismatching number of spinorbitals in 
+with equal numbers of rows and columns. Mismatching number of spin orbitals in 
 input parameters (given by the array shapes) is verified by the test case S4. 
 The last column input set targets the requirement R2 in the SRS relative to the 
 physical constraints of the RDMs.
@@ -377,7 +377,7 @@ value-error message is raised.
 \paragraph{Transition energies\\}
 
 The tests described under this section require the one- and 
-two-electron integrlas for the N-electron, M-atom system to be stored in the 
+two-electron integrals for the N-electron, M-atom system to be stored in the 
 directory \textit{test/data} as \href{https://numpy.org/} {NumPy}'s binary 
 files (.npy). Unless otherwise 
 stated, for each implemented EOM method (IM1-IM5, 
@@ -453,7 +453,7 @@ were included in the test cases bellow. We will use the absolute error
 	Test Case Derivation: 
 	The one- and two-reduced density matrices required  as input by the EOMEE 
 	methods will be generated from the number of electrons (Nocc) and MOs 
-	(Nbasis). Because the ground state wavefunction ($\Psi_0$) for the 
+	(Nbasis). Because the ground state wave function ($\Psi_0$) for the 
 	systems in Table~\ref{table:energies} will be modeled 	by a single Slater 
 	determinant (specifically the lowest energy Hartree-Fock Slater 
 	determinant), the one- and two-RDMs can be defined as:
@@ -657,7 +657,7 @@ inconsistencies.
 
 %\wss{Provide a table that shows which test cases are supporting which
 %  requirements.}
-Table~\ref{table:traceab} shows what requirement specificationns the functional and nonnfunnctional system tests address:
+Table~\ref{table:traceab} shows what requirement specifications the functional and nonfunctional system tests address:
 
 \begin{table}[ht]
 	\centering
