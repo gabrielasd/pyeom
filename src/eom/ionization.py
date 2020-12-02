@@ -1,16 +1,16 @@
 import numpy as np
 
-from eomee.base import EOMState
+from .base import EOMBase
 
 
 __all__ = [
-    'IonizationEOMState',
-    'IonizationDoubleCommutator',
-    'IonizationAntiCommutator',
+    "EOMIP",
+    "IonizationDoubleCommutator",
+    "IonizationAntiCommutator",
 ]
 
 
-class IonizationEOMState(EOMState):
+class EOMIP(EOMBase):
     """
     Ionization EOM state for operator Q = \sum_n { c_n a_n }.
     .. math::
@@ -54,8 +54,17 @@ class IonizationEOMState(EOMState):
         # M_mn = \gamma_mn
         return np.copy(self._dm1)
 
+    def compute_tdm(self, coeffs):
+        """
+        Compute .
 
-class IonizationDoubleCommutator(EOMState):
+        """
+        # M_mn = \gamma_mn
+        # return np.copy(self._dm1)
+        pass
+
+
+class IonizationDoubleCommutator(EOMBase):
     """
     Ionization EOM state for operator Q = \sum_n { c_n a_n }.
     .. math::
@@ -89,8 +98,8 @@ class IonizationDoubleCommutator(EOMState):
         a = np.copy(self._h)
         a -= 2 * np.dot(self._dm1, self._h)
         # A_mn += <v_msnq> \gamma_sq - \Gamma_mqrs <v_nqrs>
-        a += np.einsum('msnq,sq', self._v, self._dm1, optimize=True)
-        a -= np.einsum('mqrs,nqrs', self._dm2, self._v, optimize=True)
+        a += np.einsum("msnq,sq", self._v, self._dm1, optimize=True)
+        a -= np.einsum("mqrs,nqrs", self._dm2, self._v, optimize=True)
         return a
 
     def _compute_rhs(self):
@@ -104,7 +113,7 @@ class IonizationDoubleCommutator(EOMState):
         return m
 
 
-class IonizationAntiCommutator(EOMState):
+class IonizationAntiCommutator(EOMBase):
     """
     Ionization EOM state for operator Q = \sum_n { c_n a_n }.
     .. math::
@@ -135,7 +144,7 @@ class IonizationAntiCommutator(EOMState):
         # A_mn = -h_mn
         a = -np.copy(self._h)
         # A_mn += <v_qnmr> \gamma_qr
-        a += np.einsum('qnmr,qr', self._v, self._dm1, optimize=True)
+        a += np.einsum("qnmr,qr", self._v, self._dm1, optimize=True)
         return a
 
     def _compute_rhs(self):

@@ -2,14 +2,12 @@ import numpy as np
 
 from scipy.integrate import fixed_quad
 
-from eomee.base import EOMState
+from .base import EOMBase
 
-__all__ = [
-    "DoubleElectronRemovalEOM"
-]
+__all__ = ["EOMDIP"]
 
 
-class DoubleElectronRemovalEOM(EOMState):
+class EOMDIP(EOMBase):
     """
     Double Ionization EOM state for operator Q = \sum_{ij} { c_{ij} a_i a_j}.
     .. math::
@@ -20,7 +18,7 @@ class DoubleElectronRemovalEOM(EOMState):
 
     @property
     def neigs(self):
-        return self._n**2
+        return self._n ** 2
 
     def _compute_lhs(self):
         """
@@ -36,33 +34,33 @@ class DoubleElectronRemovalEOM(EOMState):
         I = np.eye(self._n, dtype=self._h.dtype)
 
         # A_klji = 2 h_il \delta_jk - 2 h_il \gamma_jk + 2 h_ik \gamma_jl - 2 h_ik \delta_jl
-        a = np.einsum('il,jk->klji', self._h, I, optimize=True)
-        a -= np.einsum('il,jk->klji', self._h, self._dm1, optimize=True)
-        a += np.einsum('ik,jl->klji', self._h, self._dm1, optimize=True)
-        a -= np.einsum('ik,jl->klji', self._h, I, optimize=True)
+        a = np.einsum("il,jk->klji", self._h, I, optimize=True)
+        a -= np.einsum("il,jk->klji", self._h, self._dm1, optimize=True)
+        a += np.einsum("ik,jl->klji", self._h, self._dm1, optimize=True)
+        a -= np.einsum("ik,jl->klji", self._h, I, optimize=True)
         # A_klji += 2 \gamma_lq h_qj \delta_ki - 2 \gamma_kq h_qj \delta_li
-        dm1h = np.einsum('ab,bc->ac', self._dm1, self._h, optimize=True)
-        a += np.einsum('lj,ki->klji', dm1h, I, optimize=True)
-        a -= np.einsum('kj,li->klji', dm1h, I, optimize=True)
+        dm1h = np.einsum("ab,bc->ac", self._dm1, self._h, optimize=True)
+        a += np.einsum("lj,ki->klji", dm1h, I, optimize=True)
+        a -= np.einsum("kj,li->klji", dm1h, I, optimize=True)
         a *= 2
         # A_klji += <v_klji>
         a += self._v
         # A_klji += <v_jilr> \gamma_kr - <v_jikr> \gamma_lr + 2 <v_qjkl> \gamma_qi
-        a += np.einsum('jilr,kr->klji', self._v, self._dm1, optimize=True)
-        a -= np.einsum('jikr,lr->klji', self._v, self._dm1, optimize=True)
-        a += 2 * np.einsum('qjkl,qi->klji', self._v, self._dm1, optimize=True)
+        a += np.einsum("jilr,kr->klji", self._v, self._dm1, optimize=True)
+        a -= np.einsum("jikr,lr->klji", self._v, self._dm1, optimize=True)
+        a += 2 * np.einsum("qjkl,qi->klji", self._v, self._dm1, optimize=True)
         # A_klji += 2 ( <v_iqrk> \gamma_qr \delta_lj - <v_iqrl> \gamma_qr \delta_kj )
-        vdm1 = np.einsum('abcd,bc->ad', self._v, self._dm1, optimize=True)
-        a += 2 * np.einsum('ik,lj->klji', vdm1, I, optimize=True)
-        a -= 2 * np.einsum('il,kj->klji', vdm1, I, optimize=True)
+        vdm1 = np.einsum("abcd,bc->ad", self._v, self._dm1, optimize=True)
+        a += 2 * np.einsum("ik,lj->klji", vdm1, I, optimize=True)
+        a -= 2 * np.einsum("il,kj->klji", vdm1, I, optimize=True)
         # A_klji += 2 ( <v_jqrk> \Gamma_qlri + <v_jqlr> \Gamma_qkri )
-        a += 2 * np.einsum('jqrk,qlri->klji', self._v, self._dm2, optimize=True)
-        a += 2 * np.einsum('jqlr,qkri->klji', self._v, self._dm2, optimize=True)
+        a += 2 * np.einsum("jqrk,qlri->klji", self._v, self._dm2, optimize=True)
+        a += 2 * np.einsum("jqlr,qkri->klji", self._v, self._dm2, optimize=True)
         # A_klji += <v_qjrs> \Gamma_qlrs \delta_ki - <v_qjrs> \Gamma_qkrs \delta_li
-        vdm2 = np.einsum('abcd,aecd->be', self._v, self._dm2, optimize=True)
-        a += np.einsum('jl,ki->klji', vdm2, I, optimize=True)
-        a -= np.einsum('jk,li->klji', vdm2, I, optimize=True)
-        return a.reshape(self._n**2, self._n**2)
+        vdm2 = np.einsum("abcd,aecd->be", self._v, self._dm2, optimize=True)
+        a += np.einsum("jl,ki->klji", vdm2, I, optimize=True)
+        a -= np.einsum("jk,li->klji", vdm2, I, optimize=True)
+        return a.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
         """
@@ -71,7 +69,16 @@ class DoubleElectronRemovalEOM(EOMState):
 
         # M_klji = \Gamma_klji
         m = np.copy(self._dm2)
-        return m.reshape(self._n**2, self._n**2)
+        return m.reshape(self._n ** 2, self._n ** 2)
+
+    def compute_tdm(self):
+        """
+        Compute .
+
+        """
+        # M_mn = \gamma_mn
+        # return np.copy(self._dm1)
+        pass
 
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
@@ -88,7 +95,7 @@ class DoubleElectronRemovalEOM(EOMState):
 
         # Linear term (eq. 20)
         # dh_pq * \gamma_pq
-        linear = np.einsum('pq,pq', dh, dm1, optimize=True)
+        linear = np.einsum("pq,pq", dh, dm1, optimize=True)
 
         # Nonlinear term (eq. 20 integrand)
         @np.vectorize
@@ -99,16 +106,20 @@ class DoubleElectronRemovalEOM(EOMState):
             v = alpha * dv
             v += v_0
             # Solve EOM equations
-            c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)[1].reshape(n ** 2, n, n)
+            c = (
+                cls(h, v, dm1, dm2)
+                .solve_dense(*args, **kwargs)[1]
+                .reshape(n ** 2, n, n)
+            )
             # Compute transition RDMs (eq. 32)
             # \gamma_m;pq = c_m;rs * \Gamma_pqrs
-            rdms = np.einsum('mrs,pqrs->mpq', c, dm2)
+            rdms = np.einsum("mrs,pqrs->mpq", c, dm2)
             # Compute nonlinear energy term
             # dv_pqrs * {sum_{m}{\gamma_m;ps * \gamma_m;qr}}_pqrs
             tv = np.zeros_like(dm2)
             for rdm in rdms:
-                tv += np.einsum('ps,qr->pqrs', rdm, rdm, optimize=True)
-            return np.einsum('pqrs,pqrs', dv, tv, optimize=True)
+                tv += np.einsum("ps,qr->pqrs", rdm, rdm, optimize=True)
+            return np.einsum("pqrs,pqrs", dv, tv, optimize=True)
 
         # Compute ERPA correlation energy (eq. 20)
         return linear + 0.5 * fixed_quad(nonlinear, 0, 1, n=nint)[0]

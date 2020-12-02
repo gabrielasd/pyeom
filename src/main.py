@@ -15,27 +15,46 @@ import solver
 import output
 
 
-inputfile = sys.argv[1]
-params = load.parse_inputfile(inputfile)
-load.check_inputs(params)
+def main():
+    args = sys.argv[1:]
+    if len(args) == 0:
+        print('Expecting one argument: "input_file.txt"', file=sys.stderr)
+        sys.exit(-1)
+    inputfile = args.pop(0)
+    params = load.parse_inputfile(inputfile)
+    load.check_inputs(params)
 
-ham = integrals.ElectronIntegrals(params.oneint_file, params.twoint_file)
-wfn = density.WfnRDMs(params.npart, params.dm1_file, params.dm2_file)
+    ham = integrals.ElectronIntegrals(params.oneint_file, params.twoint_file)
+    wfn = density.WfnRDMs(params.nparts, params.dm1_file, params.dm2_file)
 
-if params.eom == "ip":
-    eommethod = eom.IonizationEOMState
-elif params.eom == "ea":
-    eommethod = EOMEA
-elif params.eom == "exc":
-    eommethod = EOMExc
-elif params.eom == "dip":
-    eommethod = EOMDIP
-elif params.eom == "dea":
-    eommethod = EOMDEA
-else:
-    raise ValueError("Invalid EOM method: {}".format(params.eom))
+    # FIXME: Consider adding a check for number of spinorbitlas
+    # in integrlas an density matrices
 
-eomee = eommethod(ham.h, ham.v, wfn.dm1, wfn.dm2)
-exce, coeffs = solver.dense(eomee.lhs, eomee.rhs, params.tol, params.orthog)
+    if params.eom == "ip":
+        eommethod = eom.EOMIP
+    elif params.eom == "ea":
+        eommethod = eom.EOMEA
+    elif params.eom == "exc":
+        eommethod = eom.EOMExc
+    elif params.eom == "dip":
+        eommethod = eom.EOMDIP
+    elif params.eom == "dea":
+        eommethod = eom.EOMDEA
+    else:
+        raise ValueError("Invalid EOM method: {}".format(params.eom))
 
-output.dump(inputfile, exce, coeffs, tdms=None)
+    eomstate = eommethod(ham.h, ham.v, wfn.dm1, wfn.dm2)
+    print("Start EOM calcularion")
+    exce, coeffs = solver.dense(eomstate.lhs, eomstate.rhs, params.tol, params.orthog)
+    print("Done")
+    # tdms = eomstate.compute_tdm(coeffs)
+
+    if params.get_tdm:
+        output.dump(inputfile, params, exce, coeffs, tdms=tdms)
+    else:
+        print("Otput stuf")
+        output.dump(inputfile, params, exce, coeffs)
+
+
+if __name__ == "__main__":
+    main()

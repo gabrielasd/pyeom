@@ -1,9 +1,11 @@
 """Test eomee.doubleionization."""
 
 
-import eomee
-
 import numpy as np
+from scipy.linalg import eig, svd
+import pytest
+from src.eom import EOMDIP
+from src import solver
 from .tools import (
     find_datafiles,
     spinize,
@@ -12,44 +14,66 @@ from .tools import (
     hartreefock_rdms,
 )
 
-from scipy.linalg import eig, svd
+
+def test_eomdip_neigs():
+    """
+
+    """
+    nspino = 4
+    one_mo = np.arange(16, dtype=float).reshape(4, 4)
+    two_mo = np.arange(16 * 16, dtype=float).reshape(4, 4, 4, 4)
+    one_dm = np.zeros((4, 4), dtype=float)
+    one_dm[0, 0], one_dm[2, 2] = 1.0, 1.0
+    two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
+    two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
+
+    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
+    assert eom.neigs == nspino ** 2
 
 
-def test_doubleionization_one_body_term_H2():
+def test_eomdip_one_body_term():
     """Check the one-body terms of the double ionization potential
     equation of motion are correct.
 
     """
     nbasis = 2
+    # Load integrals files and transform from molecular orbital
+    # to spin orbital basis (internal representation in eomee code)
+    # For this test the two-electron integrals are ignored and the
+    # Hartree-Fock density matrices are used.
     one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
     one_mo = spinize(one_mo)
-    # the two-electron integrals are ignored
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
-    eom = eomee.DoubleElectronRemovalEOM(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = eom.solve_dense()
-    aval = np.sort(aval)
-
+    # Expected value
     w, v = eig(one_mo)
     dip = -2 * np.real(w[0])
+    # EOM solution
+    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
+    aval, avec = solver.dense(eom.lhs, eom.rhs)
+    aval = np.sort(aval)
+
     assert abs(aval[-1] - dip) < 1e-8
 
 
-def test_doubleionization_two_body_term_H2():
+def test_eomdip_two_body_terms():
     """Check the two-body teerms of the double ionization potential
     equation of motion are correct.
 
     """
     nbasis = 2
+    # Load integrals files and transform from molecular orbital
+    # to spin orbital basis (internal representation in eomee code)
+    # For this test the two-electron integrals are ignored and the
+    # Hartree-Fock density matrices are used.
     one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
     one_mo = spinize(one_mo)
-    # the two-electron integrals are ignored
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
-    eom = eomee.DoubleElectronRemovalEOM(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = eom.solve_dense()
+    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
+    aval, avec = solver.dense(eom.lhs, eom.rhs)
     aval = np.sort(aval)
 
     # Recomputing the left- and right-hand-sides for the double electron removal EOM
@@ -178,11 +202,12 @@ def test_doubleionization_two_body_term_H2():
 
     w, v = eig(one_mo)
     dip = -2 * np.real(w[0])
+
     assert abs(aval2[-1] / 2 - dip) < 1e-8
     assert abs(aval2[-1] / 2 - aval[-1]) < 1e-8
 
 
-def test_doubleionization_H2_sto6g():
+def test_eomdip_H2_sto6g():
     """Test DoubleElectronRemovalEOM for H2 (STO-6G)
     against Hartree-Fock canonical orbitals energy
     difference.
@@ -196,15 +221,17 @@ def test_doubleionization_H2_sto6g():
     two_mo = antisymmetrize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
-    eom = eomee.DoubleElectronRemovalEOM(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = eom.solve_dense()
+    # Expected value
+    dip = -2 * (-0.58205888) + two_mo[0, 2, 0, 2]
+    # EOM solution
+    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
+    aval, avec = solver.dense(eom.lhs, eom.rhs)
     aval = np.sort(aval)
 
-    dip = -2 * (-0.58205888) + two_mo[0, 2, 0, 2]
     assert abs(aval[-1] - dip) < 1e-7
 
 
-def test_doubleionization_He_ccpvdz():
+def test_eomdip_He_ccpvdz():
     """Test DoubleElectronRemovalEOM for He (cc-pVDZ)
     against Hartree-Fock canonical orbitals energy
     difference.
@@ -218,15 +245,17 @@ def test_doubleionization_He_ccpvdz():
     two_mo = antisymmetrize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
-    eom = eomee.DoubleElectronRemovalEOM(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = eom.solve_dense()
+    # Expected value
+    dip = -2 * (-0.91414765) + two_mo[0, 5, 0, 5]
+    # EOM solution
+    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
+    aval, avec = solver.dense(eom.lhs, eom.rhs)
     aval = np.sort(aval)
 
-    dip = -2 * (-0.91414765) + two_mo[0, 5, 0, 5]
     assert abs(aval[-1] - dip) < 1e-6
 
 
-def test_doubleionization_HeHcation_sto3g():
+def test_eomdip_HeHcation_sto3g():
     """Test DoubleElectronRemovalEOM for HeH^{+} (STO-3G)
     against Hartree-Fock canonical orbitals energy
     difference.
@@ -240,91 +269,11 @@ def test_doubleionization_HeHcation_sto3g():
     two_mo = antisymmetrize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
-    eom = eomee.DoubleElectronRemovalEOM(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = eom.solve_dense()
+    # Expected value
+    dip = -2 * (-1.52378328) + two_mo[0, 2, 0, 2]
+    # EOM solution
+    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
+    aval, avec = solver.dense(eom.lhs, eom.rhs)
     aval = np.sort(aval)
 
-    dip = -2 * (-1.52378328) + two_mo[0, 2, 0, 2]
     assert abs(aval[-1] - dip) < 1e-6
-
-
-def test_doubleionization_erpa_HeHcation_sto3g():
-    """Test DoubleElectronRemovalEOM ERPA for HeH^{+} (STO-3G)"""
-    nbasis = 2
-    one_mo = np.load(find_datafiles("heh+_sto3g_oneint.npy"))
-    one_mo = spinize(one_mo)
-    two_mo = np.load(find_datafiles("heh+_sto3g_twoint.npy"))
-    two_mo = symmetrize(spinize(two_mo))
-    two_mo = antisymmetrize(two_mo)
-    one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
-
-    n = one_mo.shape[0]
-    aa = one_mo[:1, :1]
-    bb = one_mo[n // 2 : (n // 2 + 1), n // 2 : (n // 2 + 1)]
-    aaaa = two_mo[:1, :1, :1, :1]
-    abab = two_mo[:1, n // 2 : (n // 2 + 1), :1, n // 2 : (n // 2 + 1)]
-    baba = two_mo[n // 2 : (n // 2 + 1), :1, n // 2 : (n // 2 + 1), :1]
-    bbbb = two_mo[
-        n // 2 : (n // 2 + 1),
-        n // 2 : (n // 2 + 1),
-        n // 2 : (n // 2 + 1),
-        n // 2 : (n // 2 + 1),
-    ]
-    one_mo_0 = np.zeros_like(one_mo)
-    two_mo_0 = np.zeros_like(two_mo)
-    one_mo_0[:1, :1] = aa
-    one_mo_0[n // 2 : (n // 2 + 1), n // 2 : (n // 2 + 1)] = bb
-    two_mo_0[:1, :1, :1, :1] = aaaa
-    two_mo_0[:1, n // 2 : (n // 2 + 1), :1, n // 2 : (n // 2 + 1)] = abab
-    two_mo_0[n // 2 : (n // 2 + 1), :1, n // 2 : (n // 2 + 1), :1] = baba
-    two_mo_0[
-        n // 2 : (n // 2 + 1),
-        n // 2 : (n // 2 + 1),
-        n // 2 : (n // 2 + 1),
-        n // 2 : (n // 2 + 1),
-    ] = bbbb
-
-    ecorr = eomee.DoubleElectronRemovalEOM.erpa(
-        one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
-    )
-
-
-def test_doubleionization_erpa_Ne_321g():
-    """Test DoubleElectronRemovalEOM ERPA for Ne 321g"""
-    nbasis = 9
-    one_mo = np.load(find_datafiles("ne_321g_oneint.npy"))
-    one_mo = spinize(one_mo)
-    two_mo = np.load(find_datafiles("ne_321g_twoint.npy"))
-    two_mo = symmetrize(spinize(two_mo))
-    two_mo = antisymmetrize(two_mo)
-    one_dm, two_dm = hartreefock_rdms(nbasis, 5, 5)
-
-    n = one_mo.shape[0]
-    aa = one_mo[:5, :5]
-    bb = one_mo[n // 2 : (n // 2 + 5), n // 2 : (n // 2 + 5)]
-    aaaa = two_mo[:5, :5, :5, :5]
-    abab = two_mo[:5, n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5)]
-    baba = two_mo[n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5), :5]
-    bbbb = two_mo[
-        n // 2 : (n // 2 + 5),
-        n // 2 : (n // 2 + 5),
-        n // 2 : (n // 2 + 5),
-        n // 2 : (n // 2 + 5),
-    ]
-    one_mo_0 = np.zeros_like(one_mo)
-    two_mo_0 = np.zeros_like(two_mo)
-    one_mo_0[:5, :5] = aa
-    one_mo_0[n // 2 : (n // 2 + 5), n // 2 : (n // 2 + 5)] = bb
-    two_mo_0[:5, :5, :5, :5] = aaaa
-    two_mo_0[:5, n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5)] = abab
-    two_mo_0[n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5), :5] = baba
-    two_mo_0[
-        n // 2 : (n // 2 + 5),
-        n // 2 : (n // 2 + 5),
-        n // 2 : (n // 2 + 5),
-        n // 2 : (n // 2 + 5),
-    ] = bbbb
-
-    ecorr = eomee.DoubleElectronRemovalEOM.erpa(
-        one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
-    )

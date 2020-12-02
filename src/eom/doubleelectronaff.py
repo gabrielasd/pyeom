@@ -1,11 +1,11 @@
 import numpy as np
 
-from eomee.base import EOMState
+from .base import EOMBase
 
-__all__ = ["DoubleElectronAttachmentEOM"]
+__all__ = ["EOMDEA"]
 
 
-class DoubleElectronAttachmentEOM(EOMState):
+class EOMDEA(EOMBase):
     """
 
     """
@@ -81,3 +81,12 @@ class DoubleElectronAttachmentEOM(EOMState):
         # M_klji += \Gamma_klji
         m += self._dm2
         return m.reshape(self._n ** 2, self._n ** 2)
+
+    def compute_tdm(self):
+        """
+        Compute .
+
+        """
+        # M_mn = \gamma_mn
+        # return np.copy(self._dm1)
+        pass

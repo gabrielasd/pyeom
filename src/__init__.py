@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 from .load import parse_inputfile, check_inputs
-from .integrlas import ElectronIntegrals
-from .densiy import WfnRDMs
+from .integrals import ElectronIntegrals
+from .density import WfnRDMs
 from .solver import dense
 from .output import dump

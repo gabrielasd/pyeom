@@ -5,25 +5,25 @@ Equations-of-motion package.
 
 
 __all__ = [
-    "EOMState",
-    "IonizationEOMState",
-    "ElectronAffinitiesEOM1",
+    "EOMBase",
+    "EOMIP",
+    "EOMEA",
+    "EOMDIP",
+    "EOMExc",
+    "EOMDEA",
     "IonizationDoubleCommutator",
-    "DoubleElectronRemovalEOM",
-    "ExcitationEOM",
     "ElectronAffinitiesEOM2",
     "IonizationAntiCommutator",
     "ElectronAffinitiesEOM3",
-    "DoubleElectronAttachmentEOM",
 ]
 
-from .base import EOMState
-from .ionization import IonizationEOMState
-from .electronaff import ElectronAffinitiesEOM1
+from .base import EOMBase
+from .ionization import EOMIP
+from .electronaff import EOMEA
+from .excitation import EOMExc
+from .doubleionization import EOMDIP
+from .doubleelectronaff import EOMDEA
 from .ionization import IonizationDoubleCommutator
-from .doubleionization import DoubleElectronRemovalEOM
-from .excitation import ExcitationEOM
 from .electronaff import ElectronAffinitiesEOM2
 from .ionization import IonizationAntiCommutator
 from .electronaff import ElectronAffinitiesEOM3
-from .doubleelectronaff import DoubleElectronAttachmentEOM

@@ -1,16 +1,16 @@
 import numpy as np
 
-from eomee.base import EOMState
+from .base import EOMBase
 
 
 __all__ = [
-    'ElectronAffinitiesEOM1',
-    'ElectronAffinitiesEOM2',
-    'ElectronAffinitiesEOM3',
+    "EOMEA",
+    "ElectronAffinitiesEOM2",
+    "ElectronAffinitiesEOM3",
 ]
 
 
-class ElectronAffinitiesEOM1(EOMState):
+class EOMEA(EOMBase):
     """
     Electron Affinities EOM states for operator Q = \sum_n { c_n a^{\dagger}_n }.
 
@@ -61,8 +61,17 @@ class ElectronAffinitiesEOM1(EOMState):
         m -= self._dm1
         return m
 
+    def compute_tdm(self, coeffs):
+        """
+        Compute .
 
-class ElectronAffinitiesEOM2(EOMState):
+        """
+        # M_mn = \gamma_mn
+        # return np.copy(self._dm1)
+        pass
+
+
+class ElectronAffinitiesEOM2(EOMBase):
     """
     Electron Affinities EOM states for operator Q = \sum_n { c_n a^{\dagger}_n }.
 
@@ -93,7 +102,7 @@ class ElectronAffinitiesEOM2(EOMState):
         """
         # A_mn = h_mn + <v_mqnr> \gamma_qr
         a = np.copy(self._h)
-        a += np.einsum('mqnr,qr->mn', self._v, self._dm1)
+        a += np.einsum("mqnr,qr->mn", self._v, self._dm1)
         return a
 
     def _compute_rhs(self):
@@ -105,8 +114,17 @@ class ElectronAffinitiesEOM2(EOMState):
         m = np.eye(self._n)
         return m
 
+    def compute_tdm(self):
+        """
+        Compute .
 
-class ElectronAffinitiesEOM3(EOMState):
+        """
+        # M_mn = \gamma_mn
+        # return np.copy(self._dm1)
+        pass
+
+
+class ElectronAffinitiesEOM3(EOMBase):
     """
     Electron Affinities EOM states for operator Q = \sum_n { c_n a^{\dagger}_n }.
 
@@ -139,12 +157,12 @@ class ElectronAffinitiesEOM3(EOMState):
         """
         # A_mn = h_mn + <v_mqnr> \gamma_qr
         a = np.copy(self._h)
-        a += np.einsum('mqnr,qr->mn', self._v, self._dm1)
+        a += np.einsum("mqnr,qr->mn", self._v, self._dm1)
         # A_mn -= 2 h_pn \gamma_pm
-        a -= 2 * np.einsum('pm,pn->mn', self._dm1, self._h, )
+        a -= 2 * np.einsum("pm,pn->mn", self._dm1, self._h,)
         # A_mn += <v_pqrn> \Gamma_pqmr
         #      -= <v_pqnr> \Gamma_pqmr
-        a -= 2 * np.einsum('pqmr,pqnr->mn', self._dm2, self._v, )
+        a -= 2 * np.einsum("pqmr,pqnr->mn", self._dm2, self._v,)
         return a
 
     def _compute_rhs(self):

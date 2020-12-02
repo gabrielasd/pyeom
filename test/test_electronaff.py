@@ -1,7 +1,11 @@
 """Test eomee.electronaff."""
 
 
-import eomee
+import numpy as np
+from scipy.linalg import eig, svd
+import pytest
+from src.eom import EOMEA
+from src import solver
 from .tools import (
     find_datafiles,
     spinize,
@@ -10,55 +14,48 @@ from .tools import (
     hartreefock_rdms,
 )
 
-import numpy as np
-from scipy.linalg import eig, svd
+
+def test_eomea_neigs():
+    """
+
+    """
+    nspino = 4
+    one_mo = np.arange(16, dtype=float).reshape(4, 4)
+    two_mo = np.arange(16 * 16, dtype=float).reshape(4, 4, 4, 4)
+    one_dm = np.zeros((4, 4), dtype=float)
+    one_dm[0, 0], one_dm[2, 2] = 1.0, 1.0
+    two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
+    two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
+
+    eom = EOMEA(one_mo, two_mo, one_dm, two_dm)
+    assert eom.neigs == 4
 
 
-def check_inputs_symm(oneint, twoint, onedm, twodm):
-    """Check symmetry of electron integrals and Density Matrices."""
-    # Electron integrals and DMs symmetric permutations
-    assert np.allclose(oneint, oneint.T)
-    assert np.allclose(onedm, onedm.T)
-    assert np.allclose(twoint, np.einsum("pqrs->rspq", twoint))
-    assert np.allclose(twoint, np.einsum("pqrs->qpsr", twoint))
-    assert np.allclose(twodm, np.einsum("pqrs->rspq", twodm))
-    assert np.allclose(twodm, np.einsum("pqrs->qpsr", twodm))
-    # Two-electron integrals  and 2DM antisymmetric permutations
-    assert np.allclose(twoint, -np.einsum("pqrs->pqsr", twoint))
-    assert np.allclose(twoint, -np.einsum("pqrs->qprs", twoint))
-    assert np.allclose(twodm, -np.einsum("pqrs->pqsr", twodm))
-    assert np.allclose(twodm, -np.einsum("pqrs->qprs", twodm))
-
-
-def test_electronffinities_one_body_term_H2():
+def test_eomea_one_body_term():
     """Check that the one-body teerms of the electron affinities
     equations of motion are correct.
 
     """
     nbasis = 2
+    # Load integrals files and transform from molecular orbital
+    # to spin orbital basis (internal representation in eomee code)
+    # For this test the two-electron integrals are ignored and the
+    # Hartree-Fock density matrices are used.
     one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
     one_mo = spinize(one_mo)
-    # the two-electron integrals are ignored
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
-    eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
-    aval1, avec = eom.solve_dense()
-
-    eom = eomee.ElectronAffinitiesEOM2(one_mo, two_mo, one_dm, two_dm)
-    aval2, avec = eom.solve_dense()
-
-    eom = eomee.ElectronAffinitiesEOM3(one_mo, two_mo, one_dm, two_dm)
-    aval3, avec = eom.solve_dense()
-
+    # Expected value
     w, v = eig(one_mo)
     ea = np.real(w)
+    # EOM solution
+    eom = EOMEA(one_mo, two_mo, one_dm, two_dm)
+    aval1, avec = solver.dense(eom.lhs, eom.rhs)
     assert abs(sorted(aval1)[0] - ea[1]) < 1e-8
-    assert abs(sorted(aval2)[-1] - ea[1]) < 1e-8
-    assert abs(sorted(aval3)[0] - ea[1]) < 1e-8
 
 
-def test_electronaff_h2_sto6g():
+def test_eomea_h2_sto6g():
     """Test Electron Affinities EOMs for H2 (STO-6G)
     against Hartree-Fock canonical orbital energy.
 
@@ -72,30 +69,19 @@ def test_electronaff_h2_sto6g():
     two_mo = symmetrize(spinize(two_mo))
     two_mo = antisymmetrize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
-    check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
-    eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
-    aval1, avec = eom.solve_dense()
+    eom = EOMEA(one_mo, two_mo, one_dm, two_dm)
+    aval1, avec = solver.dense(eom.lhs, eom.rhs)
     aval1 = sorted(aval1)
-
-    eom = eomee.ElectronAffinitiesEOM2(one_mo, two_mo, one_dm, two_dm)
-    aval2, avec = eom.solve_dense()
-    aval2 = sorted(aval2)
-
-    eom = eomee.ElectronAffinitiesEOM3(one_mo, two_mo, one_dm, two_dm)
-    aval3, avec = eom.solve_dense()
-    aval3 = sorted(aval3)
 
     # Reference value from
     # HORTON RHF
     # horton_emo = [-0.58205888, 0.66587228]
     ea = 0.66587228
     assert abs(sorted(aval1)[-1] - ea) < 1e-7
-    assert abs(sorted(aval2)[-1] - ea) < 1e-7
-    assert abs(sorted(aval3)[-1] - ea) < 1e-7
 
 
-def test_electronaff_heh_sto3g():
+def test_eomea_heh_sto3g():
     """Test Electron Affinities EOMs for HeH+ (STO-3G)
     against Hartree-Fock canonical orbital energy.
 
@@ -109,30 +95,19 @@ def test_electronaff_heh_sto3g():
     two_mo = symmetrize(spinize(two_mo))
     two_mo = antisymmetrize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
-    check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
-    eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
-    aval1, avec = eom.solve_dense()
+    eom = EOMEA(one_mo, two_mo, one_dm, two_dm)
+    aval1, avec = solver.dense(eom.lhs, eom.rhs)
     aval1 = sorted(aval1)
-
-    eom = eomee.ElectronAffinitiesEOM2(one_mo, two_mo, one_dm, two_dm)
-    aval2, avec = eom.solve_dense()
-    aval2 = sorted(aval2)
-
-    eom = eomee.ElectronAffinitiesEOM3(one_mo, two_mo, one_dm, two_dm)
-    aval3, avec = eom.solve_dense()
-    aval3 = sorted(aval3)
 
     # Reference value from
     # HORTON RHF
     # horton_emo = [-1.52378328, -0.26764028]
     ea = -0.26764028
     assert abs(sorted(aval1)[0] - ea) < 1e-6
-    assert abs(sorted(aval2)[-1] - ea) < 1e-6
-    assert abs(sorted(aval3)[-1] - ea) < 1e-6
 
 
-def test_electronaff_he_ccpvdz():
+def test_eomea_he_ccpvdz():
     """Test Electron Affinities EOMs for He (cc-pVDZ)
     against Hartree-Fock canonical orbital energy.
 
@@ -146,30 +121,19 @@ def test_electronaff_he_ccpvdz():
     two_mo = symmetrize(spinize(two_mo))
     two_mo = antisymmetrize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
-    check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
-    eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
-    aval1, avec = eom.solve_dense()
+    eom = EOMEA(one_mo, two_mo, one_dm, two_dm)
+    aval1, avec = solver.dense(eom.lhs, eom.rhs)
     aval1 = sorted(aval1)
-
-    eom = eomee.ElectronAffinitiesEOM2(one_mo, two_mo, one_dm, two_dm)
-    aval2, avec = eom.solve_dense()
-    aval2 = sorted(aval2)
-
-    eom = eomee.ElectronAffinitiesEOM3(one_mo, two_mo, one_dm, two_dm)
-    aval3, avec = eom.solve_dense()
-    aval3 = sorted(aval3)
 
     # Reference value from
     # HORTON RHF
     # horton_emo = [-0.91414765, 1.39744193, 2.52437241, 2.52437241, 2.52437241]
     ea = 1.39744193
     assert abs(aval1[2] - ea) < 1e-6
-    assert abs(aval2[2] - ea) < 1e-6
-    assert abs(aval3[2] - ea) < 1e-6
 
 
-def test_electronaff_ne_321g():
+def test_eomea_ne_321g():
     """Test Electron Affinities EOMs for Ne (3-21G)
     against Hartree-Fock canonical orbital energy.
 
@@ -183,19 +147,10 @@ def test_electronaff_ne_321g():
     two_mo = symmetrize(spinize(two_mo))
     two_mo = antisymmetrize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, 5, 5)
-    check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
-    eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
-    aval1, avec = eom.solve_dense()
+    eom = EOMEA(one_mo, two_mo, one_dm, two_dm)
+    aval1, avec = solver.dense(eom.lhs, eom.rhs)
     aval1 = sorted(aval1)
-
-    eom = eomee.ElectronAffinitiesEOM2(one_mo, two_mo, one_dm, two_dm)
-    aval2, avec = eom.solve_dense()
-    aval2 = sorted(aval2)
-
-    eom = eomee.ElectronAffinitiesEOM3(one_mo, two_mo, one_dm, two_dm)
-    aval3, avec = eom.solve_dense()
-    aval3 = sorted(aval3)
 
     # Reference value from
     # HORTON RHF
@@ -212,11 +167,9 @@ def test_electronaff_ne_321g():
     # ]
     ea = 2.68726251
     assert abs(sorted(aval1)[-3] - ea) < 1e-5
-    assert abs(sorted(aval2)[-3] - ea) < 1e-5
-    assert abs(sorted(aval3)[-3] - ea) < 1e-5
 
 
-def test_electronaff_be_sto3g():
+def test_eomea_be_sto3g():
     """Test Electron Affinities EOMs for Be (STO-3G)
     against Hartree-Fock canonical orbital energy.
 
@@ -230,32 +183,21 @@ def test_electronaff_be_sto3g():
     two_mo = symmetrize(spinize(two_mo))
     two_mo = antisymmetrize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
-    check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
-    eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
-    aval1, avec = eom.solve_dense()
+    eom = EOMEA(one_mo, two_mo, one_dm, two_dm)
+    aval1, avec = solver.dense(eom.lhs, eom.rhs)
     aval1 = sorted(aval1)
-
-    eom = eomee.ElectronAffinitiesEOM2(one_mo, two_mo, one_dm, two_dm)
-    aval2, avec = eom.solve_dense()
-    aval2 = sorted(aval2)
-
-    eom = eomee.ElectronAffinitiesEOM3(one_mo, two_mo, one_dm, two_dm)
-    aval3, avec = eom.solve_dense()
-    aval3 = sorted(aval3)
 
     # Reference value from
     # HORTON RHF
-    horton_mos = np.asarray(
-        [-4.48399211, -0.25403769, 0.22108596, 0.22108596, 0.22108596]
-    )
+    # horton_mos = np.asarray(
+    #     [-4.48399211, -0.25403769, 0.22108596, 0.22108596, 0.22108596]
+    # )
     ea = 0.22108596
     assert abs(sorted(aval1)[-1] - ea) < 1e-8
-    assert abs(sorted(aval2)[-1] - ea) < 1e-8
-    assert abs(sorted(aval3)[-1] - ea) < 1e-8
 
 
-def test_electronaff_b_sto3g():
+def test_eomea_b_sto3g():
     """Test Electron Affinities EOMs for B (STO-3G)
     against Hartree-Fock canonical orbital energies.
 
@@ -269,19 +211,10 @@ def test_electronaff_b_sto3g():
     two_mo = symmetrize(spinize(two_mo))
     two_mo = antisymmetrize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, 3, 2)
-    check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
 
-    eom = eomee.ElectronAffinitiesEOM1(one_mo, two_mo, one_dm, two_dm)
-    aval1, avec = eom.solve_dense()
+    eom = EOMEA(one_mo, two_mo, one_dm, two_dm)
+    aval1, avec = solver.dense(eom.lhs, eom.rhs)
     aval1 = sorted(aval1)
-
-    eom = eomee.ElectronAffinitiesEOM2(one_mo, two_mo, one_dm, two_dm)
-    aval2, avec = eom.solve_dense()
-    aval2 = sorted(aval2)
-
-    eom = eomee.ElectronAffinitiesEOM3(one_mo, two_mo, one_dm, two_dm)
-    aval3, avec = eom.solve_dense()
-    aval3 = sorted(aval3)
 
     # HORTON UHF alpha HOMO
     # horton_emo_a = [-7.26583392, -0.428277, -0.20051823, 0.29136562, 0.29136562]
@@ -292,9 +225,3 @@ def test_electronaff_b_sto3g():
     assert abs(aval1[5] - ea1) < 1e-8
     assert abs(aval1[7] - ea2) < 1e-8
     assert abs(aval1[9] - ea3) < 1e-8
-    assert abs(aval2[5] - ea1) < 1e-8
-    assert abs(aval2[7] - ea2) < 1e-8
-    assert abs(aval2[9] - ea3) < 1e-8
-    assert abs(aval3[-4] - ea1) < 1e-8
-    assert abs(aval3[-2] - ea2) < 1e-8
-    assert abs(aval3[-1] - ea3) < 1e-8
