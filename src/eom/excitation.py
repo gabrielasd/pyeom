@@ -1,3 +1,9 @@
+"""
+Particle-hole Equations-of-motion.
+
+"""
+
+
 import numpy as np
 
 from scipy.integrate import quad as integrate
@@ -11,11 +17,14 @@ __all__ = [
 
 
 class EOMExc(EOMBase):
-    """
+    r"""
     Excitation EOM state for operator Q = \sum_{ij} { c_{ij} a^{\dagger}_i  a_j}.
+
     .. math::
-        \left< \Psi^{(N)}_0 \middle| [a^{\dagger}_k  a_l, [\hat{H}, \hat{Q}]] \middle| \Psi^{(N)}_0 \right>
-        &= \omega_{\lambda} \left< \Psi^{(N)}_0 \middle| [a^{\dagger}_k a_l \hat{Q}] \Psi^{(N)}_0 \right>
+        \left< \Psi^{(N)}_0 \middle| [a^{\dagger}_k  a_l, [\hat{H}, \hat{Q}]]
+        \middle| \Psi^{(N)}_0 \right>\\
+        &= \omega_{\lambda} \left< \Psi^{(N)}_0 \middle| [a^{\dagger}_k a_l \hat{Q}]
+        \Psi^{(N)}_0 \right>
 
     """
 
@@ -34,16 +43,19 @@ class EOMExc(EOMBase):
         return self._n ** 2
 
     def _compute_lhs(self):
-        """
-        Compute A = h_{li} \gamma_{kj} + h_{jk} \gamma_{il}
-                  - \sum_q { h_{jq} \delta_{il} \gamma_{kq}}
-                  - \sum_q { h_{qi} \delta_{jk} \gamma_{ql}}
-                  + \sum_{qs} { \left< lq||si \right> \Gamma_{kqsj} }
-                  + \sum_{qs} { \left< jq||sk \right>  \Gamma_{iqsl} }
-                  - 0.5 \sum_{qrs} { \delta_{il} \left< jq||rs \right> \Gamma_{kqrs} }
-                  - 0.5 \sum_{pqs} { \delta_{jk} \left< pq||si \right> \Gamma_{pqsl}}
-                  + 0.5 \sum_{pq} { \left< pq||ik\right>  \Gamma_{pqlj} }
-                  + 0.5 \sum_{rs} { \left< jl||rs \right> \Gamma_{kirs} }
+        r"""
+        Compute
+
+        .. math::
+            A = h_{li} \gamma_{kj} + h_{jk} \gamma_{il}
+                - \sum_q { h_{jq} \delta_{il} \gamma_{kq}}
+                - \sum_q { h_{qi} \delta_{jk} \gamma_{ql}}
+                + \sum_{qs} { \left< lq||si \right> \Gamma_{kqsj} }
+                + \sum_{qs} { \left< jq||sk \right>  \Gamma_{iqsl} }
+                - 0.5 \sum_{qrs} { \delta_{il} \left< jq||rs \right> \Gamma_{kqrs} }
+                - 0.5 \sum_{pqs} { \delta_{jk} \left< pq||si \right> \Gamma_{pqsl}}
+                + 0.5 \sum_{pq} { \left< pq||ik\right>  \Gamma_{pqlj} }
+                + 0.5 \sum_{rs} { \left< jl||rs \right> \Gamma_{kirs} }
 
         """
         hdm1 = np.dot(self._h, self._dm1)
@@ -74,8 +86,8 @@ class EOMExc(EOMBase):
         return b.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
-        """
-        Compute M = \gamma_{kj} \delta_{li} - \Gamma_{kijl}.
+        r"""
+        Compute :math:`M = \gamma_{kj} \delta_{li} - \Gamma_{kijl}`.
 
         """
         I = np.eye(self._n, dtype=self._h.dtype)
@@ -85,17 +97,20 @@ class EOMExc(EOMBase):
         m -= np.einsum("kijl->klji", self.dm2, optimize=True)
         return m.reshape(self._n ** 2, self._n ** 2)
 
-    def compute_tdm(self):
-        """
-        Compute .
+    def compute_tdm(self, coeffs):
+        r"""
+        Compute
 
+        .. math::
+            \gamma_{kl} = \sum_{ij} {c_{ij}\left< \Psi^{(N)}_0
+            \middle| [a^{\dagger}_k a_l a^{\dagger}_i  a_j]
+            \Psi^{(N)}_0 \right>}
         """
-        # M_mn = \gamma_mn
-        # return np.copy(self._dm1)
-        pass
+        coeffs = coeffs.reshape(self._n ** 2, self._n, self._n)
+        return np.einsum("nij,pqij->npq", coeffs, self._rhs)
 
     @classmethod
-    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
+    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, *args, nint=50, **kwargs):
         """
         Compute the ERPA correlation energy for the operator.
 

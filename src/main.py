@@ -1,12 +1,7 @@
-"""
-Equations-of-motion state base class.
-
-"""
+"""Control module."""
 
 
-import os, sys
-
-import numpy as np
+import sys
 import load
 import integrals
 import density
@@ -16,6 +11,11 @@ import output
 
 
 def main():
+    """[summary]
+
+    Raises:
+        ValueError: [description]
+    """
     args = sys.argv[1:]
     if len(args) == 0:
         print('Expecting one argument: "input_file.txt"', file=sys.stderr)
@@ -47,12 +47,11 @@ def main():
     print("Start EOM calcularion")
     exce, coeffs = solver.dense(eomstate.lhs, eomstate.rhs, params.tol, params.orthog)
     print("Done")
-    # tdms = eomstate.compute_tdm(coeffs)
 
     if params.get_tdm:
+        tdms = eomstate.compute_tdm(coeffs)
         output.dump(inputfile, params, exce, coeffs, tdms=tdms)
     else:
-        print("Otput stuf")
         output.dump(inputfile, params, exce, coeffs)
 
 

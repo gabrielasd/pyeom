@@ -1,13 +1,11 @@
 """
-Equations-of-motion state base class.
+Input module.
 
 """
 
 
-import os, sys
+import os
 import re
-
-import numpy as np
 
 
 __all__ = [
@@ -18,6 +16,14 @@ __all__ = [
 
 
 def parse_inputfile(filename):
+    """[summary]
+
+    Args:
+        filename ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """
     with open(filename, "r") as ifile:
         content = ifile.read()
     # Make list of lines in ifile skipping white lines.
@@ -29,7 +35,22 @@ def parse_inputfile(filename):
 
 
 def check_inputs(params):
-    if not (isinstance(params, ParsedParams)):
+    """[summary]
+
+    Args:
+        params ([type]): [description]
+
+    Raises:
+        TypeError: [description]
+        TypeError: [description]
+        TypeError: [description]
+        ValueError: [description]
+        ValueError: [description]
+        ValueError: [description]
+        ValueError: [description]
+        TypeError: [description]
+    """
+    if not isinstance(params, ParsedParams):
         raise TypeError("chec_inputs argument must be a ParsedParams instance.")
 
     # check numbers
@@ -41,6 +62,9 @@ def check_inputs(params):
         raise TypeError(
             "The tolerance value for matrix inversion must be given as a float."
         )
+    if not params.roots is None:
+        if not isinstance(params.roots, int):
+            raise TypeError("The number of rots must be given as an integer.")
 
     # Check integrals files
     integrals = {"one": params.oneint_file, "two": params.twoint_file}
@@ -78,6 +102,10 @@ def check_inputs(params):
 
 
 class ParsedParams:
+    """[summary]
+
+    """
+
     def __init__(self, content):
         # Assign numbers
         nparts = content["nelec"]
@@ -96,6 +124,10 @@ class ParsedParams:
         else:
             self.tol = float(content["tol"])
         # self.nspino = int(content["nspino"])
+        if "roots" not in content:
+            self.roots = None
+        else:
+            self.roots = int(content["roots"])
 
         # Assign files
         self.oneint_file = content["oneint_file"]
@@ -114,11 +146,3 @@ class ParsedParams:
             raise ValueError("`get_tdm` must be `True` or `False`")
         else:
             self.get_tdm = bool(content["get_tdm"])
-
-
-# if __name__ == "__main__":
-#     filename = "../examples/file1.txt"
-#     parameters = parse_inputfile(filename)
-#     # print(parameters.nparts)
-#     check_inputs(parameters)
-

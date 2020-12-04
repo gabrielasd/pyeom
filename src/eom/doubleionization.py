@@ -1,3 +1,9 @@
+"""
+Double electron removal Equations-of-motion.
+
+"""
+
+
 import numpy as np
 
 from scipy.integrate import fixed_quad
@@ -8,11 +14,15 @@ __all__ = ["EOMDIP"]
 
 
 class EOMDIP(EOMBase):
-    """
-    Double Ionization EOM state for operator Q = \sum_{ij} { c_{ij} a_i a_j}.
+    r"""
+    Double Ionization EOM state for operator
+    :math:`Q = \sum_{ij} { c_{ij} a_i a_j}`.
+
     .. math::
-        \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l \left[ \hat{H}, \hat{Q} \right] \middle| \Psi^{(N)}_0 \right>
-        &= \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l
+        \left[ \hat{H}, \hat{Q} \right] \middle| \Psi^{(N)}_0 \right>
+        &= \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l
+        \hat{Q} \middle| \Psi^{(N)}_0 \right>
 
     """
 
@@ -21,14 +31,23 @@ class EOMDIP(EOMBase):
         return self._n ** 2
 
     def _compute_lhs(self):
-        """
-        Compute A = 2 ( h_{il} \delta_{jk} - h_{il} \gamma_{kj} + h_{ik} \gamma_{lj} - h_{ik} \delta_{jl} )
-                  + 2 ( \sum_q { h_{jq} \gamma_{lq} \delta_{ik} - h_{jq} \gamma_{kq} \delta_{il} } )
-                  + \left< ji||kl \right> + \sum_r { \left< ji||lr \right> \gamma_{kr} - \left< ji||kr \right> \gamma_{lr} }
-                  + 2 \sum_q \left< qj||kl \right> \gamma_{qi}
-                  + 2 ( \sum_{qr} { \left< iq||rk \right> \gamma_{qr} \delta_{lj} + \left< iq||lr \right> \gamma_{qr} \delta_{kj} })
-                  + 2 ( \sum_{qr} { \left< jq||rk \right> \Gamma_{qlri} + \left< jq||lr \right> \Gamma_{qkri} })
-                  + \sum_{qrs} { \left< qj||rs \right> \Gamma_{qlrs} \delta_{ki} + \left< jq||rs \right> \Gamma_{qkrs} \delta_{li} }
+        r"""
+        Compute
+
+        .. math::
+            A = 2 ( h_{il} \delta_{jk} - h_{il} \gamma_{kj}
+                + h_{ik} \gamma_{lj} - h_{ik} \delta_{jl} )\\
+                + 2 ( \sum_q { h_{jq} \gamma_{lq} \delta_{ik}
+                - h_{jq} \gamma_{kq} \delta_{il} } )\\
+                + \left< ji||kl \right> + \sum_r { \left< ji||lr \right> \gamma_{kr}
+                - \left< ji||kr \right> \gamma_{lr} }\\
+                + 2 \sum_q \left< qj||kl \right> \gamma_{qi}\\
+                + 2 ( \sum_{qr} { \left< iq||rk \right> \gamma_{qr} \delta_{lj}
+                + \left< iq||lr \right> \gamma_{qr} \delta_{kj} })\\
+                + 2 ( \sum_{qr} { \left< jq||rk \right> \Gamma_{qlri}
+                + \left< jq||lr \right> \Gamma_{qkri} })\\
+                + \sum_{qrs} { \left< qj||rs \right> \Gamma_{qlrs} \delta_{ki}
+                + \left< jq||rs \right> \Gamma_{qkrs} \delta_{li} }\\
         """
 
         I = np.eye(self._n, dtype=self._h.dtype)
@@ -63,25 +82,29 @@ class EOMDIP(EOMBase):
         return a.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
-        """
-        Compute M = \Gamma_{klji}
+        r"""
+        Compute :math:`M = \Gamma_{klji}`.
         """
 
         # M_klji = \Gamma_klji
         m = np.copy(self._dm2)
         return m.reshape(self._n ** 2, self._n ** 2)
 
-    def compute_tdm(self):
-        """
-        Compute .
+    def compute_tdm(self, coeffs):
+        r"""
+        Compute
+
+        .. math::
+            \gamma_{kl} = \sum_{ij}{c_{ij} \left< \Psi^{(N)}_0 \middle|
+            a^{\dagger}_k a^{\dagger}_l a_i a_j \middle|
+            \Psi^{(N)}_0 \right>}
 
         """
-        # M_mn = \gamma_mn
-        # return np.copy(self._dm1)
-        pass
+        coeffs = coeffs.reshape(self._n ** 2, self._n, self._n)
+        return np.einsum("nij,pqij->npq", coeffs, self._rhs)
 
     @classmethod
-    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
+    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, *args, nint=50, **kwargs):
         """
         Compute the ERPA correlation energy for the operator.
 

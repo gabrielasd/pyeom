@@ -1,5 +1,5 @@
 """
-Equations-of-motion state base class.
+Dense solver module.
 
 """
 
@@ -76,4 +76,3 @@ def dense(lhs, rhs, tol=1.0e-7, orthog="symmetric", *args, **kwargs):
             "Invalid orthogonalization parameter. Valid options are "
             "symmetric or asymmetric."
         )
-

@@ -1,5 +1,5 @@
 """
-Equations-of-motion state base class.
+Electron integrlas module.
 
 """
 
@@ -12,23 +12,57 @@ __all__ = [
 
 
 class ElectronIntegrals:
+    """[summary]
+
+    """
+
     def __init__(self, oneint_file=str, twoint_file=str):
         self.load_integrals(oneint_file, twoint_file)
         self._nspino = self._h.shape[0]
 
     @property
     def h(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         return self._h
 
     @property
     def v(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         return self._v
 
     @property
     def nspino(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         return self._nspino
 
     def verify_integrals(self, h, v):
+        """[summary]
+
+        Args:
+            h ([type]): [description]
+            v ([type]): [description]
+
+        Raises:
+            TypeError: [description]
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+        """
+
         # FIXME: Add symmetry check
         if not (isinstance(h, np.ndarray) and isinstance(v, np.ndarray)):
             raise TypeError("Electron integrals must be given as a numpy array")
@@ -44,15 +78,15 @@ class ElectronIntegrals:
             )
         # Check integrals symmetry
         # Symmetric permutations
-        oneint_symm = np.allclose(oneint, oneint.T)
+        oneint_symm = np.allclose(h, h.T)
         twoint_symm = np.all(
             [
-                np.allclose(twoint, twoint.transpose(2, 3, 0, 1)),
-                np.allclose(twoint, twoint.transpose(1, 0, 3, 2)),
+                np.allclose(v, v.transpose(2, 3, 0, 1)),
+                np.allclose(v, v.transpose(1, 0, 3, 2)),
             ]
         )
         symmetries = {"one": oneint_symm, "two": twoint_symm}
-        for number, symm in symmetries:
+        for number, symm in symmetries.items():
             if not symm:
                 raise ValueError(
                     "{}-electron integrlas do not satisfy symmetric permutations".format(
@@ -62,8 +96,8 @@ class ElectronIntegrals:
         # Two-electron integrals antisymmetric permutations
         twoint_asymm = np.all(
             [
-                np.allclose(twoint, -twoint.transpose(0, 1, 3, 2)),
-                np.allclose(twoint, -twoint.transpose(1, 0, 2, 3)),
+                np.allclose(v, -v.transpose(0, 1, 3, 2)),
+                np.allclose(v, -v.transpose(1, 0, 2, 3)),
             ]
         )
         if not twoint_asymm:
@@ -72,6 +106,12 @@ class ElectronIntegrals:
             )
 
     def load_integrals(self, oneint_file=str, twoint_file=str):
+        """[summary]
+
+        Args:
+            oneint_file ([type], optional): [description]. Defaults to str.
+            twoint_file ([type], optional): [description]. Defaults to str.
+        """
         self._h = np.load(oneint_file)
         self._v = np.load(twoint_file)
         self.verify_integrals(self._h, self._v)

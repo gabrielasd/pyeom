@@ -1,3 +1,6 @@
+"""Double Electron attachment Equations-of-motion."""
+
+
 import numpy as np
 
 from .base import EOMBase
@@ -6,25 +9,44 @@ __all__ = ["EOMDEA"]
 
 
 class EOMDEA(EOMBase):
-    """
+    r"""
+    Double electron  attachment EOM state for operator
+
+    :math:`Q = \sum_{ij} { c_{ij} a^{\dagger}_i a^{\dagger}_j}`.
+
+    .. math::
+        \left< \Psi^{(N)}_0 \middle| a_k a_l \left[ \hat{H}, \hat{Q} \right]
+        \middle| \Psi^{(N)}_0 \right>\\
+        &= \Delta_k \left< \Psi^{(N)}_0 \middle| a_k a_l
+        \hat{Q} \middle| \Psi^{(N)}_0 \right>
 
     """
 
     @property
     def neigs(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         return self._n ** 2
 
     def _compute_lhs(self):
-        """
-        Compute A = 2 (h_{li} \delta_{kj} - h_{ki} \delta_{lj})
-                  + 2 (h_{ki} \gamma_{jl} - h_{li} \gamma_{jk})
-                  + 2 \sum_{p} (h_{pi} \gamma_{pk} \delta_{lj} + h_{pj} \gamma_{pl} \delta_{ki})
-                  + \left< lk||ij \right>
-                  + \sum_{q} (\left< ql||ij \right> \gamma_{qk} - \left< qk||ij \right> \gamma_{ql})
-                  + 2 \sum_{r} \left< lk||jr \right> \gamma_{ir}
-                  + 2 \sum_{qr} \gamma_{qr}(\left< ql||jr \right> \delta_{ki} - \left< qk||jr \right> \delta_{li})
-                  + 2 \sum_{qr} (\left< ql||ir \right> \Gamma_{qjrk} - \left< qk||ir \right> \Gamma_{qjrl})
-                  + \sum_{pqr} \left< pq||jr \right> (\Gamma_{pqrk} \delta_{li} - \Gamma_{pqrl} \delta_{ki})
+        r"""
+        Compute
+
+        A = 2 (h_{li} \delta_{kj} - h_{ki} \delta_{lj})
+            + 2 (h_{ki} \gamma_{jl} - h_{li} \gamma_{jk})
+            + 2 \sum_{p} (h_{pi} \gamma_{pk} \delta_{lj} + h_{pj} \gamma_{pl} \delta_{ki})
+            + \left< lk||ij \right>
+            + \sum_{q} (\left< ql||ij \right> \gamma_{qk} - \left< qk||ij \right> \gamma_{ql})
+            + 2 \sum_{r} \left< lk||jr \right> \gamma_{ir}
+            + 2 \sum_{qr} \gamma_{qr}(\left< ql||jr \right> \delta_{ki}
+            - \left< qk||jr \right> \delta_{li})
+            + 2 \sum_{qr} (\left< ql||ir \right> \Gamma_{qjrk}
+            - \left< qk||ir \right> \Gamma_{qjrl})
+            + \sum_{pqr} \left< pq||jr \right> (\Gamma_{pqrk} \delta_{li}
+            - \Gamma_{pqrl} \delta_{ki})
         """
 
         I = np.eye(self._n, dtype=self._h.dtype)
@@ -62,11 +84,13 @@ class EOMDEA(EOMBase):
         return a.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
-        """
-        Compute M = \Gamma_{ijlk}
-                  + \delta_{li} \delta_{kj} - \delta_{ki} \delta_{lj}
-                  + \delta_{ki} \gamma_{jl} - \delta_{kj} \gamma_{li}
-                  + \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
+        r"""
+        Compute
+
+        M = \Gamma_{ijlk}
+            + \delta_{li} \delta_{kj} - \delta_{ki} \delta_{lj}
+            + \delta_{ki} \gamma_{jl} - \delta_{kj} \gamma_{li}
+            + \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
         """
         I = np.eye(self._n, dtype=self._h.dtype)
         # M_klji = \delta_li \delta_kj - \delta_ki \delta_lj
@@ -82,11 +106,15 @@ class EOMDEA(EOMBase):
         m += self._dm2
         return m.reshape(self._n ** 2, self._n ** 2)
 
-    def compute_tdm(self):
-        """
-        Compute .
+    def compute_tdm(self, coeffs):
+        r"""
+        Compute
+
+        .. math::
+            \gamma_{kl} = \sum_{ij}{c_{ij} \left< \Psi^{(N)}_0 \middle|
+            a_k a_l a^{\dagger}_i a^{\dagger}_j \middle|
+            \Psi^{(N)}_0 \right>}
 
         """
-        # M_mn = \gamma_mn
-        # return np.copy(self._dm1)
-        pass
+        coeffs = coeffs.reshape(self._n ** 2, self._n, self._n)
+        return np.einsum("nij,pqij->npq", coeffs, self._rhs)
