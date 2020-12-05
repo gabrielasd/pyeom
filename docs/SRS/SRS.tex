@@ -861,11 +861,11 @@ Label &\bf Transition operator approximation \\
 % \hline
 SI Units&--\\
 \hline
-Equation& $ \hat{Q^{(\pm k)}_k} = \sum_n c_{n;k} \hat{q}_n $\\
+Equation& $ \hat{Q}^{(\pm k)}_k = \sum_n c_{n;k} \hat{q}_n $\\
 \hline
 Description &
 The equation above represents a general notation for the definition of the  
-transition operator ($\hat{Q^{(\pm k)}_k}$) through a BS expansion 
+transition operator ($\hat{Q}^{(\pm k)}_k$) through a BS expansion 
 ($\hat{q}_n$).\\
 &Some common transition operators for which only the 1- and 2-RDMs would be 
 needed are:\\
@@ -885,7 +885,7 @@ a^{\dagger}_q$\\
 \end{tabular}
 \end{minipage}\\
 
-It is posible to define expression for $\hat{Q^{(\pm k)}_k}$ with more terms. 
+It is possible to define expression for $\hat{Q}^{(\pm k)}_k$ with more terms. 
 For instance in the case of excitations, one could include higher than single 
 excitation terms:
 \begin{flalign}
@@ -946,24 +946,22 @@ The Schr\"odinger equation (\tref{T_SchrodingerEq}) for the excited state
 $\Psi^{(N\pm k)}_k $ (\tref{T_ExcState}) is:
 \begin{flalign}\label{eq:schrod_exc}
 \hat{H}\ket{\Psi^{(N\pm k)}_k} &= E_k \ket{\Psi^{(N\pm k)}_k}\\\nonumber
-\hat{H}\hat{Q^{(\pm k)}_k}\ket{\Psi^{(N)}_0} &= E_k \hat{Q^{(\pm 
-k)}_k}\ket{\Psi^{(N)}_0}
+\hat{H}\hat{Q}^{(\pm k)}_k\ket{\Psi^{(N)}_0} &= E_k \hat{Q}^{(\pm 
+	k)}_k \ket{\Psi^{(N)}_0}
 \end{flalign}
 To directly determine the energy change due to the excitation process we apply 
-the transition operator $\hat{Q^{(\pm k)}_k}$ to the Schr\"odinger equation for 
-$\Psi^{(N)}_0$, substracting it from Eq.~(\ref{eq:schrod_exc}):
+the transition operator $\hat{Q}^{(\pm k)}_k$ to the Schr\"odinger equation for 
+$\Psi^{(N)}_0$, subtracting it from Eq.~(\ref{eq:schrod_exc}):
 \begin{flalign}
-\hat{Q^{(\pm k)}_k}\hat{H}\ket{\Psi^{(N)}_0} &= E_0 \hat{Q^{(\pm 
-k)}_k}\ket{\Psi^{(N)}_0}
+\hat{Q}^{(\pm k)}_k \hat{H}\ket{\Psi^{(N)}_0} &= E_0 \hat{Q}^{(\pm 
+	k)}_k \ket{\Psi^{(N)}_0}
 \end{flalign}
 
 \begin{flalign}
-(\hat{H}\hat{Q^{(\pm k)}_k} - \hat{Q^{(\pm k)}_k}\hat{H})\ket{\Psi^{(N)}_0} &= 
-(E_k - E_0) \hat{Q^{(\pm 
-		k)}_k}\ket{\Psi^{(N)}_0}\\\nonumber
-[\hat{H},\hat{Q^{(\pm k)}_k}]\ket{\Psi^{(N)}_0} &= 
-\Delta E_k \hat{Q^{(\pm 
-		k)}_k}\ket{\Psi^{(N)}_0}
+(\hat{H}\hat{Q}^{(\pm k)}_k - \hat{Q}^{(\pm k)}_k \hat{H})\ket{\Psi^{(N)}_0} &= 
+(E_k - E_0) \hat{Q}^{(\pm k)}_k \ket{\Psi^{(N)}_0}\\\nonumber
+[\hat{H},\hat{Q}^{(\pm k)}_k ]\ket{\Psi^{(N)}_0} &= 
+\Delta E_k \hat{Q}^{(\pm k)}_k\ket{\Psi^{(N)}_0}
 \end{flalign}
 \noindent
 This last expression can be solved by projecting onto a suitable set of states. 
@@ -972,9 +970,9 @@ the
 same basis set in which $\hat{Q^{(\pm k)}_k}$ is expanded [\dref{G_approxQ}] to 
 build this set:
 \begin{flalign}\label{eq:koopman}
-\bra{\Psi^{(N)}_0}q^{\dagger}_m[\hat{H}, \hat{Q^{(\pm k)}_k}]\ket{\Psi^{(N)}_0} 
-= \Delta E_k \bra{\Psi^{(N)}_0}q^{\dagger}_m\hat{Q^{(\pm 
-k)}_k}\ket{\Psi^{(N)}_0}
+\bra{\Psi^{(N)}_0}q^{\dagger}_m[\hat{H}, \hat{Q}^{(\pm k)}_k]\ket{\Psi^{(N)}_0} 
+= \Delta E_k \bra{\Psi^{(N)}_0}q^{\dagger}_m\hat{Q}^{(\pm k)}_k 
+\ket{\Psi^{(N)}_0}
 \end{flalign}
 This last equation is suitable for the electron attachment and removal 
 operators defined in [\dref{G_approxQ}], with which the final expressions only 
@@ -984,15 +982,15 @@ electron removal or attachment operators, can be derived by invoking the
 ``killer condition" [\aref{A_killercond}]. This allows to add/subtract zero 
 from (\ref{eq:koopman}) so that:
 \begin{flalign}\label{eq:killer1}
-\bra{\Psi^{(N)}_0}q^{\dagger}_m[\hat{H}, \hat{Q^{(\pm k)}_k}] \pm [\hat{H}, 
-\hat{Q^{(\pm k)}_k}] q^{\dagger}_m \ket{\Psi^{(N)}_0} 
-&= \Delta E_k \bra{\Psi^{(N)}_0}q^{\dagger}_m\hat{Q^{(\pm 
-		k)}_k} \pm  \hat{Q^{(\pm 
-		k)}_k}q^{\dagger}_m \ket{\Psi^{(N)}_0}\\\nonumber
-\bra{\Psi^{N}_0}[q^{\dagger}_m,[\hat{H},\hat{Q^{(\pm 
-		k)}_k}]]_{\pm}\ket{\Psi^{N}_0} &= 
-	\Delta E_k \bra{\Psi^{N}_0}[q^{\dagger}_m,\hat{Q^{(\pm 
-			k)}_k}]_\pm \ket{\Psi^{N}_0}
+\bra{\Psi^{(N)}_0}q^{\dagger}_m[\hat{H}, \hat{Q}^{(\pm k)}_k] \pm [\hat{H}, 
+\hat{Q}^{(\pm k)}_k] q^{\dagger}_m \ket{\Psi^{(N)}_0} 
+&= \Delta E_k \bra{\Psi^{(N)}_0}q^{\dagger}_m\hat{Q}^{(\pm 
+	k)}_k \pm  \hat{Q}^{(\pm 
+	k)}_k q^{\dagger}_m \ket{\Psi^{(N)}_0}\\\nonumber
+\bra{\Psi^{N}_0}[q^{\dagger}_m,[\hat{H},\hat{Q}^{(\pm 
+	k)}_k]]_{\pm}\ket{\Psi^{N}_0} &= 
+	\Delta E_k \bra{\Psi^{N}_0}[q^{\dagger}_m,\hat{Q}^{(\pm 
+		k)}_k ]_\pm \ket{\Psi^{N}_0}
 \end{flalign}
 Expressions (\ref{eq:koopman}) and (\ref{eq:killer1}) constitute determined 
 systems of linear equations. The equations defined by (\ref{eq:killer1}) can be 
