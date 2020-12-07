@@ -126,7 +126,7 @@ description of the unit and the SI name.
     \toprule		
     \textbf{symbol} & \textbf{unit} & \textbf{SI}\\
     \midrule 
-%    \si{\metre} & length & metre\\
+    \si{\metre} & length & metre\\
 %    \si{\kilogram} & mass	& kilogram\\
 %    \si{\second} & time & second\\
 %    \si{\celsius} & temperature & centigrade\\
@@ -158,9 +158,8 @@ description of the unit and the SI name.
 \subsection{Table of Symbols}
 
 The table that follows summarizes the symbols used in this document along with
-their units.  The choice of symbols was made to be consistent with the quantum 
-chemistry literature and with existing documentation for equation-of-motion 
-methods.  The symbols are listed in alphabetical order.
+their units. 
+% The symbols are listed in alphabetical order.
 
 \renewcommand{\arraystretch}{1.2}
 %\noindent \begin{tabularx}{1.0\textwidth}{l l X}
@@ -172,26 +171,61 @@ methods.  The symbols are listed in alphabetical order.
 %$A_\text{in}$ & \si[per-mode=symbol] {\square\metre} & surface area over 
 %which heat is transferred in
 %\\
-$\hat{a}_p$ & unitless & anihilation operator\\ 
-$\hat{a}^\dagger_p$ & unitless & creation operator\\ 
-$E$ & \si{\joule} & energy\\
-$\hat{H}$ & \si{\joule} & Hamiltonian operator\\
-$\gamma_{pq}$ & unitless & 1-electron reduced density matrix\\
-$\Gamma_{pqrs}$ & unitless & 2-electron reduced density matrix\\
-$h_{pq}$ & \si{\joule} & 1-electron integral\\
-$v_{pqrs}$ & \si{\joule} & 2-electron integral\\
-$\gamma_{pq}$ & unitless&1-electron reduced density matrix\\
-$\Gamma_{pqrs}$ &unitless& 2-electron reduced density matrix\\
+$n$ & unitless & number of spinorbitals in the basis set\\
 $N$ & unitless & number of electrons in a system\\
-$\Psi$ & unitless & stationary state wavefunction\\
-$\Psi^{(N)}_0$ & unitless & N-electron ground state wavefunction\\
-$\Psi^{(N \pm k)}_n$ & unitless & n-th excited state wavefunction\\
-$p,q,r,s$ & unitless & arbitrary spinorbital index\\
+%$\{\phi_i|i=1,2,.,n\}$ & $\si{\metre}^{-3/2}$ & spinorbital basis set\\
+$\phi_p$ & $\si{\metre}^{-3/2}$ & p-th spinorbital of the basis set, 
+can also be represented as p\\
+$\hat{a}_p$ & unitless & Second-quantization anihilation operator for 
+spinorbital p\\ 
+$\hat{a}^\dagger_p$ & unitless & Second-quantization creation operator for 
+spinorbital p\\ 
+$\delta_{ij}$ & unitless & Kronecker delta function (1 for i=j, 0 otherwise)\\
+$\mathbf{I}$ & unitless & Identity matrix, its elements are $\delta_{ij}$\\
+$\Psi^{N}$ & $\si{\metre}^{-3/2}$ & N-electron stationary state wavefunction\\
+$\ket{\Psi^{(N)}_0}$ & $\si{\metre}^{-3/2}$ & N-electron ground state 
+wavefunction (vector representation using Dirack's bra-ket notation)\\
+$\ket{\Psi^{(N \pm K)}_n}$ & $\si{\metre}^{-3/2}$ & (N $\pm$ K)-electron, n-th 
+excited state wavefunction (vector representation using Dirack's bra-ket 
+notation)\\
+$\hat{H}$ & \si{\joule} & Hamiltonian operator\\
 $\hat{Q}$ & unitless & Transition operator\\
+$\hat{Q}^{\dagger}$ & unitless & Conjugate transpose of $\hat{Q}$\\
+$\hat{Q}^{\pm K}_{k}$ & unitless & $\hat{Q}$ of the 
+(N$\pm$K)-stationary state $k$ (relative to the N-electron reference 
+stationary state)\\
+$\hat{h}$ & \si{\joule} & 1-electron Hamiltonian operator\\
+$\mathbf{h}$ & \si{\joule} & 1-electron integral matrix\\
+$h_{pq}$ & \si{\joule} & p,q-th element of $\mathbf{h}$\\
+$\hat{v}$ & \si{\joule} & 2-electron Hamiltonian operator\\
+$\mathbf{v}$ & \si{\joule} & 2-electron integral matrix\\
+$v_{pqrs}$ & \si{\joule} & the p,q,r,s-th element of $\mathbf{v}$\\
+$E$ & \si{\joule} & energy\\
+$\Delta E_{k}$ & \si{\joule} & energy difference between two stationary 
+states ($k$ and the reference one)\\
+$\boldsymbol{\gamma}$ & unitless& 1-electron reduced density matrix\\
+$\gamma_{pq}$ & unitless& p,q-th element of $\boldsymbol{\gamma}$\\
+$\gamma_{pq}$ & unitless& p,q-th element of $\boldsymbol{\gamma}$\\
+$\Gamma_{pqrs}$ & unitless& p,q,r,s-th element of $\boldsymbol{\Gamma}$\\
+$\gamma_{m;0k}$ & unitless& m-th element of the transition density matrix 
+between states $\ket{\Psi^{(N)}_0}$ and $\ket{\Psi^{(N \pm K)}_{k}}$\\
+$p,q,r,s$ & unitless & arbitrary spinorbital index\\
+$\mathbf{r}$ & \si{\metre} & Electronic coordinates\\
+$\mathbf{R}$ & \si{\metre} & Nuclear coordinates\\
 \bottomrule
 \end{longtable*}
-%\plt{Use your problems actual symbols.  The si package is a good idea to use for
- % units.}
+%\plt{Use your problems actual symbols.  The si package is a good idea to use 
+%for units.}
+\subsection{Notation}
+The symbols and notation used through this document are consistent with the 
+quantum chemistry literature and with existing documentation for 
+equation-of-motion methods (see, e.g., \cite{Pernal2018}, \cite{McKoy1977} and 
+Chapters 1 nad 2 of \cite{szabo-ostlund}). Some examples of this notation are: 
+the operator of an observable O is denoted by $\hat{O}$, Dirac's bra-ket 
+notation ($\bra{}$ $\ket{}$) is used for the representation of a state's wave 
+function and vector or matrix parameters are indicated with bold face (like the 
+identity matrix in the table above).
+
 
 \subsection{Abbreviations and Acronyms}
 
@@ -386,7 +420,7 @@ of memory resources.
 The reader of this document must have a Level-1 undergraduate knowledge of 
 mathematics 
 (specifically of linear algebra), and quantum chemistry or physics. 
-Additionally, familiarity with the formalism of second quantization and some 
+Additionally, familiarity with the formalism of second-quantization and some 
 programming skills are required.
 
 \subsection{Organization of Document}
@@ -589,10 +623,10 @@ The EOMEE's physical system includes the following elements:
 \item[PS1:] The N-electron reference stationary state $\Psi^{(N)}_0$, 
 characterized by the 1- and 2-RDMs.
 
-\item[PS2:] The $k$th excited state $\Psi^{(N \pm k)}_k$.
+\item[PS2:] The $k$th excited state $\Psi^{(N \pm K)}_k$.
 
-\item[PS3:] The excitation operator $\hat{Q}^{(N \pm k)}_k$ that transform 
-$\Psi^{(N)}_0$ into $\Psi^{(N \pm k)}_k$.
+\item[PS3:] The excitation operator $\hat{Q}^{(N \pm K)}_k$ that transform 
+$\Psi^{(N)}_0$ into $\Psi^{(N \pm K)}_k$.
 
 \item[PS4:] The electronic Hamiltonian operator $\hat{H}$ which contains the 
 information about the interactions between the particles in the system.
@@ -662,8 +696,8 @@ likely change [LC], in which the respective assumption is used.
 %    explicit (or implicit) ``and'' in the text of an assumption.}
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A_transition_op_approx}:] 
 The 
-transition operator can be approximated by a finite expansion in second 
-quantization operators strings (BS). [ 
+transition operator can be approximated by a finite expansion in 
+second-quantization operators strings (BS). [ 
 \tref{T_ExcState}],[~\dref{G_approxQ}]
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A_dms_mointeg}:] The EOM 
 methods can be expressed in terms of the 1- and 2-reduced density
@@ -757,19 +791,19 @@ M-atom system.
 		\hline
 		Label&\bf Excited State\\
 		\hline
-		Equation&  $\ket{\Psi^{(N\pm k)}_k} = \hat{Q_k}^{(\pm 
+		Equation&  $\ket{\Psi^{(N\pm K)}_k} = \hat{Q_k}^{(\pm 
 			k)}\ket{\Psi^{(N)}_0}$ \\
 		\hline
 		Description & 
-		The wavefunction of the ``excited" state ($\Psi^{(N\pm k)}_k$) is 
+		The wavefunction of the ``excited" state ($\Psi^{(N\pm K)}_k$) is 
 		defined by the action of a 
-		transition operator $\hat{Q_k}^{(\pm k)}$ onto a reference N-electron 
+		transition operator $\hat{Q_k}^{(\pm K)}$ onto a reference N-electron 
 		stationary 
 		state (ground state $\Psi^{(N)}_0$). As a 
 		result 
 		of the transition,
 the number of electrons ($N$) in the initial 
-		reference system and the final one might differ ($N\pm k$).
+		reference system and the final one might differ ($N\pm K$).
 %		a result 
 \\
 		\hline
@@ -826,10 +860,10 @@ the number of electrons ($N$) in the initial
 		Description & 
 		Represents the probability of finding the state defined by 
 		$\hat{q}^{\dagger}_m 
-		\ket{\Psi^{N}_0}$ in the ``excited" state $\ket{\Psi^{N\pm k}_k}$; 
+		\ket{\Psi^{N}_0}$ in the ``excited" state $\ket{\Psi^{N\pm K}_k}$; 
 		where 
 		$\hat{q}_m$ is some 
-		string of second quantization operators.\\
+		string of second-quantization operators.\\
 		\hline
 		Source & \cite{Pernal2018}\\
 		\hline
@@ -861,11 +895,11 @@ Label &\bf Transition operator approximation \\
 % \hline
 SI Units&--\\
 \hline
-Equation& $ \hat{Q}^{(\pm k)}_k = \sum_n c_{n;k} \hat{q}_n $\\
+Equation& $ \hat{Q}^{(\pm K)}_k = \sum_n c_{n;k} \hat{q}_n $\\
 \hline
 Description &
 The equation above represents a general notation for the definition of the  
-transition operator ($\hat{Q}^{(\pm k)}_k$) through a BS expansion 
+transition operator ($\hat{Q}^{(\pm K)}_k$) through a BS expansion 
 ($\hat{q}_n$).\\
 &Some common transition operators for which only the 1- and 2-RDMs would be 
 needed are:\\
@@ -885,7 +919,7 @@ a^{\dagger}_q$\\
 \end{tabular}
 \end{minipage}\\
 
-It is possible to define expression for $\hat{Q}^{(\pm k)}_k$ with more terms. 
+It is possible to define expression for $\hat{Q}^{(\pm K)}_k$ with more terms. 
 For instance in the case of excitations, one could include higher than single 
 excitation terms:
 \begin{flalign}
@@ -943,35 +977,35 @@ However the evaluation of the EOM equations would then required higher than the
 \subsubsection*{Derivation of the eigenvalue problems}
 \noindent
 The Schr\"odinger equation (\tref{T_SchrodingerEq}) for the excited state 
-$\Psi^{(N\pm k)}_k $ (\tref{T_ExcState}) is:
+$\Psi^{(N\pm K)}_k $ (\tref{T_ExcState}) is:
 \begin{flalign}\label{eq:schrod_exc}
-\hat{H}\ket{\Psi^{(N\pm k)}_k} &= E_k \ket{\Psi^{(N\pm k)}_k}\\\nonumber
-\hat{H}\hat{Q}^{(\pm k)}_k\ket{\Psi^{(N)}_0} &= E_k \hat{Q}^{(\pm 
+\hat{H}\ket{\Psi^{(N\pm K)}_k} &= E_k \ket{\Psi^{(N\pm K)}_k}\\\nonumber
+\hat{H}\hat{Q}^{(\pm K)}_k\ket{\Psi^{(N)}_0} &= E_k \hat{Q}^{(\pm 
 	k)}_k \ket{\Psi^{(N)}_0}
 \end{flalign}
 To directly determine the energy change due to the excitation process we apply 
-the transition operator $\hat{Q}^{(\pm k)}_k$ to the Schr\"odinger equation for 
+the transition operator $\hat{Q}^{(\pm K)}_k$ to the Schr\"odinger equation for 
 $\Psi^{(N)}_0$, subtracting it from Eq.~(\ref{eq:schrod_exc}):
 \begin{flalign}
-\hat{Q}^{(\pm k)}_k \hat{H}\ket{\Psi^{(N)}_0} &= E_0 \hat{Q}^{(\pm 
+\hat{Q}^{(\pm K)}_k \hat{H}\ket{\Psi^{(N)}_0} &= E_0 \hat{Q}^{(\pm 
 	k)}_k \ket{\Psi^{(N)}_0}
 \end{flalign}
 
 \begin{flalign}
-(\hat{H}\hat{Q}^{(\pm k)}_k - \hat{Q}^{(\pm k)}_k \hat{H})\ket{\Psi^{(N)}_0} &= 
-(E_k - E_0) \hat{Q}^{(\pm k)}_k \ket{\Psi^{(N)}_0}\\\nonumber
-[\hat{H},\hat{Q}^{(\pm k)}_k ]\ket{\Psi^{(N)}_0} &= 
-\Delta E_k \hat{Q}^{(\pm k)}_k\ket{\Psi^{(N)}_0}
+(\hat{H}\hat{Q}^{(\pm K)}_k - \hat{Q}^{(\pm K)}_k \hat{H})\ket{\Psi^{(N)}_0} &= 
+(E_k - E_0) \hat{Q}^{(\pm K)}_k \ket{\Psi^{(N)}_0}\\\nonumber
+[\hat{H},\hat{Q}^{(\pm K)}_k ]\ket{\Psi^{(N)}_0} &= 
+\Delta E_k \hat{Q}^{(\pm K)}_k\ket{\Psi^{(N)}_0}
 \end{flalign}
 \noindent
 This last expression can be solved by projecting onto a suitable set of states. 
 Because we are interested in using the 1- and 2-RDMs, it is convenient to use 
 the 
-same basis set in which $\hat{Q^{(\pm k)}_k}$ is expanded [\dref{G_approxQ}] to 
+same basis set in which $\hat{Q^{(\pm K)}_k}$ is expanded [\dref{G_approxQ}] to 
 build this set:
 \begin{flalign}\label{eq:koopman}
-\bra{\Psi^{(N)}_0}q^{\dagger}_m[\hat{H}, \hat{Q}^{(\pm k)}_k]\ket{\Psi^{(N)}_0} 
-= \Delta E_k \bra{\Psi^{(N)}_0}q^{\dagger}_m\hat{Q}^{(\pm k)}_k 
+\bra{\Psi^{(N)}_0}q^{\dagger}_m[\hat{H}, \hat{Q}^{(\pm K)}_k]\ket{\Psi^{(N)}_0} 
+= \Delta E_k \bra{\Psi^{(N)}_0}q^{\dagger}_m\hat{Q}^{(\pm K)}_k 
 \ket{\Psi^{(N)}_0}
 \end{flalign}
 This last equation is suitable for the electron attachment and removal 
@@ -982,8 +1016,8 @@ electron removal or attachment operators, can be derived by invoking the
 ``killer condition" [\aref{A_killercond}]. This allows to add/subtract zero 
 from (\ref{eq:koopman}) so that:
 \begin{flalign}\label{eq:killer1}
-\bra{\Psi^{(N)}_0}q^{\dagger}_m[\hat{H}, \hat{Q}^{(\pm k)}_k] \pm [\hat{H}, 
-\hat{Q}^{(\pm k)}_k] q^{\dagger}_m \ket{\Psi^{(N)}_0} 
+\bra{\Psi^{(N)}_0}q^{\dagger}_m[\hat{H}, \hat{Q}^{(\pm K)}_k] \pm [\hat{H}, 
+\hat{Q}^{(\pm K)}_k] q^{\dagger}_m \ket{\Psi^{(N)}_0} 
 &= \Delta E_k \bra{\Psi^{(N)}_0}q^{\dagger}_m\hat{Q}^{(\pm 
 	k)}_k \pm  \hat{Q}^{(\pm 
 	k)}_k q^{\dagger}_m \ket{\Psi^{(N)}_0}\\\nonumber
@@ -1029,7 +1063,7 @@ models. The dimension of each quantity is also given.
 		Equation&$\hat{H} = \sum_{pq} h_{pq} a^{\dagger}_p a_q + \frac{1}{2} 
 		\sum_{pqrs} v_{pqrs} a^{\dagger}_p a^{\dagger}_q a_s a_r$\\
 		\hline
-		Description & Second quantization notation for the electronic 
+		Description & Second-quantization notation for the electronic 
 		Hamiltonian operator under the Born-Oppenheimer approximation.
 		\\
 		&$h_{pq} $ and $ v_{pqrs}$ are the one and two electron integrals in 
