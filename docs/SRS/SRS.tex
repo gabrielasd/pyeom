@@ -496,20 +496,18 @@ transition energies and density matrices (TDMs).
 	\item User Responsibilities:
 	\begin{itemize}
 		\item Provide the inputs for the atomic or molecular system of interest.
-		\item Guarantee that enough memory resources are available for the intended 
-		study system.
 		\item Verify that the output data has physical meaning for his intended system.
 	\end{itemize}
 	\item EOMEE Responsibilities:
 	\begin{itemize}
 		\item Detect data type mismatch, such as a string of characters 
-		instead of an array.
-		\item Detect data value mismatch, such as incorrect dimensions of input arrays.
+		instead of a sequence of floats.
+		\item Detect data value mismatch, such as incorrect dimensions of input 
+		sequences of floats.
 		\item Verify that the input matrices have the correct symmetries.
-		\item Transform the electron integrals and RDMs from the MO to the spinorbital 
-		representation.
-		\item Evaluate the transition energies and density matrices for the user 
-		selected EOM method.
+		\item Check the normalization of the 1- and 2-RDMs.
+		\item Evaluate the transition energies and density matrices for the 
+		user selected EOM method.
 	\end{itemize}
 \end{itemize}
 
