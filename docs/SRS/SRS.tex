@@ -245,6 +245,7 @@ identity matrix in the table above).
   IP & Ionization Potential\\
   LC & Likely Change\\
   MO & Molecular orbital\\
+  SO & Spinorbital\\
   PS & Physical System Description\\
   PC & Personal Computer\\
   QC & Quantum chemistry\\
@@ -583,14 +584,14 @@ easier to correctly understand the requirements:
 operator acts. Is usually taken as the lowest energy N-electron stationary 
 state (ground 
 state).
-\item \textbf{excitation or transition operator}: Operator that transforms the 
+\item \textbf{excitation or transition operator}: Operator that takes the 
 reference N-electron stationary state into a different stationary state.
-\item \textbf{excited state}: an stationary state other than the ground one. 
+\item \textbf{excited state}: a stationary state other than the ground one. 
 Higher in 
 energy and potentially with a different number of electrons.
 \item \textbf{electron density matrix}: matrix corresponding to the electron 
-density distribution represented in the spinorbital basis set.
-\item \textbf{spinorbital}: orthonormal function of the space and spin 
+density distribution represented in the spinorbital basis set (BS).
+\item \textbf{spinorbital (SO)}: orthonormal function of the space and spin 
 coordinates of a single electron.
 \item \textbf{electron integrals}: energy contributions of the different 
 interaction between the electrons and nuclei in the system.
@@ -702,7 +703,7 @@ methods can be expressed in terms of the 1- and 2-reduced density
 matrices of the reference state and the 1- and 2-electron integrals.
 [\iref{IM_IP}]-[\iref{IM_DEA}]
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A_int_mos}:] The 1- and 
-2-electron integrals are in the MO basis representation. [\ddref{D_oneints}], 
+2-electron integrals are in the SO basis representation. [\ddref{D_oneints}], 
 [\ddref{D_twoints}]
 \item[A\refstepcounter{assumpnum}\theassumpnum \label{A_symmetry}:] The input 
 electron integrals and RDMs have the correct symmetries.[\ddref{D_oneints}], 
@@ -1069,7 +1070,7 @@ models. The dimension of each quantity is also given.
 		Hamiltonian operator under the Born-Oppenheimer approximation.
 		\\
 		&$h_{pq} $ and $ v_{pqrs}$ are the one and two electron integrals in 
-		the spinorbital basis. The summations run over all spinorbitals 
+		the SO basis. The summations run over all SO 
 		(indexes p,q,r,s), which will be infinite for a complete BS.\\
 		\hline
 		Sources& \cite{szabo-ostlund} \\
@@ -1267,7 +1268,7 @@ solved by \iref{IM_IP} to \iref{I_transDM}.
   Output&$\Delta E_k$ and $c_{n;k}$\\
   \hline
   Description& $h_{pq} $ and $ v_{pqrs}$ are the 1- and 2-electron integrals in 
-  the spinorbital base\\
+  the SO base\\
   & $\gamma_{pq}$ and $\Gamma_{pqrs}$ are the RDMs for the reference N-electron 
   state.\\
   & IP\_EOM() is the EOM method corresponding to the electron removal 
@@ -1330,7 +1331,7 @@ Hamiltonian integrals:
 		\hline
 		Description& $h_{pq} $ and $ v_{pqrs}$ are the 1- and 2-electron 
 		integrals in 
-		the spinorbital base\\
+		the SO base\\
 		& $\gamma_{pq}$ and $\Gamma_{pqrs}$ are the RDMs for the reference 
 		N-electron 
 		state.\\
@@ -1392,7 +1393,7 @@ electron integrals:
 		\hline
 		Description& $h_{pq} $ and $ v_{pqrs}$ are the 1- and 2-electron 
 		integrals in 
-		the spinorbital base\\
+		the SO base\\
 		& $\gamma_{pq}$ and $\Gamma_{pqrs}$ are the RDMs for the reference 
 		N-electron 
 		state.\\
@@ -1462,7 +1463,7 @@ v_{jqks}\Gamma_{iqls})\biggr] c_{ij;k}\\
 		Output&$\Delta E_k$ and $c_{ij;k}$\\
 		\hline
 		Description& $h_{pq} $ and $ v_{pqrs}$ are the 1- and 2-electron 
-		integrals in the spinorbital base\\
+		integrals in the SO base\\
 		& $\gamma_{pq}$ and $\Gamma_{pqrs}$ are the RDMs for the reference 
 		N-electron state.\\
 		& DIP\_EOM() is the EOM method corresponding to the double electron 
@@ -1540,7 +1541,7 @@ c_{ij;k} \\
 		Output&$\Delta E_k$ and $c_{ij;k}$\\
 		\hline
 		Description& $h_{pq} $ and $ v_{pqrs}$ are the 1- and 2-electron 
-		integrals in the spinorbital base\\
+		integrals in the SO base\\
 		& $\gamma_{pq}$ and $\Gamma_{pqrs}$ are the RDMs for the reference 
 		N-electron state.\\
 		& DEA\_EOM() is the EOM method corresponding to the double electron 
@@ -1753,7 +1754,7 @@ qualities that the software is expected to exhibit.
 \noindent \begin{itemize}
 
 \item[R\refstepcounter{reqnum}\thereqnum \label{R_Inputs}:] Input the 1- and 
-2-electron integrals in the MO basis representation, the 1- and 2-RDMs, and a 
+2-electron integrals in the SO basis representation, the 1- and 2-RDMs, and a 
 selection of the EOM method to solve.
 
 \item[R\refstepcounter{reqnum}\thereqnum \label{R_VerifyInputs_RDM}:] Verify 
