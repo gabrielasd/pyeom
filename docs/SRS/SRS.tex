@@ -394,11 +394,10 @@ by
 %is
 %  on the ``big picture'' assumptions.  The assumptions section lists, and
 %  describes, all of the assumptions.}
+The scope of EOMEE is the computation of excited state properties using an 
+approximated transition operator and 1- and 2-electron reduced density matrices 
+(RDMs).
 
-EOMEE will evaluate the energy variations in processes that involve up to two 
-particle transitions. In a standard PC its applicability will be limited to 
-molecular systems with about 60 molecular orbital (MO) basis due to the demands 
-of memory resources.
 
 \subsection{Characteristics of Intended Reader} \label{sec_IntendedReader}
 
@@ -540,8 +539,12 @@ computational an theoretical chemistry or physics.
   %may not have any system constraints.}
 
 %\an{
-	Availability of general Python libraries is required for the development 
-of EOMEE.
+EOMEE will evaluate the energy variations in processes that involve up 
+to two particle transitions using low rank RDMs. In a standard PC its 
+applicability will be limited to molecular systems with about 60 molecular 
+orbital (MO) basis due to the demands of memory resources. Availability of 
+general Python libraries is required for the development of EOMEE given that a 
+previous implementation is being refactored for this project. 
 %}
 
 \section{Specific System Description}
