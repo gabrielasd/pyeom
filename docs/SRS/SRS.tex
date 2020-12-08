@@ -1758,7 +1758,7 @@ selection of the EOM method to solve.
 
 \item[R\refstepcounter{reqnum}\thereqnum \label{R_VerifyInputs_RDM}:] Verify 
 that 
-the input RDMs satisfy the physical constraints listes in 
+the input RDMs satisfy the physical constraints listed in 
 Table~\ref{TblInputVar}.
 
 \item[R\refstepcounter{reqnum}\thereqnum \label{R_VerifyInputs_Ints}:] Verify 
@@ -1772,10 +1772,6 @@ selected by the user (\iref{IM_IP} - \iref{I_transDM})
 \item[R\refstepcounter{reqnum}\thereqnum \label{R_Output}:] Output $\Delta E_0$ 
 (from \iref{IM_IP} - \iref{IM_DEA} as applicable) and $\gamma_{n;0k}$ (from  
 \iref{I_transDM}).
-
-\item[R\refstepcounter{reqnum}\thereqnum \label{R_VerifyOutput}:]
-The user should have the knowledge to assess whether the returned parameters 
-have physical meaning for their system of interest.
 
 %\item[R\refstepcounter{reqnum}\thereqnum \label{R_OutputInputs}:] \plt{It isn't
 %    always required, but often echoing the inputs as part of the output is a
@@ -1947,22 +1943,23 @@ the assumptions.
 
 \begin{table}[h!]
 \centering
-\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|}
 \hline
-	& \iref{IM_IP}& \iref{IM_EA}& \iref{IM_Exc}& \iref{IM_DIP}& \iref{IM_DEA}& \iref{I_transDM}& \rref{R_Inputs}& \rref{R_VerifyInputs_RDM}& \rref{R_VerifyInputs_Ints} & \rref{R_Calculate} & \rref{R_Output} & \rref{R_VerifyOutput}\\
+	& \iref{IM_IP}& \iref{IM_EA}& \iref{IM_Exc}& \iref{IM_DIP}& \iref{IM_DEA}& 
+	\iref{I_transDM}& \rref{R_Inputs}& \rref{R_VerifyInputs_RDM}& 
+	\rref{R_VerifyInputs_Ints} & \rref{R_Calculate} & \rref{R_Output}\\
 \hline
-\iref{IM_IP}            & & & & & & &  & & & X& X&\\ \hline
-\iref{IM_EA}            & & & & & & &  & & & X& X&\\ \hline
-\iref{IM_Exc}          & & & & & & & & & & X& X&\\ \hline
-\iref{IM_DIP}          & & & & & & &  & & & X& X&\\ \hline
-\iref{IM_DEA}          & & & & & & &  & & & X& X&\\ \hline
-\iref{I_transDM}          & & & & & & &  & & & X& X&\\ \hline
-\rref{R_Inputs}     & & & & & & & & & & &&\\ \hline
-\rref{R_VerifyInputs_RDM}    & & & & & & & & & & & &\\ \hline
-\rref{R_VerifyInputs_Ints}   & & & & & & & & & & & &\\ \hline
-\rref{R_Calculate}  & & & & & & &  & & & & &\\ \hline
-\rref{R_Output}     & & & & & & & & & & & &\\ \hline 
-\rref{R_VerifyOutput}       & & & & & & & & & & & &\\  
+\iref{IM_IP}            & & & & & & &  & & & X& X\\ \hline
+\iref{IM_EA}            & & & & & & &  & & & X& X\\ \hline
+\iref{IM_Exc}          & & & & & & & & & & X& X\\ \hline
+\iref{IM_DIP}          & & & & & & &  & & & X& X\\ \hline
+\iref{IM_DEA}          & & & & & & &  & & & X& X\\ \hline
+\iref{I_transDM}          & & & & & & &  & & & X& X\\ \hline
+\rref{R_Inputs}     & & & & & & & & & & &\\ \hline
+\rref{R_VerifyInputs_RDM}    & & & & & & & & & & & \\ \hline
+\rref{R_VerifyInputs_Ints}   & & & & & & & & & & & \\ \hline
+\rref{R_Calculate}  & X& X& X& X& X& X&  & & & & \\ \hline
+\rref{R_Output}     & X& X& X& X& X& X& & & & & \\ \hline  
 \hline
 \end{tabular}
 \caption{Traceability Matrix Showing the Connections Between Requirements and Instance Models}
