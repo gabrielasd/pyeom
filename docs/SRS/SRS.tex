@@ -898,8 +898,12 @@ Equation& $ \hat{Q}^{(\pm K)}_k = \sum_n c_{n;k} \hat{q}_n $\\
 \hline
 Description &
 The equation above represents a general notation for the definition of the  
-transition operator ($\hat{Q}^{(\pm K)}_k$) through a BS expansion 
-($\hat{q}_n$).\\
+transition operator ($\hat{Q}^{(\pm K)}_k$) in terms of a BS ($\hat{q}_n$). 
+This BS can be represented by strings of second quantization creation 
+($a^{\dagger}_n$) and annihilation ($a_n$) operators as shown in the examples 
+bellow. The 
+summation runs over all spinorbitals in the system (n), which will be infinite 
+for a complete BS.\\
 &Some common transition operators for which only the 1- and 2-RDMs would be 
 needed are:\\
 & electron removal: $\hat{Q}^{-1}_k = \sum_n c_{n;k} a_n $\\
@@ -1066,7 +1070,8 @@ models. The dimension of each quantity is also given.
 		Hamiltonian operator under the Born-Oppenheimer approximation.
 		\\
 		&$h_{pq} $ and $ v_{pqrs}$ are the one and two electron integrals in 
-		the spinorbital basis.\\
+		the spinorbital basis. The summations run over all spinorbitals 
+		(indexes p,q,r,s), which will be infinite for a complete BS.\\
 		\hline
 		Sources& \cite{szabo-ostlund} \\
 		\hline
