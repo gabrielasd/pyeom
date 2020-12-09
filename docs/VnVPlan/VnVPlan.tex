@@ -64,6 +64,8 @@
   LUMO& Lowest Unoccupied Molecular Orbital\\
   R & Requirement\\
   SRS & Software Requirements Specification\\
+  MG & Module Guide\\
+  MIS & Module Interface Specification\\
   RDM & Reduced density matrix\\
   TDM & Transition density matrix\\
   $h_{pq}$ & 1-electron integral\\
@@ -75,6 +77,8 @@
 
 %\wss{symbols, abbreviations or acronyms -- you can simply reference the SRS
 %  \citep{SRS} tables, if appropriate}
+For more details about symbols, abbreviations and acronyms see Sections 1.2 and 
+1.4 in \cite{SRS2020}.
 
 \newpage
 
@@ -124,9 +128,11 @@ code usability will be among the main tests this plan will be focusing on.
 %\wss{Reference relevant documentation.  This will definitely include your SRS
 %  and your other project documents (MG, MIS, etc)}
 
-Through this document we will be referring to the requirement specifications for 
-EOMEE[\citet{SRS2020}], in particular to its functional and nonfunctional 
-requirements.
+Through this document we will be referring to the requirement specifications 
+for EOMEE [\citet{SRS2020}], in particular to its functional and nonfunctional 
+requirements. Additionally, details about the module design can be found in the 
+Module Guide (MG) [\cite{MG2020}] and Module Interface Specification (MIS) 
+[\cite{MIS2020}].
 
 \section{Plan}
 \label{section:plans}
@@ -136,7 +142,7 @@ requirements.
 %\wss{You, your classmates and the course instructor.  Maybe your supervisor.}\\
 The review of EOMEE will be conducted by the following parties:
 \begin{itemize}
-	\item The Ayers Lab members, in particular Michael Rischer, Dr.\ Paul Ayers 
+	\item The Ayers Lab members, in particular Michael Richer, Dr.\ Paul Ayers 
 	and Gabriela S\'anchez D\'iaz.
 	\item Dr.\ Spencer Smith.
 	\item Members of 2020 CAS741 course; in particular the following 
@@ -154,7 +160,7 @@ The review of EOMEE will be conducted by the following parties:
 %  something more rigorous/systematic in mind..}
 The Software Requirement Specifications (SRS) verification should be carried by 
 the reviewers following the indications below:\\
-The the SRS document [\cite{SRS2020}] will be provided to Dr.\ Ayers, Dr.\ 
+The SRS document [\cite{SRS2020}] will be provided to Dr.\ Ayers, Dr.\ 
 Smith, Mohamed AbuElAla and Gabriela S\'anchez along with a questionnaire (to 
 be found in the Appendix section \ref{section:srsreview}). The reviewers 
 will read the document and questions and report any problems or 
@@ -165,9 +171,16 @@ inconsistencies as GitHub issues in the project's repository
 \subsection{Design Verification Plan}
 
 %\wss{Plans for design verification}
-The modules design will be discussed with the review team members Dr.\ Paul 
-Ayers and Michael Richer. It will also be presented to/evaluated by Dr.\ Smith 
-and the members of 2020 CAS741 course.
+The modules design (see MG [\cite{MG2020}] and MIS [\cite{MIS2020}]) will be 
+discussed with the review team members Dr.\ Paul Ayers and Michael Richer. It 
+will also be presented to/evaluated by Dr.\ Smith and the members of 2020 
+CAS741 course. The review process will be guided by the MG and MIS checklists  
+that can be accessed as part of the course materials (\cite{mgcheck} and 
+\cite{mischeck}, respectively). Design problems or inconsistencies will be 
+reported as GitHub 
+issues in EOMEE's repository 
+(\href{https://github.com/gabrielasd/eomee/tree/cas741} 
+{cas741}).
 
 \subsection{Implementation Verification Plan}
 
