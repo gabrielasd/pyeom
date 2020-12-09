@@ -152,9 +152,15 @@ The review of EOMEE will be conducted by the following parties:
 %\wss{List any approaches you intend to use for SRS verification.  This may just
 %  be ad hoc feedback from reviewers, like your classmates, or you may have
 %  something more rigorous/systematic in mind..}
-The software requirement specifications (SRS) verification will be carried by 
-the reviewers following the indications describes in the SRS verification test. 
-This test is intended as a guide in the revision process.
+The Software Requirement Specifications (SRS) verification should be carried by 
+the reviewers following the indications below:\\
+The the SRS document [\cite{SRS2020}] will be provided to Dr.\ Ayers, Dr.\ 
+Smith, Mohamed AbuElAla and Gabriela S\'anchez along with a questionnaire (to 
+be found in the Appendix section \ref{section:srsreview}). The reviewers 
+will read the document and questions and report any problems or 
+inconsistencies as GitHub issues in the project's repository 
+(\href{https://github.com/gabrielasd/eomee/tree/cas741} 
+{cas741})
 
 \subsection{Design Verification Plan}
 
@@ -177,21 +183,20 @@ The implementation will be verified through system and unit testing. The
 following test areas will be defined:
 \begin{itemize}
 	\item \textbf{Subsection} \ref{section:inputs} Input Verification : 
-	includes 
-	checks for the input variables types and values.
+	includes checks for the input variables types and values.
+	
 	\item \textbf{Subsection} 
 	\ref{section:calculations} Energies and TDMs Evaluation: tests in 
 	which the properties represented by the instance models (IM1-IM6) are 
 	evaluated and compared against literature or pseudo-oracle results.
-	\item \textbf{Subsection} \ref{section:srsreview} SRS Review: 
-	introduces a questionnaire to guide the SRS review team.
+	
 	\item \textbf{Subsection} \ref{section:usability} Usability Verification 
-	Plan: 
-	tests with the purpose of identifying potential deficiencies in the 
+	Plan: tests with the purpose of identifying potential deficiencies in the 
 	user-software interaction.
+	
 	\item \textbf{Subsection} \ref{section:performance} Performance: an 
-	assessment 
-	attempt at the numerical stability limits of the implemented IM1-IM5.
+	assessment attempt at the numerical stability limits of the implemented 
+	IM1-IM5.
 \end{itemize}
 
 \an{The corresponding sections for the unit tests will be added once that 
@@ -548,32 +553,6 @@ were included in the test cases bellow. We will use the absolute error
 The tests described in the following subsections verify the nonfunctional 
 requirements listed in the subsection 5.2 of the 
 \href{https://github.com/gabrielasd/eomee/tree/cas741/docs/SRS} {SRS}.
-
-\subsubsection{SRS Review}
-\label{section:srsreview}
-		
-%\paragraph{Title for Test}
-
-\begin{enumerate}
-
-\item{SRS\_questionnaire:SQ}
-
-Type: Manual
-					
-Initial State: N/A
-					
-Input/Condition: 
-The the SRS document[\cite{SRS2020}] will be provided to Dr.\ Ayers, Dr.\ Smith, 
-Mohamed AbuElAla and Gabriela S\'anchez along with a questionnaire (to be found 
-in the \hyperref[section:appendix]{Appendix} section).
-					
-Output/Result: GitHub issues 
-					
-How test will be performed: 
-The reviewers will read the document and questions and  report any problems or 
-inconsistencies.
-
-\end{enumerate}
 
 \subsubsection{Usability verification}
 \label{section:usability}
@@ -1234,6 +1213,7 @@ Their values are defined in this section for easy maintenance.
 \end{enumerate}
 
 \subsection{SRS Questionnaire}
+\label{section:srsreview}
 Because the members of the VnV team might have limited time to review the 
 document some of the question bellow have been specifically assigned:
 \begin{enumerate}
