@@ -68,10 +68,19 @@
   MIS & Module Interface Specification\\
   RDM & Reduced density matrix\\
   TDM & Transition density matrix\\
-  $h_{pq}$ & 1-electron integral\\
-  $v_{pqrs}$ & 2-electron integral\\
-  $\gamma_{pq}$ & 1-electron reduced density matrix\\
-  $\Gamma_{pqrs}$ & 2-electron reduced density matrix\\
+  2D & Two-Dimensional\\
+  4D & Four-Dimensional\\
+  $\mathbf{h}$ & 1-electron integral matrix (a 2D matrix);\\
+               & $h_{pq}$ denotes its p,q-th element\\
+  $\mathbf{v}$ & 2-electron integral matrix (a 4D tensor);\\
+               & $v_{pqrs}$ is its p,q,r,s-th element\\
+  $\boldsymbol{\gamma}$ & 1-electron reduced density matrix (a 2D matrix);\\
+                        &$\gamma_{pq}$ denotes its p,q-th element\\
+  $\boldsymbol{\Gamma}$ & 2-electron reduced density matrix (a 4D tensor)\\
+                        &$\Gamma_{pqrs}$ denotes its p,q,r,s-th element\\
+  $\otimes$ & Kronecker product\\
+  idx & Index\\
+  $\epsilon$& Energy (in Hartree) of a spinorbital\\
   \bottomrule
 \end{tabular}\\
 
@@ -294,10 +303,12 @@ Control: Automatic
 					
 Initial State: N/A
 					
-Input: Two sets of inputs, corresponding to the one-electron integral, 
-two-electron integral, one-electron reduced density matrix and two-electron 
-reduced density matrix, will be provided according to 
-Table~\ref{Table:typeerror}:
+Input: According to Table~\ref{Table:typeerror}, two sets of inputs (S1 and 
+S2), corresponding to the one-electron integrals ($\mathbf{h}$), 
+two-electron integrals ($\mathbf{v}$), one-electron reduced density matrix 
+($\boldsymbol{\gamma}$) and two-electron reduced density matrix 
+($\boldsymbol{\Gamma}$), will 
+be provided:
 
 \begin{table}[h!]
 	\centering
@@ -305,22 +316,28 @@ Table~\ref{Table:typeerror}:
 		\toprule		
 		\textbf{Input set} & \textbf{S1} & \textbf{S2}\\
 		\midrule 
-		$h_{pq}$& tuple & 2-idx numpy array\\
-		$v_{pqrs}$& 4-idx numpy array& 4-idx numpy array\\
-		$\gamma_{pq}$& 2-idx numpy array& 2-idx list\\
-		$\Gamma_{pqrs}$& 4-idx numpy array& 4-idx numpy array\\
-		\textbf{Wrong}& tuple variable& list variable\\
+		$\mathbf{h}$& tuple & 2-idx numpy array\\
+		$\mathbf{v}$& 4-idx numpy array& 4-idx numpy array\\
+		$\boldsymbol{\gamma}$& 2-idx numpy array& 2-idx list\\
+		$\boldsymbol{\Gamma}$& 4-idx numpy array& 4-idx numpy array\\
+		\textbf{Wrong type}& tuple variable& list variable\\
 		\bottomrule
 	\end{tabular}
-	\caption{Type of the input variables}
+	\caption{Tests to check that incorrect input parameter types are detected. 
+	Columns S1 and S2 specify two test cases. The last row, labeled as ``Wrong 
+	type", 
+	indicates the incorrect type of input that 
+	shall raise a type-error exception.}
 	\label{Table:typeerror}
 \end{table}
 
 The variables in the table will be defined as:\\
 tuple: ((1,2), (3,4))\\
-2-idx numpy array: numpy.random.rand(4, 4).astype(float)\\
-2-idx list: [[1.0, 2.0],[3.0, 4.0]]\\
-4-idx numpy array: numpy.random.rand(4, 4, 4, 4).astype(float)
+A : [[1.0, 2.0], [3.0, 4.0]] \\
+2-idx numpy array: numpy.asarray(A)\\
+2-idx list: A\\
+4-idx numpy array: numpy.asarray([A, A, A, A])
+%numpy.random.rand(4, 4, 4, 4).astype(float)
 	
 Output: A type-error will be raised in each case. 
 
@@ -337,9 +354,10 @@ Control: Automatic
 					
 Initial State: N/A
 					
-Input: Five input sets, corresponding to the one-electron integral, 
-two-electron integral, one-electron reduced density matrix and two-electron 
-reduced density matrix, as described in Table~\ref{Table:valueerror}.
+Input: Five input sets (S1 to S5) for the input parameters: one-electron 
+integrals ($\mathbf{h}$), two-electron integrals ($\mathbf{v}$), one-electron 
+reduced density matrix ($\boldsymbol{\gamma}$) and two-electron reduced density 
+matrix ($\boldsymbol{\Gamma}$), as described in Table~\ref{Table:valueerror}:
 \begin{table}[h!]
 	\centering
 	\noindent \begin{tabular}{l c c l l c} 
@@ -347,22 +365,27 @@ reduced density matrix, as described in Table~\ref{Table:valueerror}.
 		\textbf{Input set} & \textbf{S1} & \textbf{S2}& 
 		\textbf{S3} & \textbf{S4}& \textbf{S5}\\
 		\midrule 
-		$h_{pq}$& $v_{pqrs}$ & $h_{pq}$& $A_{(n \times m)}$& 
+		$\mathbf{h}$& $v_{pqrs}$ & $h_{pq}$& $A_{(n \times m)}$& 
 		$A_{(m \times m)}$& $\gamma_{pq}$\\
-		$v_{pqrs}$& $h_{pq}$& $v_{pqrs}$&$B_{(n \times m 
+		$\mathbf{v}$& $h_{pq}$& $v_{pqrs}$&$B_{(n \times m 
 		\times m \times m)}$& $B_{(n \times n 
 		\times n \times n)}$& $\Gamma_{pqrs}$\\
-		$\gamma_{pq}$& $\gamma_{pq}$& $\Gamma_{pqrs}$& $A_{(n \times m)}$& 
+		$\boldsymbol{\gamma}$& $\gamma_{pq}$& $\Gamma_{pqrs}$& $A_{(n \times 
+		m)}$& 
 		$C_{(n \times n)}$& $h_{pq}$ 
 		\\
-		$\Gamma_{pqrs}$& $\Gamma_{pqrs}$& $\gamma_{pq}$&$B_{(n \times m \times 
+		$\boldsymbol{\Gamma}$& $\Gamma_{pqrs}$& $\gamma_{pq}$&$B_{(n \times m 
+		\times 
 		m \times m)}$& $D_{(n \times n \times n \times 
 		n)}$& $v_{pqrs}$\\
 		\textbf{Wrong}& \multicolumn{2}{l}{array dimensions} 
 		&\multicolumn{2}{c}{array shape} & RDMs constrains\\
 		\bottomrule
 	\end{tabular}
-	\caption{Test input variables definition.}
+	\caption{Tests to check that incorrect input values are detected. 
+		Columns S1 to S5 specify the test cases. The last row, labeled as 
+		``Wrong ", indicates the incorrect input value that	shall raise a 
+		value-error exception.}
 	\label{Table:valueerror}
 \end{table}
 
@@ -409,7 +432,7 @@ files (.npy). Unless otherwise
 stated, for each implemented EOM method (IM1-IM5, 
 \href{https://github.com/gabrielasd/eomee/tree/cas741/docs/SRS} {SRS} 
 subsection 4.2.5), the lowest (positive valued) 
-transition energy will be taken and compared against an "expected" value 
+transition energy will be taken and compared against an "expected" energy value 
 (generally from a Gaussian[\cite{g16}] calculation). 
 Because at this point we are not targeting the performance of the 
 methods, only small systems with at most 5 electrons and 10 molecular orbitals 
@@ -437,7 +460,9 @@ were included in the test cases bellow. We will use the absolute error
 	
 	Table~\ref{table:energies} contains the test cases 
 	description. All systems have closed-shell electronic configurations except 
-	the boron atom (B).
+	the boron atom (B). The $\epsilon_{HOMO}$ and 
+	$\epsilon_{LUMO}$ values for the atomic and molecular systems are reported 
+	in Table~\ref{table:koopman}.
 
 	\begin{table}[h!]
 		\centering
