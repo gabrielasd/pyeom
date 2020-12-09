@@ -80,15 +80,21 @@
 
 \pagenumbering{arabic}
 
-This document presents the VnV plan for EOMEE. First, the strategies for the 
-verification of the SRS, code design and implementation will be described, 
-followed by the software validation plan. The later one will present the system 
-and unit tests that will verify the functional and nonfunctional requirements 
-of the package.
-%\wss{provide an introductory blurb and roadmap of the  Verification and 
-%Validation plan}
+This document describes the procedures to determine whether the specified 
+requirements for EOMEE were satisfied [\cite{SRS2020}]. It is organized as 
+follows: Section \ref{section:geninfo} gives general information about the 
+software. The project reviewers and verification plans for the documentation 
+and implementation are introduced under Section \ref{section:plans}. The system 
+tests (black box tests) are specified in Section \ref{section:systemtests} 
+including the verification of the functional and nonfunctional requirements. 
+Section \ref{section:unittest} describes the unit tests (white box tests). 
+Finally, traceability matrices between system tests and requirements, and 
+between unit tests and modules (see Module Guide [\cite{MG2020}]) can be found 
+in Subsections \ref{section:systemtraceability} and 
+\ref{section:unittraceability}, respectively.
 
 \section{General Information}
+\label{section:geninfo}
 
 \subsection{Summary}
 
@@ -123,7 +129,8 @@ EOMEE[\citet{SRS2020}], in particular to its functional and nonfunctional
 requirements.
 
 \section{Plan}
-	
+\label{section:plans}
+
 \subsection{Verification and Validation Team}
 
 %\wss{You, your classmates and the course instructor.  Maybe your supervisor.}\\
@@ -235,6 +242,7 @@ validation can be the NIST Atomic Spectra
 Database[\cite{NIST_ASD}].
 
 \section{System Test Description}
+\label{section:systemtests}
 	
 \subsection{Tests for Functional Requirements}
 
@@ -654,6 +662,7 @@ inconsistencies.
 
 
 \subsection{Traceability Between Test Cases and Requirements}
+\label{section:systemtraceability}
 
 %\wss{Provide a table that shows which test cases are supporting which
 %  requirements.}
@@ -680,6 +689,7 @@ Table~\ref{table:traceab} shows what requirement specifications the functional a
 \end{table}
 
 \section{Unit Test Description}
+\label{section:unittest}
 
 \wss{Reference your MIS and explain your overall philosophy for test case
   selection.}  
@@ -1183,6 +1193,7 @@ How test will be performed:
 ...
 
 \subsection{Traceability Between Test Cases and Modules}
+\label{section:unittraceability}
 
 \wss{Provide evidence that all of the modules have been considered.}
 				
