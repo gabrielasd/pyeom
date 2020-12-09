@@ -70,6 +70,9 @@
 \newcounter{reqnum} %Requirement Number
 \newcommand{\rthereqnum}{P\thereqnum}
 \newcommand{\rref}[1]{R\ref{#1}}
+\newcounter{nfrnum} %NFR Number
+\newcommand{\rthenfrnum}{NFR\thenfrnum}
+\newcommand{\nfrref}[1]{NFR\ref{#1}}
 \newcounter{lcnum} %Likely change number
 \newcommand{\lthelcnum}{LC\thelcnum}
 \newcommand{\lcref}[1]{LC\ref{#1}}
@@ -250,6 +253,7 @@ identity matrix in the table above).
   PC & Personal Computer\\
   QC & Quantum chemistry\\
   R & Requirement\\
+  NFR & Nonfunctional Requirement\\
   SRS & Software Requirements Specification\\
   RDM & Reduced density matrix\\
   T & Theoretical Model\\
@@ -1784,16 +1788,30 @@ selected by the user (\iref{IM_IP} - \iref{I_transDM})
 
 %\plt{List your nonfunctional requirements.  You may consider using a fit
 %  criterion to make them verifiable.}
-\begin{itemize}
-\item Reusable: The code should be modular so that future improvements (like 
-the implementation of new EOMs) don't imply major feature changes.
-\item Portable: The software should run in multiple platforms.
-\item Usable: The software should be well documented so that an intermediate 
-user doesn't need more than a day to understand the code's purpose and not more 
-than three hours to prepare and run a calculation.
-\item Correct: It should follow the inputs and outputs requirements. It can be 
-tested using as reference available literature data for atomic IP and 
-electronic excitation energies. 
+\noindent \begin{itemize}
+
+\item[NFR\refstepcounter{nfrnum}\thenfrnum \label{NFR_Reusability}:]
+\textbf{Reusability} The code should be modular so that future improvements 
+(like the implementation of new EOMs) don't imply major feature changes.
+
+\item[NFR\refstepcounter{nfrnum}\thenfrnum \label{NFR_Usability}:] 
+\textbf{Usability} The software should be well documented so that an 
+intermediate user (Subsection \ref{SecUserCharacteristics}) doesn't need 
+more than a day 
+to understand the code's purpose and not more than three hours to prepare and 
+run a calculation. Usability shall be measured following the procedure given in 
+Section 5.2.2 of the Verification and Validation Plan [\cite{VnV2020}]
+
+\item[NFR\refstepcounter{nfrnum}\thenfrnum \label{NFR_Portability}:]
+\textbf{Portability} The software should run in multiple platforms (Ubuntu, Mac 
+OS and Windows 10). Section 5.2.2 of the Verification and Validation Plan 
+[\cite{VnV2020}] describes how to verify this NFR.
+
+\item[NFR\refstepcounter{nfrnum}\thenfrnum \label{NFR_Accuracy}:]
+\textbf{Accuracy} EOMEE can be tested using as reference available literature 
+data for atomic IP and electronic excitation energies. The accuracy of the 
+outputs can be assessed by the tests described in Section 5.1.2 of the 
+Verification and Validation Plan [\cite{VnV2020}]
 \end{itemize}
 
 \section{Likely Changes}    
