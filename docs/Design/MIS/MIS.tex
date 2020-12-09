@@ -141,7 +141,7 @@ sake of understandability:
 	\item seq($l_1$,$l_2$,...,$l_n$:T), will be used instead of 
 	sequence 
 	[$l_1$,$l_2$,...,$l_n$] of type T. For example seq($n,m:\mathbb{R}$), where 
-	$n,m > 0$, would map to sequence [$n$, $m$] of type $\mathbb{R}$.This 
+	$n,m > 0$, would map to sequence [$n$, $m$] of type $\mathbb{R}$. This 
 	type will generally be used to indicate NumPy.ndarray data types.
 	\item Variables that are of type sequence will be denoted in bold font, 
 	i.e, the parameter $\textbf{x}$ denotes a sequence. 
@@ -370,7 +370,8 @@ None
 \textit{two\_int\_file}: str\\
 \textit{dm1\_file}: str\\
 \textit{dm2\_file}: str\\
-\textit{eom}: str $\in \{"ip", "dip", "ea", "dea", "exc"\}$ which selects the 
+\textit{eom}: str $\in \{``ip", ``dip", ``ea", ``dea", ``exc"\}$ which selects 
+the 
 EOM method\\
 \textit{orthog}: str $\in \{``symmetric", ``asymmetric"\}$\\
 \textit{tol}: $\mathbb{R} > 0$\\
@@ -622,7 +623,7 @@ invoked.
 	Read the binary files \textit{one\_int\_file} and 
 	\textit{two\_int\_file} \\
 	verify\_integrals()\\
-	If no exception is raised, assigne the state variables \textbf{h} and 
+	If no exception is raised, assign the state variables \textbf{h} and 
 	\textbf{v}	
 %	\item output: None
 	\item exception: exc := FileNotFoundError
@@ -1647,7 +1648,7 @@ input (\ref{mInput})
 		dense & $\textbf{A}$: seq(k,k:$\mathbb{R}$), $\textbf{B}$: 
 		seq(k,k:$\mathbb{R}$), 
 		tol: $\mathbb{R} >0$, 
-		orthog: str $in \{"symm", "asymm"\}$& 
+		orthog: str $in \{``symm", ``asymm"\}$& 
 		$\boldsymbol{\Delta E}$:seq(k:$\mathbb{R}$), 
 		$\boldsymbol{c}$=seq(k,k:$\mathbb{R}$) & 
 		DivideByZero \\
