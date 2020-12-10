@@ -512,7 +512,17 @@ used by the EOM module. Stores the input values.
 \section{Traceability Matrix} \label{SecTM}
 
 This section shows two traceability matrices: between the modules and the
-requirements and between the modules and the anticipated changes.
+requirements (Table \ref{TblRT}) and between the modules and the anticipated 
+changes (Table \ref{TblACT}). Table \ref{TblACT} should show a one 
+to one correspondence between AC and modules. Modules \mref{mEOMIP} to 
+\mref{mEOMDEA} are implementations of the EOM Interface module 
+(\mref{mEOM}), and can be modified independently without changing the 
+interface, therefore, there can still be considered that the previous 
+requirement is fulfilled for \acref{acEOMs}. In the case of \acref{acTDMs}, 
+related to de implementation of the TDMs, it maps to the same modules as 
+\acref{acEOMs}, therefore the condition is relaxed. This is done taking into 
+consideration that each EOM method has an associated TDM, therefore, these 
+should be implemented as part of the EOM module.
 
 % the table should use mref, the requirements should be named, use something
 % like fref
@@ -528,15 +538,6 @@ R3 & \mref{mInput}, \mref{mIntegrals}\\
 R4 & \mref{mEOM}, \mref{mEOMIP}, \mref{mEOMEA}, \mref{mEOMDIP}, 
 \mref{mEOMDEA},\mref{mEOMExc}, \mref{mGEP}, \mref{mDriver}\\
 R5 & \mref{mOutput}, \mref{mDriver}\\
-%R6 & \mref{mOutput}, \mref{mODEs}, \mref{mControl}, \mref{mSeqDS}, 
-%\mref{mSolver}, \mref{mPlot}\\
-%R7 & \mref{mOutput}, \mref{mEnergy}, \mref{mControl}, \mref{mSeqDS}, 
-%\mref{mPlot}\\
-%R8 & \mref{mOutput}, \mref{mEnergy}, \mref{mControl}, \mref{mSeqDS}, 
-%\mref{mPlot}\\
-%R9 & \mref{mVerifyOut}\\
-%R10 & \mref{mOutput}, \mref{mODEs}, \mref{mControl}\\
-%R11 & \mref{mOutput}, \mref{mODEs}, \mref{mEnergy}, \mref{mControl}\\
 \bottomrule
 \end{tabular}
 \caption{Trace Between Requirements and Modules}
@@ -560,10 +561,6 @@ R5 & \mref{mOutput}, \mref{mDriver}\\
 \mref{mEOMDIP}, \mref{mEOMDEA}\\
 \acref{acSolver} & \mref{mGEP}\\
 \acref{acOutput} & \mref{mOutput}\\
-%\acref{acPlot} & \mref{mPlot}\\
-%\acref{acVerifyOut} & \mref{mVerifyOut}\\
-%\acref{acODEs} & \mref{mODEs}\\
-%\acref{acEnergy} & \mref{mEnergy}\\
 \bottomrule
 \end{tabular}
 \caption{Trace Between Anticipated Changes and Modules}
