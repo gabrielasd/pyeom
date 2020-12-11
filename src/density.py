@@ -75,17 +75,18 @@ class WfnRDMs:
             ValueError: [description]
         """
         # Check DMs
-        if not (isinstance(dm1, np.ndarray) and isinstance(dm2, np.ndarray)):
-            raise TypeError("Density matrices must be given as a numpy array")
-        elif not (dm1.ndim == 2 and dm1.shape[0] == dm1.shape[1]):
+        # This check makes no sence given how the files are loaded with assign_rdms
+        # if not (isinstance(dm1, np.ndarray) and isinstance(dm2, np.ndarray)):
+        #     raise TypeError("Density matrices must be given as a numpy array")
+        if not (dm1.ndim == 2 and dm1.shape[0] == dm1.shape[1]):
             raise ValueError(
                 "One-reduced density matrix must be a two-dimensional square matrix"
             )
-        elif not (dm2.ndim == 4 and dm2.shape == (dm2.shape[0],) * 4):
+        if not (dm2.ndim == 4 and dm2.shape == (dm2.shape[0],) * 4):
             raise ValueError(
                 "Two-reduced density matrix must be a square matrix of matrix"
             )
-        elif not dm1.shape[0] == dm2.shape[0]:
+        if not dm1.shape[0] == dm2.shape[0]:
             raise ValueError(
                 "Number of spinorbitals between density matrices don't match"
             )

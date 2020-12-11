@@ -3,6 +3,7 @@ Electron integrlas module.
 
 """
 
+import re
 import numpy as np
 
 
@@ -13,11 +14,11 @@ __all__ = [
 
 class ElectronIntegrals:
     """[summary]
-
     """
 
-    def __init__(self, oneint_file=str, twoint_file=str):
+    def __init__(self, oneint_file, twoint_file):
         self.load_integrals(oneint_file, twoint_file)
+        self.verify_integrals(self._h, self._v)
         self._nspino = self._h.shape[0]
 
     @property
@@ -55,7 +56,6 @@ class ElectronIntegrals:
             v ([type]): [description]
 
         Raises:
-            TypeError: [description]
             ValueError: [description]
             ValueError: [description]
             ValueError: [description]
@@ -63,14 +63,11 @@ class ElectronIntegrals:
             ValueError: [description]
         """
 
-        # FIXME: Add symmetry check
-        if not (isinstance(h, np.ndarray) and isinstance(v, np.ndarray)):
-            raise TypeError("Electron integrals must be given as a numpy array")
-        elif not (h.ndim == 2 and h.shape[0] == h.shape[1]):
+        if not (h.ndim == 2 and h.shape[0] == h.shape[1]):
             raise ValueError(
                 "One-electron integrals must be a two-dimensional square matrix"
             )
-        elif not (v.ndim == 4 and v.shape == (h.shape[0],) * 4):
+        if not (v.ndim == 4 and v.shape == (v.shape[0],) * 4):
             raise ValueError("Two-electron integrals must be a square matrix of matrix")
         if not h.shape[0] == v.shape[0]:
             raise ValueError(
@@ -89,7 +86,7 @@ class ElectronIntegrals:
         for number, symm in symmetries.items():
             if not symm:
                 raise ValueError(
-                    "{}-electron integrlas do not satisfy symmetric permutations".format(
+                    "{}-electron integrals do not satisfy symmetric permutations".format(
                         number
                     )
                 )
@@ -102,16 +99,45 @@ class ElectronIntegrals:
         )
         if not twoint_asymm:
             raise ValueError(
-                "Two-electron integrlas do not satisfy the asymmetric permutations"
+                "Two-electron integrals do not satisfy the asymmetric permutations"
             )
 
-    def load_integrals(self, oneint_file=str, twoint_file=str):
+    def load_integralfile(self, int_file):
         """[summary]
 
         Args:
-            oneint_file ([type], optional): [description]. Defaults to str.
-            twoint_file ([type], optional): [description]. Defaults to str.
+            int_file (str): .npy integrals file.
         """
-        self._h = np.load(oneint_file)
-        self._v = np.load(twoint_file)
-        self.verify_integrals(self._h, self._v)
+        match = re.search(r"\.npy$", int_file)
+        if not match:
+            raise ValueError(
+                "The electron integral must be a .npy file:{0} given".format(int_file)
+            )
+        return np.load(int_file)
+
+    def load_integrals(self, oneint_file, twoint_file):
+        """[summary]
+
+        Args:
+            oneint_file ([type]): [description]
+            twoint_file ([type]): [description]
+
+        Raises:
+            TypeError: [description]
+        """
+        integrals = {"one": (oneint_file), "two": twoint_file}
+        for number, integral in integrals.items():
+            if isinstance(integral, str):
+                temp = self.load_integralfile(integral)
+            elif isinstance(integral, np.ndarray):
+                temp = integral
+            else:
+                raise TypeError(
+                    "{0}-electron integral must be a .npy file or numpy array: {1} given".format(
+                        number, integral
+                    )
+                )
+            if number == "one":
+                self._h = temp
+            else:
+                self._v = temp
