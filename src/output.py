@@ -44,10 +44,17 @@ def get_roots(excen, method, roots):
     # FIXME:
     # number of roots cant be > than number of eigenvalues
     excen[excen < 0] = 0.0
-    none0_id = np.flatnonzero(excen)
+    non0_id = np.flatnonzero(excen)
+    if len(non0_id) < roots:
+        raise ValueError(
+            "There are {0} nonzero energy values but {1} requested".format(
+                len(non0_id), roots
+            )
+        )
+
     output = ""
     output += header
-    for idx in none0_id[:roots]:
+    for idx in non0_id[:roots]:
         output += "{0}, {1:.5f}\n".format(idx, excen[idx])
     return output
 
@@ -65,7 +72,10 @@ def dump(filename, params, excen, coeffs, tdms=None):
     """
     output = ""
     output += "# Number of electrons\n"
-    output += "nelec: {:d}\n".format(sum(params.nparts))
+    if isinstance(params.nparts, int):
+        output += "nelec: {:d}\n".format(params.nparts)
+    else:
+        output += "nelec: {:d}\n".format(sum(params.nparts))
     output += "# Electron Integrals files\n"
     output += "oneint_file: {}\n".format(params.oneint_file)
     output += "twoint_file: {}\n".format(params.twoint_file)
@@ -87,9 +97,9 @@ def dump(filename, params, excen, coeffs, tdms=None):
         output += "Printing {} selected energies\n".format(params.roots)
         output += get_roots(excen, params.eom, params.roots)
 
-    dir_path = os.path.dirname(os.path.realpath(filename))
-    cwd = os.getcwd()
-    os.chdir(dir_path)
+    # dir_path = os.path.dirname(os.path.realpath(filename))
+    # cwd = os.getcwd()
+    # os.chdir(dir_path)
 
     filename = os.path.basename(filename)
     filename = filename.split(".")[0]
@@ -103,4 +113,4 @@ def dump(filename, params, excen, coeffs, tdms=None):
     with open(filename, "w") as ofile:
         ofile.write(output)
 
-    os.chdir(cwd)
+    # os.chdir(cwd)

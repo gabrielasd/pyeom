@@ -1573,7 +1573,8 @@ input (\ref{mInput})
 		\hline
 		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
 		\hline
-		output & fname: str, $\boldsymbol{\Delta E}$:seq(k:$\mathbb{R}$), 
+		dump & fname: str, ParsedParams, $\boldsymbol{\Delta 
+		E}$:seq(k:$\mathbb{R}$), 
 		$\boldsymbol{c}$=seq(k,n:$\mathbb{R}$), 
 		$\boldsymbol{\gamma_{n;0k}}$=seq(k,n,n:$\mathbb{R}$)& - & - \\
 % 			   & $c_{n;k}$=NumPy.ndarray& & \\
@@ -1598,7 +1599,7 @@ outputFile: A text file
 
 \subsubsection{Access Routine Semantics}
 
-\noindent output(fname,$\boldsymbol{\Delta 
+\noindent dump(fname,ParsedParams,$\boldsymbol{\Delta 
 E}$,$\boldsymbol{c}$,$\boldsymbol{\gamma_{n;0k}}$):
 \begin{itemize}
 	\item transition: Write to fname the input parameters from ParsedParams and 
@@ -1621,7 +1622,19 @@ E}$,$\boldsymbol{c}$,$\boldsymbol{\gamma_{n;0k}}$):
 %	They are not necessarily something that is going to be implemented
 %	explicitly.  Even if they are implemented, they are not exported; they only
 %	have local scope.}
-None
+\noindent get\_roots($\boldsymbol{\Delta E}$, ParsedParams.eom, 
+ParsedParams.roots):
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item transition: Select from $\boldsymbol{\Delta E}$ the number of nonzero 
+	values indicated by ParsedParams.roots and write them to fname.
+	%	\item output: None 
+	\item exception: \textit{exc} :=  
+\end{itemize}
+\noindent \begin{longtable*}[l]{l l}
+$\neg$(ParsedParams.eom $\in \{"ip", "dip", "ea", "dea", "exc"\}$)  & 
+$\Rightarrow$ ValueError
+\end{longtable*} 
 
 \newpage
 

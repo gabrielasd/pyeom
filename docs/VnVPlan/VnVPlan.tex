@@ -1139,25 +1139,71 @@ Table~\ref{table:traceab} shows what requirement specifications the functional a
 \wss{Include a blurb here to explain why the subsections below cover the module.
 	References to the MIS would be good.  You will want tests from a black box
 	perspective and from a white box perspective.  Explain to the reader how the
-	tests were selected.}
+	tests were selected.}\\
+The test cases under this section verify the Output module described in 
+Subsection 16 of the MIS [\cite{MIS2020}]. The module takes a filename, a 
+structure storing input parameters, the 
+energies and coefficients solution to the EOM eigenvalue problem, and 
+optionally, the corresponding TDM of the EOM method. Three test cases have been 
+considered whose target is to check that the expected output files are 
+generated. Table~\ref{table:dumpdata} lists some common input parameters 
+between these tests.
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{ll}
+		Parameters& Description\\
+		\midrule
+		filename& example\_output.in\\
+		delta\_E & [1.0, 2.0]\\ 
+        coeffs& [[1.0, 2.0], [1.0, 2.0]]\\
+        tdm& numpy.zeros((2, 2, 2))\\
+        \bottomrule
+	\end{tabular}
+	\caption{Parameters used by all Output module tests.}
+	\label{table:dumpdata}
+\end{table}
+
 
 \begin{enumerate}
 	
-	\item{test\_dump\\}
+	\item{test\_output\_dump\\}
 	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
+	Type: Automatic
 	
-	Initial State: 
+	Initial State: N/A
 	
-	Input: 
+	Input: The parameters specified in Table~\ref{table:dumpdata} (which are 
+	common for all cases) and the inputs that change in each test 
+	test (C1-C3), listed in Table~\ref{table:dumpcases}. Also, a structure that 
+	stores the usual inputs of EOMEE (see the Input module from MIS 
+	[\cite{MIS2020}]) that will be called MockParsedParams.
+%	A filename: example\_output.in, params, excen, coeffs, tdms, num_files, 
+%	num_outlines
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{lccc}
+			                       & \multicolumn{3}{c}{Test Cases} \\
+			Parameters             &  C1  &  C2  &        C3        \\
+			TDM                    & None & tdm  &       None       \\
+			MockParsedParams.roots & None & None &        1         \\
+			\#files                &  2   &  3   &        2         \\
+			\#lines                &  17  &  17  &        21
+		\end{tabular}
+		\caption{Input parameters for the Output module tests. Column 1 
+		specifies the variables, columns C1 to C3 their values in each test 
+		case. \#files are the expected number of generated output files. 
+		\#lines are the expected number of lines printed in the output file.}
+		\label{table:dumpcases}
+	\end{table}
 	
-	Output: \wss{The expected result for the given inputs}
+	Output: An .out output file, a NumPy .npz file containing the energies and 
+	coefficients, a NumPy .npy file with the TDMs for the case in 
+	Table~\ref{table:dumpcases} where a TDM was specified.
 	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
+	Test Case Derivation: N/A
 	
-	How test will be performed: 
+	How test will be performed: The test framework will pass the inputs to the 
+	Output module.
 	
 \end{enumerate}
 
