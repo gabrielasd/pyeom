@@ -335,7 +335,7 @@ None
 		\hline
 		parse\_inputfile& str& ParsedParams & FileNotFoundError \\
 		check\_inputs& ParsedParams& - & FileNotFoundError, ValueError \\
-		\textit{N}& & $(n1, n2:\mathbb{Z})$ & \\
+		\textit{N}& & $(n1, n2:\mathbb{N})$ & \\
 %		\textit{nso}& & $\mathbb{Z}$ & \\
 		\textit{one\_int\_file}& & str & \\
 		\textit{two\_int\_file}& & str & \\
@@ -364,7 +364,7 @@ None
 %\wss{Not all modules will have state variables.  State variables give the 
 %module
 %	a memory.}
-\textit{N}: $\mathbb{Z} \lor (n1, n2:\mathbb{Z})$\\
+\textit{N}: $\mathbb{N} \lor (n1, n2:\mathbb{N})$\\
 %\textit{nso}: $\mathbb{Z}$\\
 \textit{one\_int\_file}: str\\
 \textit{two\_int\_file}: str\\
@@ -414,7 +414,7 @@ The first function called will be parse\_infile, followed by check\_inputs.
 	\item exception: \textit{exc} :=  
 \end{itemize}
 \noindent \begin{longtable*}[l]{l l}
-	$\neg$(\textit{N} $\in (n1, n2:\mathbb{Z})$) & $\Rightarrow$ TypeError\\
+	$\neg$(\textit{N} $\in (n1, n2:\mathbb{N})$) & $\Rightarrow$ TypeError\\
 	``one\_int\_file" not in working directory & $\Rightarrow$ 
 	FileNotFoundError\\
 	``two\_int\_file" not in working directory & $\Rightarrow$ 
@@ -540,7 +540,7 @@ input (\ref{mInput})
 		new Integrlas& str, str& Integrlas& -\\
  		\textbf{h}& -& seq($m,m:\mathbb{R}$)& -\\
  		\textbf{v}& -& seq($m,m,m,m:\mathbb{R}$)& -\\
-		\textit{nspino} & -& $\mathbb{Z}$& -\\
+		\textit{nspino} & -& $\mathbb{N}$& -\\
 		\hline
 	\end{tabular}
 \end{center}
@@ -554,7 +554,7 @@ input (\ref{mInput})
 %	a memory.}
 \textbf{h}: seq($m,m:\mathbb{R}$)\\
 \textbf{v}: seq($m,m,m,m:\mathbb{R}$)\\
-\textit{nspino}: $\mathbb{Z}$
+\textit{nspino}: $\mathbb{N}$
 
 \subsubsection{Environment Variables}
 
@@ -679,8 +679,8 @@ input (\ref{mInput})
 		str& WfnRDMs& -\\
 		$\boldsymbol{\gamma}$& -& seq($m,m:\mathbb{R}$)& -\\
 		$\boldsymbol{\Gamma}$& -& seq($m,m,m,m:\mathbb{R}$)& -\\
-		\textit{N} & -& $(n1, n2:\mathbb{Z})$& -\\
-		\textit{nspino} & -& $\mathbb{Z}$& -\\
+		\textit{N} & -& $(n1, n2:\mathbb{N})$& -\\
+		\textit{nspino} & -& $\mathbb{N}$& -\\
 %		\textit{hf\_rdms}& -& bool& -\\
 		\hline
 	\end{tabular}
@@ -693,8 +693,8 @@ input (\ref{mInput})
 %\wss{Not all modules will have state variables.  State variables give the 
 %module
 %	a memory.}
-\textit{N}: $(n1, n2:\mathbb{Z})$\\
-\textit{nspino}: $\mathbb{Z}$\\
+\textit{N}: $(n1, n2:\mathbb{N})$\\
+\textit{nspino}: $\mathbb{N}$\\
 %\textit{nso}: $\mathbb{Z}$\\
 $\boldsymbol{\gamma}$: seq($m,m:\mathbb{R}$), where 0 $\le \gamma_{ij} \le$ 1\\
 $\boldsymbol{\Gamma}$: seq($m,m,m,m:\mathbb{R}$), where 0 $\le \Gamma_{ijkl} 
@@ -845,12 +845,12 @@ None
 		%NumPy.ndarray, 
 		%		dm1: 2D NumPy.ndarray, dm2: 4D NumPy.ndarray& EOMBase & 
 		%		NotImplementedError \\		
-		\textit{neigs} & -& $\mathbb{Z}$& NotImplementedError\\
+		\textit{neigs} & -& $\mathbb{N}$& NotImplementedError\\
 		compute\_tdm& seq(k,k:$\mathbb{R}$)& seq(k,m,m:$\mathbb{R}$)& 
 		NotImplementedError\\
 		\textit{lhs} & -& seq$(k,k:\mathbb{R})$& -\\
 		\textit{rhs} & -& seq$(k,k:\mathbb{R})$& -\\
-		\textit{nspino}& -& $\mathbb{Z}$& -\\
+		\textit{nspino}& -& $\mathbb{N}$& -\\
 		\textbf{h}& -& seq$(m,m:\mathbb{R})$& -\\
 		\textbf{v}& -& seq$(m,m,m,m:\mathbb{R})$& -\\
 		$\boldsymbol{\gamma}$& -& seq$(m,m:\mathbb{R})$& -\\
@@ -865,7 +865,7 @@ None
 \subsection{Semantics}
 
 \subsubsection{State Variables}
-\textit{nspino}: $\mathbb{Z}$\\
+\textit{nspino}: $\mathbb{N}$\\
 \textbf{h}: seq$(m,m:\mathbb{R})$\\
 \textbf{v}: seq$(m,m,m,m:\mathbb{R})$\\
 $\boldsymbol{\gamma}$: seq$(m,m:\mathbb{R})$\\
@@ -969,7 +969,7 @@ None
 \subsection{Semantics}
 
 \subsubsection{State Variables}
-\textit{nspino}: $\mathbb{Z}$\\
+\textit{nspino}: $\mathbb{N}$\\
 \textbf{h}: seq$(m,m:\mathbb{R})$\\
 \textbf{v}: seq$(m,m,m,m:\mathbb{R})$\\
 $\boldsymbol{\gamma}$: seq$(m,m:\mathbb{R})$\\
@@ -1129,7 +1129,7 @@ None
 \subsection{Semantics}
 
 \subsubsection{State Variables}
-\textit{nspino}: $\mathbb{Z}$\\
+\textit{nspino}: $\mathbb{N}$\\
 \textbf{h}: seq$(m,m:\mathbb{R})$\\
 \textbf{v}: seq$(m,m,m,m:\mathbb{R})$\\
 $\boldsymbol{\gamma}$: seq$(m,m:\mathbb{R})$\\
@@ -1302,7 +1302,7 @@ None
 \subsection{Semantics}
 
 \subsubsection{State Variables}
-\textit{nspino}: $\mathbb{Z}$\\
+\textit{nspino}: $\mathbb{N}$\\
 \textbf{h}: seq$(m,m:\mathbb{R})$\\
 \textbf{v}: seq$(m,m,m,m:\mathbb{R})$\\
 $\boldsymbol{\gamma}$: seq$(m,m:\mathbb{R})$\\

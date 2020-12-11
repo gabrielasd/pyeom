@@ -721,11 +721,15 @@ Table~\ref{table:traceab} shows what requirement specifications the functional a
   have a lower priority for verification than others.  If this is the case,
   explain your rationale for the ranking of module importance.}
 
+The modules tested in the subsequent sections correspond to the ones detailed 
+in the MG and MIS of this project (see \cite{MG2020} and \cite{MIS2020}, 
+respectively) 
+
 \subsection{Tests for Functional Requirements}
 
-\wss{Most of the verification will be through automated unit testing.  If
-  appropriate specific modules can be verified by a non-testing based
-  technique.  That can also be documented in this section.}
+%\wss{Most of the verification will be through automated unit testing.  If
+%  appropriate specific modules can be verified by a non-testing based
+%  technique.  That can also be documented in this section.}
 
 %\subsubsection{Module 1}
 %
@@ -773,64 +777,115 @@ Table~\ref{table:traceab} shows what requirement specifications the functional a
 %    
 %\end{enumerate}
 
-\subsubsection{Load Module}
+\subsubsection{Input Module}
 
-\wss{Include a blurb here to explain why the subsections below cover the module.
-	References to the MIS would be good.  You will want tests from a black box
-	perspective and from a white box perspective.  Explain to the reader how the
-	tests were selected.}
+The interface of the Input  module is described in [\cite{MIS2020}]. It 
+requires as input a file with line-separated instructions and stores the parsed 
+parameters in a data structure (called ParsedParams in the MIS). The tests 
+bellow aim at checking that the input file is parsed correctly 
+(test\_parse\_inputfile) and that the correct input variables were specified 
+(test\_wrong\_inputs). Table~\ref{table:loaddata} lists common input variables 
+between these tests. The parameters file1 and file2 correspond to sample input 
+files that should be located under the package's \textit{test/data} folder.
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{ll}
+		Parameters& Value\\
+		\midrule
+		file1& test/data/test\_input1.in\\
+		file2 & test/data/test\_input2.in\\ 
+		int1 & be\_sto3g\_oneint\_spino.npy\\
+		int2 & be\_sto3g\_twoint\_spino.npy\\
+		dm1 & be\_sto3g\_onedm\_spino.npy\\
+		dm2 & be\_sto3g\_twodm\_spino.npy\\
+		orthog& symmetric\\
+		eom& ip\\
+		\bottomrule
+	\end{tabular}
+	\caption{Common parameters used by Input module tests.}
+	\label{table:loaddata}
+\end{table}
 
 \begin{enumerate}
 	
-	\item{test\_load\_parse\_inputfile\\}
+	\item{test\_parse\_inputfile}
 	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
+	Type: Automatic
+	
+	Initial State: N/A
+	
+	Input: The files file1 and file2 from Table~\ref{table:loaddata}. Each file 
+	is a test case (C1 and C2 respectively).
+
+	Output: For tests C1 and C2 the output is a data structure storing the 
+	parsed input data as variables (ParsedParams). The expected stored values 
+	are reported in Table~\ref{table:loadcases}. The common variables between 
+	the two tests are listed in Table~\ref{table:loaddata} (int1, int2, dm1, 
+	dm2, orthog, eom).
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{lcc}
+			& \multicolumn{2}{c}{Test Cases} \\
+			Parameters             &  C1  &  C2  \\
+			nelec                  & (2, 2) & 4  \\
+			get\_tdm                 &  False   &  True   \\
+			roots                &  None  &  1\\
+			tol& 1.0e-7& 1.0e-6\\  
+		\end{tabular}
+		\caption{Input module stored parameters. Column 1 
+			specifies the variables, columns C1 and C2 their expected values 
+			for each test case.}
+		\label{table:loadcases}
+	\end{table}
+	
+	Test Case Derivation: While the values for column C2 in 
+	Table~\ref{table:loaddata} are parsed from the input file file2, the values 
+	for C1 are the defaults assigned by the module when their corresponding 
+	parameters aren't included in the input file (file1)
+	
+	How test will be performed: The test framework will pass the input files to 
+	the module and verify that the expected outputs were obtained.
+	
+	\item{test\_wrong\_inputs}
+	
+	Type: Automatic
 	
 	Initial State: 
 	
-	Input: 
+	Input: A list of input parameters as specified in 
+	Table~\ref{table:wrongcases}:
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{lcc}
+			Parameter & Wrong\_Value &     Exception     \\
+			\toprule
+			nelec      &     0.1      &     TypeError     \\
+			tol        &      4       &     TypeError     \\
+			roots      &     0.1      &     TypeError     \\
+			get\_tdm   &     yes      &     TypeError     \\
+			h\_file    &   temp.npy   & FileNotFoundError \\
+			v\_file    &   temp.npy   & FileNotFoundError \\
+			dm1\_file  &   temp.npy   & FileNotFoundError \\
+			dm2\_file  &   temp.npy   & FileNotFoundError \\
+			orthog     &      ip      &    ValueError     \\
+			eom        &  symmetric   &    ValueError\\
+			\bottomrule
+		\end{tabular}
+		\caption{Invalid input values.  Column 3 
+			specifies the expected raised exception.}
+		\label{table:wrongcases}
+	\end{table}
 	
-	Output: \wss{The expected result for the given inputs}
+	Output: An exception will be raised according to 
+	Table~\ref{table:wrongcases}.
 	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-	field}
+	Test Case Derivation: Starting from a list containing the valid parsed 
+	instructions from file2 (see Table~\ref{table:loaddata} for its location), 
+	they are assigned incorrectly to ParsedParams variables as specified in 
+	Table~\ref{table:wrongcases}.
 	
-	How test will be performed: 
-	
-	\item{test\_load\_check\_inputs\\}
-	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
-	
-	Initial State: 
-	
-	Input: 
-	
-	Output: \wss{The expected result for the given inputs}
-	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-	field}
-	
-	How test will be performed: 
-	
-	\item{test\_load\_parsedparams\\}
-	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
-	
-	Initial State: 
-	
-	Input: 
-	
-	Output: \wss{The expected result for the given inputs}
-	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-	field}
-	
-	How test will be performed:
-	
-	\item{...\\}
+	How test will be performed: The test framework will pass the input to 
+	the module and verify that the expected exceptions are raised.
 	
 \end{enumerate}
 
@@ -1136,18 +1191,19 @@ Table~\ref{table:traceab} shows what requirement specifications the functional a
 
 \subsubsection{Output Module}
 
-\wss{Include a blurb here to explain why the subsections below cover the module.
-	References to the MIS would be good.  You will want tests from a black box
-	perspective and from a white box perspective.  Explain to the reader how the
-	tests were selected.}\\
 The test cases under this section verify the Output module described in 
-Subsection 16 of the MIS [\cite{MIS2020}]. The module takes a filename, a 
-structure storing input parameters, the 
-energies and coefficients solution to the EOM eigenvalue problem, and 
-optionally, the corresponding TDM of the EOM method. Three test cases have been 
+Subsection 16 of the MIS [\cite{MIS2020}]. The module takes a filename, the 
+energies and coefficients solution to the EOM eigenvalue problem, the 
+corresponding TDM of the EOM method (this is optional) and a 
+data structure storing input parameters (that will be called MockParsedParams). 
+Three test cases have been 
 considered whose target is to check that the expected output files are 
-generated. Table~\ref{table:dumpdata} lists some common input parameters 
-between these tests.
+generated (in all cases a .out and .npz files must be produced). The number of 
+lines in the .out file is also verified in each test case. This is particularly 
+relevant when information about the transition energies is requested as part of 
+the .ou file (trough the parameter ``MockParsedParams.roots").
+Table~\ref{table:dumpdata} lists common input variables between these 
+tests.
 \begin{table}[h!]
 	\centering
 	\begin{tabular}{ll}
@@ -1163,7 +1219,6 @@ between these tests.
 	\label{table:dumpdata}
 \end{table}
 
-
 \begin{enumerate}
 	
 	\item{test\_output\_dump\\}
@@ -1173,10 +1228,10 @@ between these tests.
 	Initial State: N/A
 	
 	Input: The parameters specified in Table~\ref{table:dumpdata} (which are 
-	common for all cases) and the inputs that change in each test 
-	test (C1-C3), listed in Table~\ref{table:dumpcases}. Also, a structure that 
-	stores the usual inputs of EOMEE (see the Input module from MIS 
-	[\cite{MIS2020}]) that will be called MockParsedParams.
+	common for all cases) and the inputs that change in each test, listed in 
+	Table~\ref{table:dumpcases} (C1-C3). Also, a MockParsedParams (structure 
+	that stores the usual inputs of EOMEE (see the Input module from MIS 
+	[\cite{MIS2020}]))  .
 %	A filename: example\_output.in, params, excen, coeffs, tdms, num_files, 
 %	num_outlines
 	\begin{table}[h!]

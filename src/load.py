@@ -44,11 +44,11 @@ def check_inputs(params):
         TypeError: [description]
         TypeError: [description]
         TypeError: [description]
-        ValueError: [description]
-        ValueError: [description]
-        ValueError: [description]
-        ValueError: [description]
         TypeError: [description]
+        FileNotFoundError: [description]
+        FileNotFoundError: [description]
+        ValueError: [description]
+        ValueError: [description]
     """
     if not isinstance(params, ParsedParams):
         raise TypeError("chec_inputs argument must be a ParsedParams instance.")
@@ -66,11 +66,17 @@ def check_inputs(params):
         if not isinstance(params.roots, int):
             raise TypeError("The number of rots must be given as an integer.")
 
+    if not isinstance(params.get_tdm, bool):
+        raise TypeError(
+            "Flag for transition density matrix computation must "
+            "be given as a boolean."
+        )
+
     # Check integrals files
     integrals = {"one": params.oneint_file, "two": params.twoint_file}
     for number, filename in integrals.items():
         if not os.path.isfile(filename):
-            raise ValueError(
+            raise FileNotFoundError(
                 "Cannot find the {}-electron integrals at {}."
                 "".format(number, os.path.abspath(filename))
             )
@@ -78,7 +84,7 @@ def check_inputs(params):
     densities = {"one": params.dm1_file, "two": params.dm2_file}
     for number, filename in densities.items():
         if not os.path.isfile(filename):
-            raise ValueError(
+            raise FileNotFoundError(
                 "Cannot find the {}-electron reduced density matrix at {}."
                 "".format(number, os.path.abspath(filename))
             )
@@ -93,11 +99,6 @@ def check_inputs(params):
         raise ValueError(
             "Equation-of-motion method must be one of `ip`, `ea`, `exc`, "
             "`dip` and `dea`."
-        )
-    if not isinstance(params.get_tdm, bool):
-        raise TypeError(
-            "Flag for transition density matrix computation must "
-            "be given as a boolean."
         )
 
 
@@ -142,7 +143,9 @@ class ParsedParams:
         self.eom = content["eom"]
         if "get_tdm" not in content:
             self.get_tdm = False
-        elif content["get_tdm"] not in ["True", "False"]:
-            raise ValueError("`get_tdm` must be `True` or `False`")
+        elif content["get_tdm"] == "True":
+            self.get_tdm = True
+        elif content["get_tdm"] == "False":
+            self.get_tdm = False
         else:
-            self.get_tdm = bool(content["get_tdm"])
+            raise ValueError("`get_tdm` must be `True` or `False`")
