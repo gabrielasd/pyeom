@@ -1,9 +1,9 @@
-"""Test src.load."""
+"""Test eomes.load."""
 
 import os
 import glob
 import numpy as np
-from src import output
+from eomes import output
 import pytest
 
 # Casos

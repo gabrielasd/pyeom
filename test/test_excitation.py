@@ -1,11 +1,10 @@
-"""Test eomee.ionization."""
+"""Test eomes.ionization."""
 
 
 import numpy as np
-from scipy.linalg import eig, svd
-import pytest
-from src.eom import EOMExc
-from src import solver
+from scipy.linalg import svd
+from eomes.eom import EOMExc
+from eomes import solver
 from test.tools import (
     find_datafiles,
     spinize,

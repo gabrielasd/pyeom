@@ -1,7 +1,7 @@
-"""Test src.integrals."""
+"""Test eomes.integrals."""
 
 import numpy as np
-from src.integrals import ElectronIntegrals
+from eomes.integrals import ElectronIntegrals
 from test.tools import find_datafiles
 
 import pytest

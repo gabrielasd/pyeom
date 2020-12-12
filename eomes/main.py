@@ -2,12 +2,12 @@
 
 
 import sys
-from src.load import parse_inputfile, check_inputs
-from src.integrals import ElectronIntegrals
-from src.density import WfnRDMs
-from src.eom import EOMIP, EOMEA, EOMExc, EOMDIP, EOMDEA
-from src.solver import dense
-from src.output import dump
+from eomes.load import parse_inputfile, check_inputs
+from eomes.integrals import ElectronIntegrals
+from eomes.density import WfnRDMs
+from eomes.eom import EOMIP, EOMEA, EOMExc, EOMDIP, EOMDEA
+from eomes.solver import dense
+from eomes.output import dump
 
 
 def main():

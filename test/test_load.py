@@ -1,7 +1,7 @@
-"""Test src.load."""
+"""Test eomes.load."""
 
 import numpy as np
-from src.load import parse_inputfile, ParsedParams, check_inputs
+from eomes.load import parse_inputfile, ParsedParams, check_inputs
 from test.tools import find_datafiles
 
 import pytest

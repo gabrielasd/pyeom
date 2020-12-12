@@ -1,11 +1,11 @@
-"""Test eomee.electronaff."""
+"""Test eomes.electronaff."""
 
 
 import numpy as np
 from scipy.linalg import eig, svd
 import pytest
-from src.eom import EOMEA
-from src import solver
+from eomes.eom import EOMEA
+from eomes import solver
 from .tools import (
     find_datafiles,
     spinize,

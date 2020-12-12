@@ -1,8 +1,8 @@
-"""Test eomee.doubleelectronaff."""
+"""Test eomes.doubleelectronaff."""
 
 
-from src.eom import EOMDEA
-from src import solver
+from eomes.eom import EOMDEA
+from eomes import solver
 from test.tools import (
     find_datafiles,
     spinize,
@@ -12,7 +12,6 @@ from test.tools import (
 )
 
 import numpy as np
-import numpy.testing as npt
 
 from scipy.linalg import eig, svd
 

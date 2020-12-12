@@ -1,11 +1,10 @@
-"""Test eomee.doubleionization."""
+"""Test eomes.doubleionization."""
 
 
 import numpy as np
 from scipy.linalg import eig, svd
-import pytest
-from src.eom import EOMDIP
-from src import solver
+from eomes.eom import EOMDIP
+from eomes import solver
 from .tools import (
     find_datafiles,
     spinize,

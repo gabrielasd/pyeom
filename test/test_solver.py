@@ -1,8 +1,8 @@
-"""Test src.load."""
+"""Test eomes.load."""
 
 import numpy as np
-from src.eom import EOMIP
-from src.solver import dense
+from eomes.eom import EOMIP
+from eomes.solver import dense
 from test.tools import (
     find_datafiles,
     spinize,

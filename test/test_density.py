@@ -1,9 +1,8 @@
-"""Test src.density."""
+"""Test eomes.density."""
 
-import os
 import tempfile
 import numpy as np
-from src.density import WfnRDMs
+from eomes.density import WfnRDMs
 from test.tools import find_datafiles
 
 import pytest

@@ -1,8 +1,8 @@
-"""Test src.load."""
+"""Test eomes.load."""
 
 import os
 import glob
-from src import main
+from eomes import main
 from test.tools import find_datafiles
 
 import pytest
@@ -20,7 +20,7 @@ import pytest
 )
 def test_run_main(filename, numfiles):
     inputfile = find_datafiles(filename + ".in")
-    os.system("python src/main.py {0}".format(inputfile))
+    os.system("python eomes/main.py {0}".format(inputfile))
     files = sorted(glob.glob(filename + "*"))
     assert len(files) == numfiles
 
