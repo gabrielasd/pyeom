@@ -15,6 +15,45 @@ from .tools import (
 )
 
 
+def incorrect_inputs():
+    listparam = np.load(find_datafiles("be_sto3g_oneint_spino.npy"))
+    listparam = listparam.tolist()
+    matrix = np.load(find_datafiles("be_sto3g_oneint_spino.npy"))
+    tensor = np.load(find_datafiles("be_sto3g_twoint_spino.npy"))
+    hdm2shape = np.zeros((2, 2, 2, 2))
+
+    cases = [
+        (listparam, tensor, matrix, tensor),
+        (matrix, matrix, matrix, tensor),
+        (matrix, tensor, tensor, tensor),
+        (matrix, tensor, matrix, listparam),
+        (matrix, tensor, matrix, hdm2shape),
+    ]
+
+    for case in cases:
+        yield case
+
+
+@pytest.mark.parametrize(
+    "one_mo, two_mo, one_dm, two_dm", incorrect_inputs(),
+)
+def test_load_invalid_integrals(one_mo, two_mo, one_dm, two_dm):
+    """Check that bad inputs are
+    detected. The cases considered are:
+    Case 1: Incorrect file extension (only .npy is allowed)
+    Case 2: Incorrect integral data type (only NumPy array is allowed)
+    Case 3: Incorrect integrals dimensions (oneint must be 2D, twoint 4D)
+    Case 4: Incorrect integrals shape (oneint must be a square matrix,
+        twoint a tensor with 4 equivalent dimensions)
+    Case 4: Basis set mismatch between integrals (oneint and twoint must
+        have the same number of spinorbitals)
+
+    """
+
+    with pytest.raises(ValueError):
+        EOMIP(one_mo, two_mo, one_dm, two_dm)
+
+
 def test_eomip_neigs():
     """
 
@@ -28,7 +67,8 @@ def test_eomip_neigs():
     two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
 
     eom = EOMIP(one_mo, two_mo, one_dm, two_dm)
-    assert eom.neigs == 4
+    assert eom.n == nspino
+    assert eom.neigs == nspino
 
 
 def test_eomip_one_body_term():
@@ -91,3 +131,28 @@ def test_ionizationeomstate_h2_sto6g(
     # Reference value from HORTON RHF
     # horton_emo = [-0.58205888, 0.66587228]
     assert abs(aval[evidx] - expected) < tol
+
+
+def test_compute_tdm():
+    nbasis = 5
+    one_mo = np.load(find_datafiles("be_sto3g_oneint.npy"))
+    one_mo = spinize(one_mo)
+    two_mo = np.load(find_datafiles("be_sto3g_twoint.npy"))
+    two_mo = symmetrize(spinize(two_mo))
+    two_mo = antisymmetrize(two_mo)
+    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
+    eom = EOMIP(one_mo, two_mo, one_dm, two_dm)
+
+    # Solve the EOM and compute the TDMs
+    aval, avec = solver.dense(eom.lhs, eom.rhs)
+    tdms = eom.compute_tdm(avec)
+
+    # Tentative verification of the TDM for some ionized state.
+    non0_idxs = np.flatnonzero(aval)
+    idx = non0_idxs[0]
+    tdm_psi_idx = tdms[idx]
+
+    dm_oo = np.einsum("i,k->ik", tdm_psi_idx, tdm_psi_idx.conj())
+    assert np.allclose(dm_oo, dm_oo.T)
+    _, s, _ = svd(dm_oo)
+    assert np.allclose(sum(s[:]), 1.0)

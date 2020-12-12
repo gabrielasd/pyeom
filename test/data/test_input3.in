@@ -3,9 +3,8 @@ oneint_file:  test/data/be_sto3g_oneint_spino.npy
 twoint_file:  test/data/be_sto3g_twoint_spino.npy
 dm1_file:  test/data/be_sto3g_onedm_spino.npy
 dm2_file:  test/data/be_sto3g_twodm_spino.npy
-orthog: asymmetric
-eom: ea
+orthog: symmetric
+eom: exc
 tol: 1e-6
 roots: 1
-get_tdm: True
 

@@ -107,53 +107,8 @@ class EOMExc(EOMBase):
             \Psi^{(N)}_0 \right>}
         """
         coeffs = coeffs.reshape(self._n ** 2, self._n, self._n)
-        return np.einsum("nij,pqij->npq", coeffs, self._rhs)
-
-    @classmethod
-    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, *args, nint=50, **kwargs):
-        """
-        Compute the ERPA correlation energy for the operator.
-
-        """
-        # Size of dimensions
-        n = h_0.shape[0]
-        # H_1 - H_0
-        dh = h_1 - h_0
-        # V_1 - V_0
-        dv = v_1 - v_0
-        # \delta_sq * \gamma_pr
-        dm1_eye = np.einsum("sq,pr->pqrs", np.eye(n), dm1, optimize=True)
-
-        # Compute \delta_sq * \gamma_pr - \Gamma_psrq (eq. 29)
-        rdm_terms = dm1_eye - np.transpose(dm2, axes=(0, 3, 2, 1))
-
-        # Nonlinear term (eq. 19 integrand)
-        def nonlinear(alpha):
-            # Compute H^alpha
-            h = alpha * dh
-            h += h_0
-            v = alpha * dv
-            v += v_0
-            # Solve EOM equations
-            c = (
-                cls(h, v, dm1, dm2)
-                .solve_dense(*args, **kwargs)[1]
-                .reshape(n ** 2, n, n)
-            )
-            # Compute transition RDMs (eq. 29)
-            rdms = np.einsum("mrs,pqrs->mpq", c, rdm_terms)
-            # Compute nonlinear energy term
-            tv = np.zeros_like(dm2)
-            for rdm in rdms:
-                tv += np.einsum("ps,qr->pqrs", rdm, rdm, optimize=True)
-            return np.einsum("pqrs,pqrs", dv, tv, optimize=True)
-
-        # Compute linear term (eq. 19)
-        # dh * \gamma + 0.5 * dv * (\delta_sq * \gamma_pr - \gamma_ps * \gamma_qr)
-        linear = dm1_eye - np.einsum("ps,qr->pqrs", dm1, dm1, optimize=True)
-        linear = np.einsum("pq,pq", dh, dm1, optimize=True) + 0.5 * np.einsum(
-            "pqrs,pqrs", dv, linear, optimize=True
+        return np.einsum(
+            "nij,pqij->npq",
+            coeffs,
+            self._rhs.reshape(self._n, self._n, self._n, self._n),
         )
-
-        # Compute ERPA correlation energy (eq. 19)
-        return linear - 0.5 * integrate(nonlinear, 0, 1, limit=nint)[0]

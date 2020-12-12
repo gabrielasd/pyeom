@@ -117,4 +117,8 @@ class EOMDEA(EOMBase):
 
         """
         coeffs = coeffs.reshape(self._n ** 2, self._n, self._n)
-        return np.einsum("nij,pqij->npq", coeffs, self._rhs)
+        return np.einsum(
+            "nij,pqij->npq",
+            coeffs,
+            self._rhs.reshape(self._n, self._n, self._n, self._n),
+        )

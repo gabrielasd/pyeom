@@ -3,7 +3,7 @@
 
 from src.eom import EOMDEA
 from src import solver
-from .tools import (
+from test.tools import (
     find_datafiles,
     spinize,
     symmetrize,
@@ -81,11 +81,6 @@ def test_eomdea_righthandside_2particle_4spin():
     two_mo = np.zeros((nspin,) * 4, dtype=one_mo.dtype)
     # Build density matrices
     one_dm, two_dm = hartreefock_rdms(nspatial, 1, 1)
-    # one_dm = np.zeros((nspin, nspin))
-    # one_dm[:nspatial, :nspatial] = temp
-    # one_dm[nspatial:, nspatial:] = temp
-    # two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
-    # two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
 
     # EOM solution
     eomea = EOMDEA(one_mo, two_mo, one_dm, two_dm)
@@ -123,11 +118,6 @@ def test_eomdea_righthandside_4particle_6spin():
     two_mo = np.zeros((nspin,) * 4, dtype=one_mo.dtype)
     # Build density matrices
     one_dm, two_dm = hartreefock_rdms(nspatial, 1, 1)
-    # one_dm = np.zeros((nspin, nspin))
-    # one_dm[:nspatial, :nspatial] = temp
-    # one_dm[nspatial:, nspatial:] = temp
-    # two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
-    # two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
 
     # EOM solution
     eomea = EOMDEA(one_mo, two_mo, one_dm, two_dm)
@@ -217,17 +207,7 @@ def test_eomdea_beII_sto6g():
     nhole = nspin - npart
     one_mo = np.load(find_datafiles("beII_sto6g_oneint_genzd.npy"))
     two_mo = np.load(find_datafiles("beII_sto6g_twoint_genzd_anti.npy"))
-    # DMs for a single Slater determinant
-    # occs = np.array([1.0, 0.0, 0.0, 0.0, 0.0])
-    # temp = np.diag(occs)
-    # one_dm = np.zeros((nspin, nspin))
-    # one_dm[:nspatial, :nspatial] = temp
-    # one_dm[nspatial:, nspatial:] = temp
-    # two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
-    # two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
     one_dm, two_dm = hartreefock_rdms(nspatial, 1, 1)
-    # assert np.trace(one_dm) == 2
-    # assert np.einsum("klkl", two_dm) == 2
 
     eom = EOMDEA(one_mo, two_mo, one_dm, two_dm)
     avalea, avecea = solver.dense(eom.lhs, eom.rhs)
@@ -244,4 +224,27 @@ def test_eomdea_beII_sto6g():
     assert abs(approxbeEccd - CCD) < 1e-3
 
 
-test_eomdea_righthandside_4particle_6spin()
+def test_compute_tdm():
+    nbasis = 5
+    one_mo = np.load(find_datafiles("be_sto3g_oneint.npy"))
+    one_mo = spinize(one_mo)
+    two_mo = np.load(find_datafiles("be_sto3g_twoint.npy"))
+    two_mo = symmetrize(spinize(two_mo))
+    two_mo = antisymmetrize(two_mo)
+    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
+    eom = EOMDEA(one_mo, two_mo, one_dm, two_dm)
+
+    # Solve the EOM and compute the TDMs
+    aval, avec = solver.dense(eom.lhs, eom.rhs)
+    tdms = eom.compute_tdm(avec)
+
+    # Tentative verification of the TDM for some excited state.
+    non0_idxs = np.flatnonzero(aval)
+    idx = non0_idxs[0]
+    tdm_psi_idx = tdms[idx]
+    assert not np.allclose(tdm_psi_idx, tdm_psi_idx.T)
+
+    dm_oo = np.einsum("ia,ka->ik", tdm_psi_idx, tdm_psi_idx.conj())
+    assert np.allclose(dm_oo, dm_oo.T)
+    _, s, _ = svd(dm_oo)
+    assert np.allclose(sum(s[:]), 2.0)

@@ -7,6 +7,9 @@ Input module.
 import os
 import re
 
+# ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+# DATA_DIR = os.path.split(ROOT_DIR)
+# DATA_DIR = os.path.join(DATA_DIR[0], "test/data/")
 
 __all__ = [
     "parse_inputfile",

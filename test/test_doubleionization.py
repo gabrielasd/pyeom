@@ -277,3 +277,29 @@ def test_eomdip_HeHcation_sto3g():
     aval = np.sort(aval)
 
     assert abs(aval[-1] - dip) < 1e-6
+
+
+def test_compute_tdm():
+    nbasis = 5
+    one_mo = np.load(find_datafiles("be_sto3g_oneint.npy"))
+    one_mo = spinize(one_mo)
+    two_mo = np.load(find_datafiles("be_sto3g_twoint.npy"))
+    two_mo = symmetrize(spinize(two_mo))
+    two_mo = antisymmetrize(two_mo)
+    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
+    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
+
+    # Solve the EOM and compute the TDMs
+    aval, avec = solver.dense(eom.lhs, eom.rhs)
+    tdms = eom.compute_tdm(avec)
+
+    # Tentative verification of the TDM for some excited state.
+    non0_idxs = np.flatnonzero(aval)
+    idx = non0_idxs[0]
+    tdm_psi_idx = tdms[idx]
+    assert not np.allclose(tdm_psi_idx, tdm_psi_idx.T)
+
+    dm_oo = np.einsum("ia,ka->ik", tdm_psi_idx, tdm_psi_idx.conj())
+    assert np.allclose(dm_oo, dm_oo.T)
+    _, s, _ = svd(dm_oo)
+    assert np.allclose(sum(s[:]), 2.0)

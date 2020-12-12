@@ -101,48 +101,8 @@ class EOMDIP(EOMBase):
 
         """
         coeffs = coeffs.reshape(self._n ** 2, self._n, self._n)
-        return np.einsum("nij,pqij->npq", coeffs, self._rhs)
-
-    @classmethod
-    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, *args, nint=50, **kwargs):
-        """
-        Compute the ERPA correlation energy for the operator.
-
-        """
-        # Size of dimensions
-        n = h_0.shape[0]
-        # H_1 - H_0
-        dh = h_1 - h_0
-        # V_1 - V_0
-        dv = v_1 - v_0
-
-        # Linear term (eq. 20)
-        # dh_pq * \gamma_pq
-        linear = np.einsum("pq,pq", dh, dm1, optimize=True)
-
-        # Nonlinear term (eq. 20 integrand)
-        @np.vectorize
-        def nonlinear(alpha):
-            # Compute H^alpha
-            h = alpha * dh
-            h += h_0
-            v = alpha * dv
-            v += v_0
-            # Solve EOM equations
-            c = (
-                cls(h, v, dm1, dm2)
-                .solve_dense(*args, **kwargs)[1]
-                .reshape(n ** 2, n, n)
-            )
-            # Compute transition RDMs (eq. 32)
-            # \gamma_m;pq = c_m;rs * \Gamma_pqrs
-            rdms = np.einsum("mrs,pqrs->mpq", c, dm2)
-            # Compute nonlinear energy term
-            # dv_pqrs * {sum_{m}{\gamma_m;ps * \gamma_m;qr}}_pqrs
-            tv = np.zeros_like(dm2)
-            for rdm in rdms:
-                tv += np.einsum("ps,qr->pqrs", rdm, rdm, optimize=True)
-            return np.einsum("pqrs,pqrs", dv, tv, optimize=True)
-
-        # Compute ERPA correlation energy (eq. 20)
-        return linear + 0.5 * fixed_quad(nonlinear, 0, 1, n=nint)[0]
+        return np.einsum(
+            "nij,pqij->npq",
+            coeffs,
+            self._rhs.reshape(self._n, self._n, self._n, self._n),
+        )
