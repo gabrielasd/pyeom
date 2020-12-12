@@ -17,6 +17,13 @@
 \input{../Comments}
 \input{../Common}
 
+\newcounter{systnum} %Sistem Test Number
+\newcommand{\sthesystnum}{ST\thesystnum}
+\newcommand{\sref}[1]{ST\ref{#1}}
+\newcounter{utnum} %Unit Test Number
+\newcommand{\utheutnum}{UT\theutnum}
+\newcommand{\uref}[1]{UT\ref{#1}}
+
 \begin{document}
 
 \title{Project Title: System Verification and Validation Plan for EOMEE} 
@@ -33,6 +40,7 @@
 \toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
 \midrule
 29-10-2020 & 1.0 & Created VnV first draft \\
+12-12-2020 & 1.0 & Add Unit tests and make correction from feedback \\
 %Date 2 & 1.1 & Notes\\
 \bottomrule
 \end{tabularx}
@@ -43,7 +51,7 @@
 
 \listoftables
 
-\listoffigures
+%\listoffigures
 
 \newpage
 
@@ -57,12 +65,18 @@
   T & Test\\
   VnV & Verification and Validation\\
   DD & Data Definition\\
-  EOMEE& Equation-of-motion for excited states\\
+  DEA & Double Electron affinity\\
+  DIP & Double Ionization Potential\\
+  EA & Electron affinity\\
+  \progname& Equation-of-motion for excited states\\
+  Exc & Excitation\\
   IM & Instance Model\\
+  IP & Ionization Potential\\
   MO & Molecular orbital(s)\\
   HOMO& Highest Occupied Molecular Orbital\\
   LUMO& Lowest Unoccupied Molecular Orbital\\
   R & Requirement\\
+  SO & Spinorbital(s)\\
   SRS & Software Requirements Specification\\
   MG & Module Guide\\
   MIS & Module Interface Specification\\
@@ -70,23 +84,54 @@
   TDM & Transition density matrix\\
   2D & Two-Dimensional\\
   4D & Four-Dimensional\\
-  $\mathbf{h}$ & 1-electron integral matrix (a 2D matrix);\\
-               & $h_{pq}$ denotes its p,q-th element\\
-  $\mathbf{v}$ & 2-electron integral matrix (a 4D tensor);\\
-               & $v_{pqrs}$ is its p,q,r,s-th element\\
-  $\boldsymbol{\gamma}$ & 1-electron reduced density matrix (a 2D matrix);\\
-                        &$\gamma_{pq}$ denotes its p,q-th element\\
-  $\boldsymbol{\Gamma}$ & 2-electron reduced density matrix (a 4D tensor)\\
-                        &$\Gamma_{pqrs}$ denotes its p,q,r,s-th element\\
-  $\otimes$ & Kronecker product\\
-  idx & Index\\
-  $\epsilon$& Energy (in Hartree) of a spinorbital\\
-  \bottomrule
+%  $\mathbf{h}$ & 1-electron integral matrix (a 2D matrix), $h_{pq}$ denotes 
+%its 
+%  p,q-th element\\
+%  $\mathbf{v}$ & 2-electron integral matrix (a 4D tensor), $v_{pqrs}$ is its 
+%  p,q,r,s-th element\\
+%  $\boldsymbol{\gamma}$ & 1-electron reduced density matrix (a 2D matrix);\\
+%                        &$\gamma_{pq}$ denotes its p,q-th element\\
+%  $\boldsymbol{\Gamma}$ & 2-electron reduced density matrix (a 4D tensor)\\
+%                        &$\Gamma_{pqrs}$ denotes its p,q,r,s-th element\\
+%  $\otimes$ & Kronecker product\\
+%  idx & Index\\
+%  $\epsilon$& Energy (in Hartree) of a spinorbital\\
+%  $\mathbb{R}^{m \times n}$& A 2D matrix with dimensions $m$, $n$\\
+%  $\mathbb{R}^{m \times n \times l \times k}$& A 4D tensor with dimensions 
+%$m$, 
+%  $n$, $l$, $k$\\
+%  \bottomrule
 \end{tabular}\\
 
+\subsection{Notation}
+\an{This section was introduced to avoid issues with long tables splitting 
+twrough pages.}\\
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{l l} 
+	\toprule		
+	\textbf{symbol} & \textbf{description}\\
+	\midrule
+	$\mathbf{h}$ & 1-electron integral matrix (a 2D matrix),\\
+	& $h_{pq}$ denotes its p,q-th element\\
+	$\mathbf{v}$ & 2-electron integral matrix (a 4D tensor),\\
+	& $v_{pqrs}$ is its p,q,r,s-th element\\
+	$\boldsymbol{\gamma}$ & 1-electron reduced density matrix (a 2D matrix);\\
+	&$\gamma_{pq}$ denotes its p,q-th element\\
+	$\boldsymbol{\Gamma}$ & 2-electron reduced density matrix (a 4D tensor)\\
+	&$\Gamma_{pqrs}$ denotes its p,q,r,s-th element\\
+	$\otimes$ & Kronecker product\\
+	idx & Index\\
+	$\epsilon$& Energy (in Hartree) of a spinorbital\\
+	$\mathbb{R}^{m \times n}$& A 2D matrix with dimensions $m$, $n$\\
+	$\mathbb{R}^{m \times n \times l \times k}$& A 4D tensor with dimensions 
+	$m$, 
+	$n$, $l$, $k$\\
+	\bottomrule
+\end{tabular}\\
 %\wss{symbols, abbreviations or acronyms -- you can simply reference the SRS
 %  \citep{SRS} tables, if appropriate}
-For more details about symbols, abbreviations and acronyms see Sections 1.2 and 
+\newline For more details about symbols, abbreviations and acronyms see 
+Sections 1.2 and 
 1.4 in \cite{SRS2020}.
 
 \newpage
@@ -164,9 +209,6 @@ The review of EOMEE will be conducted by the following parties:
 
 \subsection{SRS Verification Plan}
 
-%\wss{List any approaches you intend to use for SRS verification.  This may just
-%  be ad hoc feedback from reviewers, like your classmates, or you may have
-%  something more rigorous/systematic in mind..}
 The Software Requirement Specifications (SRS) verification should be carried by 
 the reviewers following the indications below:\\
 The SRS document [\cite{SRS2020}] will be provided to Dr.\ Ayers, Dr.\ 
@@ -186,10 +228,8 @@ will also be presented to/evaluated by Dr.\ Smith and the members of 2020
 CAS741 course. The review process will be guided by the MG and MIS checklists  
 that can be accessed as part of the course materials (\cite{mgcheck} and 
 \cite{mischeck}, respectively). Design problems or inconsistencies will be 
-reported as GitHub 
-issues in EOMEE's repository 
-(\href{https://github.com/gabrielasd/eomee/tree/cas741} 
-{cas741}).
+reported as GitHub issues in EOMEE's repository 
+(\href{https://github.com/gabrielasd/eomee/tree/cas741}{cas741}).
 
 \subsection{Implementation Verification Plan}
 
@@ -204,40 +244,44 @@ issues in EOMEE's repository
 The implementation will be verified through system and unit testing. The 
 following test areas will be defined:
 \begin{itemize}
-	\item \textbf{Subsection} \ref{section:inputs} Input Verification : 
-	includes checks for the input variables types and values.
+	\item \textbf{Subsection} \ref{section:inputs} Input Verification: 
+	checks for valid input variables.
 	
 	\item \textbf{Subsection} 
-	\ref{section:calculations} Energies and TDMs Evaluation: tests in 
-	which the properties represented by the instance models (IM1-IM6) are 
-	evaluated and compared against literature or pseudo-oracle results (see 
-	\cite{SRS2020} for details of the IMs).
+	\ref{section:calculations} Energies and TDMs Evaluation: verification of 
+	the calculation results corresponding to IM1-IM6 (see Section 4.2.5 of the 
+	SRS \cite{SRS2020}).
 	
 	\item \textbf{Subsection} \ref{section:usability} Usability Verification 
 	Plan: tests with the purpose of identifying potential deficiencies in the 
 	user-software interaction.
 	
-	\item \textbf{Subsection} \ref{section:performance} Performance: Assess the 
-	numerical stability of the implemented IM1-IM5 [\cite{SRS2020}].
+	\item \textbf{Subsection} \ref{section:reusability} Reusability 
+	verification: check whether the modular decomposition of the software was 
+	done correctly.
+	
+	\item \textbf{Subsection} \ref{section:performance} Performance: check the 
+	numerical stability of the eigenvalue solution method for the implemented 
+	IM1-IM5 [\cite{SRS2020}].
+
+	\item \textbf{Subsection} \ref{sec:M3} Input Module: Unit tests for the 
+	type and values of the inputs.
+
+	\item \textbf{Subsection} \ref{sec:M4} Integrals Module: Unit tests of 
+	electron integrals format.
+	
+	\item \textbf{Subsection} \ref{sec:M5} Density Module: Unit tests of 
+	density matrices format.
+	
+	\item \textbf{Subsection} \ref{sec:M12} Solver Module: Unit tests for the 
+	solver orthogonalization method.
+	
+	\item \textbf{Subsection} \ref{sec:M13} Output Module: Unit tests for the 
+	output formats.
 \end{itemize}
 
-\an{The corresponding sections for the unit tests will be added once that 
-section of 
-the VnV plan is completed}
-
 \subsection{Automated Testing and Verification Tools}
-
-%\wss{What tools are you using for automated testing.  Likely a unit testing
-%  framework and maybe a profiling tool, like ValGrind.  Other possible tools
-%  include a static analyzer, make, continuous integration tools, test coverage
-%  tools, etc.  Explain your plans for summarizing code coverage metrics.
-%  Linters are another important class of tools.  For the programming language
-%  you select, you should look at the available linters.  There may also be 
-%tools
-%  that verify that coding standards have been respected, like flake9 for
-%  Python.}
-%\wss{The details of this section will likely evolve as you get closer to the
-%  implementation.}\\  
+ 
 We will be using \href{https://docs.pytest.org/en/stable/} 
 {Pytest} testing framework for tests automation  with the plugin 
 \href{https://pytest-cov.readthedocs.io/en/latest/} {pytest-cov} to 
@@ -262,11 +306,10 @@ For continuous integration we will use the \href{https://travis-ci.org/}
 %  point to it here.  If there are no plans for validation, you should state 
 %that
 %  here.}
-To assess the validity of EOMEE results, in particular during the system tests, 
+To verify EOMEE results, in particular during the system tests, 
 these will be compared against the ones obtained with the package for 
-electronic structure calculations Gaussian[\cite{g16}]. Another source for 
-validation can be the NIST Atomic Spectra 
-Database[\cite{NIST_ASD}].
+electronic structure calculations Gaussian [\cite{g16}]. Additionally, a source 
+for validation can be the NIST Atomic Spectra Database[\cite{NIST_ASD}].
 
 \section{System Test Description}
 \label{section:systemtests}
@@ -292,131 +335,107 @@ related to the spectroscopic properties evaluated by EOMEE.
 %  cover the requirements.  References to the SRS would be good.  If a section
 %  covers tests for input constraints, you should reference the data constraints
 %  table in the SRS.}
-		
-\paragraph{Input type and value}
+
+\paragraph{Valid and invalid inputs}
 
 \begin{enumerate}
 
-\item{input-type:IT\\}
-
+\item{valid\_inputs: ST\refstepcounter{systnum}\thesystnum \label{ST1}\\}
 Control: Automatic
 					
 Initial State: N/A
-					
-Input: According to Table~\ref{Table:typeerror}, two sets of inputs (S1 and 
-S2), corresponding to the one-electron integrals ($\mathbf{h}$), 
-two-electron integrals ($\mathbf{v}$), one-electron reduced density matrix 
-($\boldsymbol{\gamma}$) and two-electron reduced density matrix 
-($\boldsymbol{\Gamma}$), will 
-be provided:
 
+Input: The following sample input files stored under \textit{test/data/}:
+\begin{itemize}
+	\item file1: test\_input1.in
+	\item file2: test\_input2.in
+	\item file3: test\_input3.in
+	\item file4: test\_input4.in
+	\item file5: test\_input5.in
+\end{itemize}				
+
+Each of this files uses a different EOM method as shown in column 3 of 
+Table~\ref{table:validins} 
 \begin{table}[h!]
 	\centering
-	\noindent \begin{tabular}{l l l } 
-		\toprule		
-		\textbf{Input set} & \textbf{S1} & \textbf{S2}\\
-		\midrule 
-		$\mathbf{h}$& tuple & 2-idx numpy array\\
-		$\mathbf{v}$& 4-idx numpy array& 4-idx numpy array\\
-		$\boldsymbol{\gamma}$& 2-idx numpy array& 2-idx list\\
-		$\boldsymbol{\Gamma}$& 4-idx numpy array& 4-idx numpy array\\
-		\textbf{Wrong type}& tuple variable& list variable\\
+	\begin{tabular}{lccc}
+		Case&File  & Method & Expected \# outputs   \\ \midrule
+		C1&file1 &   IP   &          2           \\
+		C2&file2 &   EA   &          3            \\
+		C3&file3 &  Exc   &          2            \\
+		C4&file4 &  DIP   &          2            \\
+		C5&file5 &  DEA   &          2            \\ \bottomrule
+	\end{tabular}
+	\caption{Test cases for valid input parameters. The last column indicates 
+	the expected number of files to be produced as output.}
+	\label{table:validins}
+\end{table}
+The istegrals and RDMs used in these tests are the same as detailed in 
+Table~\ref{table:datains}
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{ll}
+		Parameters& Value\\
+		\midrule
+		oneint\_file& test/data/be\_sto3g\_oneint\_spino.npy\\
+		twoint\_file & test/data/be\_sto3g\_twoint\_spino.npy\\ 
+		dm1\_file & test/data/be\_sto3g\_onedm\_spino.npy\\
+		dm2\_file & test/data/be\_sto3g\_twodm\_spino.npy\\
 		\bottomrule
 	\end{tabular}
-	\caption{Tests to check that incorrect input parameter types are detected. 
-	Columns S1 and S2 specify two test cases. The last row, labeled as ``Wrong 
-	type", 
-	indicates the incorrect type of input that 
-	shall raise a type-error exception.}
-	\label{Table:typeerror}
+	\caption{Common parameters between all input files.}
+	\label{table:datains}
 \end{table}
-
-The variables in the table will be defined as:\\
-tuple: ((1,2), (3,4))\\
-A : [[1.0, 2.0], [3.0, 4.0]] \\
-2-idx numpy array: numpy.asarray(A)\\
-2-idx list: A\\
-4-idx numpy array: numpy.asarray([A, A, A, A])
-%numpy.random.rand(4, 4, 4, 4).astype(float)
 	
-Output: A type-error will be raised in each case. 
+Output: The number of output files specified in the last column of 
+Table~\ref{table:validins}
 
 Test Case Derivation: N/A
 					
 How test will be performed: The test module will feed the inputs, as specified 
-in Table~\ref{Table:typeerror}, to the EOMEE code and verify that a type-error 
-message is raised.
+in Table~\ref{table:validins}, to the EOMEE code and verify that the expected 
+number of files is generated.
 
-					
-\item{input-value:IV\\}
+\item{invalid\_inputs: ST\refstepcounter{systnum}\thesystnum \label{ST2}\\}
 
 Control: Automatic
-					
+
 Initial State: N/A
-					
-Input: Five input sets (S1 to S5) for the input parameters: one-electron 
-integrals ($\mathbf{h}$), two-electron integrals ($\mathbf{v}$), one-electron 
-reduced density matrix ($\boldsymbol{\gamma}$) and two-electron reduced density 
-matrix ($\boldsymbol{\Gamma}$), as described in Table~\ref{Table:valueerror}:
+
+Input: The following input files stored under \textit{test/data/}: 
+\begin{itemize}
+	\item file1: test\_input\_mos.in
+	\item file2: test\_wrong\_dms.in
+\end{itemize}
+The options inside each file that will cause the program to fail are specified 
+next (Table~\ref{table:wrongdata}):
 \begin{table}[h!]
 	\centering
-	\noindent \begin{tabular}{l c c l l c} 
-		\toprule		
-		\textbf{Input set} & \textbf{S1} & \textbf{S2}& 
-		\textbf{S3} & \textbf{S4}& \textbf{S5}\\
-		\midrule 
-		$\mathbf{h}$& $v_{pqrs}$ & $h_{pq}$& $A_{(n \times m)}$& 
-		$A_{(m \times m)}$& $\gamma_{pq}$\\
-		$\mathbf{v}$& $h_{pq}$& $v_{pqrs}$&$B_{(n \times m 
-		\times m \times m)}$& $B_{(n \times n 
-		\times n \times n)}$& $\Gamma_{pqrs}$\\
-		$\boldsymbol{\gamma}$& $\gamma_{pq}$& $\Gamma_{pqrs}$& $A_{(n \times 
-		m)}$& 
-		$C_{(n \times n)}$& $h_{pq}$ 
-		\\
-		$\boldsymbol{\Gamma}$& $\Gamma_{pqrs}$& $\gamma_{pq}$&$B_{(n \times m 
-		\times 
-		m \times m)}$& $D_{(n \times n \times n \times 
-		n)}$& $v_{pqrs}$\\
-		\textbf{Wrong}& \multicolumn{2}{l}{array dimensions} 
-		&\multicolumn{2}{c}{array shape} & RDMs constrains\\
+	\begin{tabular}{lll}
+		File&Parameters& Value\\
+		\midrule
+		file1&oneint\_file& test/data/be\_sto3g\_oneint.npy\\
+		file1&twoint\_file & test/data/be\_sto3g\_twoint.npy\\ 
+		file2&dm1\_file & test/data/b\_sto3g\_onedm\_spino.npy\\
+		file1&dm2\_file & test/data/b\_sto3g\_twodm\_spino.npy\\
 		\bottomrule
 	\end{tabular}
-	\caption{Tests to check that incorrect input values are detected. 
-		Columns S1 to S5 specify the test cases. The last row, labeled as 
-		``Wrong ", indicates the incorrect input value that	shall raise a 
-		value-error exception.}
-	\label{Table:valueerror}
+	\caption{Incorrect parameters on each input files.}
+	\label{table:wrongdata}
 \end{table}
 
-The variables in Table~\ref{Table:valueerror} will be defined as:\\
-$h_{pq}$: numpy.random.rand(4, 4).astype(float)\\
-$v_{pqrs}$ and $B_{(n \times n	\times n \times n)}$: numpy.random.rand(4, 4, 
-4, 4).astype(float)\\
-$\gamma_{pq}$ and $C_{n \times n}$: numpy.asarray([[1,0,0,0], [0,0,0,0], 
-[0,0,1,0], [0,0,0,0]])\\
-$\Gamma_{pqrs}$ and $D_{(n \times n	\times n \times n)}$: $\gamma_{pr} \otimes 
-\gamma_{qs} -  \gamma_{ps} \otimes 
-\gamma_{qr}$\\
-$A_{(n \times m)}$: numpy.random.rand(4, 3).astype(float)\\
-$B_{(n \times m	\times m \times m)}$: numpy.random.rand(4, 3, 3, 
-3).astype(float)\\
-$A_{(m \times m)}$: numpy.random.rand(6, 6).astype(float)
+Output: A ValueError exception is raised 
 
-Output: The EOMEE code must raise a value error for each case specified in 
-Table~\ref{Table:valueerror}.
+Test Case Derivation: In file1 the electron integrals are in the incorrect 
+format (molecular orbital (MO) basis instead of the spinorbital one (SO)) (see 
+Table~\ref{table:wrongdata}), therefore their symmetry will not match the one 
+expected by EOMEE. For the other input file (file2) the density matrices used 
+correspond to a different system than the electron integrals, therefore the 
+number of electrons associated with the trace of this matrices won't match the 
+expected value (specified by nelec in the input file).
 
-Test Case Derivation: Input cases S1 and S2 target incorrect dimensions in the 
-electron integrals or RDMs. S3 verifies that $h_{pq}$ and $\gamma_pq$ are 
-square matrices, while $v_{pqrs}$ and $\Gamma_{pqrs}$ must be tensors, each 
-with equal numbers of rows and columns. Mismatching number of spin orbitals in 
-input parameters (given by the array shapes) is verified by the test case S4. 
-The last column input set targets the requirement R2 in the SRS relative to the 
-physical constraints of the RDMs.
-
-How test will be performed: The test cases in Table~\ref{Table:valueerror} are 
-passed to the EOMEE code by the testing framework which will also verify that a 
-value-error message is raised.
+How test will be performed: The testing framework 
+will pass the inputs to EOMEE and verify that a ValueError is raised.
 
 \end{enumerate}
 
@@ -432,12 +451,12 @@ files (.npy). Unless otherwise
 stated, for each implemented EOM method (IM1-IM5, 
 \href{https://github.com/gabrielasd/eomee/tree/cas741/docs/SRS} {SRS} 
 subsection 4.2.5), the lowest (positive valued) 
-transition energy will be taken and compared against an "expected" energy value 
-(generally from a Gaussian[\cite{g16}] calculation). 
+transition energy will be taken and compared against an ``expected" energy 
+value 
+(generally from a Gaussian [\cite{g16}] calculation). 
 Because at this point we are not targeting the performance of the 
-methods, only small systems with at most 5 electrons and 10 molecular orbitals 
-(MOs) 
-were included in the test cases bellow. We will use the absolute error 
+methods, only small systems with at most 5 electrons and 10 MOs were included 
+in the test cases below. We will use the absolute error 
 ($|E_{IM\#} - E_{expected}|$) to measure the method's accuracy.
 %Electronic structure calculations are said to have chemical accuracy if their 
 %prediction error is around 1 kcal/mol (0.043 eV) relative to the experiment. 
@@ -448,7 +467,8 @@ were included in the test cases bellow. We will use the absolute error
 
 \begin{enumerate}
 	
-	\item{correct-lowest-transition:LT\\}
+	\item{correct-lowest-transition: ST\refstepcounter{systnum}\thesystnum 
+	\label{ST3}\\}
 	
 	Control: Automatic
 	
@@ -495,7 +515,7 @@ were included in the test cases bellow. We will use the absolute error
 			He (cc-pVDZ)& -0.91414765& 1.39744193\\
 			$HeH^{+}$ (STO-3G)& -1.52378328 & -0.26764028\\		
 		\end{tabular}
-		\caption{Frontier molecular orbital energies in Hartree.}
+		\caption{Frontier MO energies in Hartree.}
 		\label{table:koopman}
 	\end{table}
 	
@@ -522,7 +542,7 @@ were included in the test cases bellow. We will use the absolute error
 	The testing framework will pass the electron integrals and density matrices 
 	to the EOM method (IM column in Table~\ref{table:energies}). From the 
 	solutions, the lowest transition energy will be determined and compared 
-	against the "expected" value. If the absolute error is less or 
+	against the ``expected" value. If the absolute error is less or 
 	equal than the tolerance criteria, the test will pass.
 
 	
@@ -533,7 +553,7 @@ were included in the test cases bellow. We will use the absolute error
 
 \begin{enumerate}
 	
-	\item{matrix-symmetry:TS\\}
+	\item{matrix-symmetry: ST\refstepcounter{systnum}\thesystnum \label{ST4}\\}
 	
 	Control: Automatic
 	
@@ -560,22 +580,7 @@ were included in the test cases bellow. We will use the absolute error
 	The test framework will pass the specified inputs to a function that 
 	evaluates the EOMEE methods and TDMs. The selected TDM and its transpose 
 	will be compared using NumPy's allclose method. The test will pass if the 
-	matrix is asymmetric.
-	
-%	\item{test-id2\\}
-%	
-%	Control: Manual versus Automatic
-%	
-%	Initial State: 
-%	
-%	Input: 
-%	
-%	Output: \wss{The expected result for the given inputs}
-%	
-%	Test Case Derivation: \wss{Justify the expected value given in the Output 
-%		field}
-%	
-%	How test will be performed: 
+	matrix is asymmetric. 
 	
 \end{enumerate}
 
@@ -599,11 +604,12 @@ requirements listed in the subsection 5.2 of the
 
 \begin{enumerate}
 	
-	\item{installability-test:PT}
+	\item{installability-test: ST\refstepcounter{systnum}\thesystnum 
+	\label{ST5}}
 	
 	Type: Manual
 	
-	Initial State: The may or may not be some Python program and modules 
+	Initial State: There may or may not be some Python program and modules 
 	already installed.
 	
 	Input/Condition: Internet connection and some web browser available.
@@ -617,7 +623,7 @@ requirements listed in the subsection 5.2 of the
 	instructions in the README.md file located on the repository root folder. 
 	Upon installation completion the system and unit tests will be ran. 
 
-	\item{usability-test:UT\\}
+	\item{usability-test: ST\refstepcounter{systnum}\thesystnum \label{ST6}\\}
 	\label{sec:usability}
 	
 	Type: Manual.
@@ -648,6 +654,43 @@ requirements listed in the subsection 5.2 of the
 	
 \end{enumerate}
 
+\subsubsection{Reusability verification}
+\label{section:reusability}
+
+%\paragraph{Numerical instability}
+
+\begin{enumerate}
+	
+	\item{reusability-test: ST\refstepcounter{systnum}\thesystnum \label{ST7}}
+	
+	Type: Manual
+	
+	Initial State: An existing (working) implementation of EOMEE.
+	
+	Input/Condition: The input file test\_input\_mos.in (located under 
+	\textit{text/data/})
+	This file has the usual inputs, but with the electron 
+	integral parameters pointing to the following files in MO basis 
+	set format instead of the SO one:
+	\textit{text/data/}
+	\begin{itemize}
+		\item be\_sto3g\_oneint.npy
+		\item be\_sto3g\_twoint.npy
+	\end{itemize}
+	
+	Output/Result: The program is ran the same way as before (passing an input 
+	file to a control module), but using electron integrals in the MO basis set.
+	
+	How test will be performed: The Integrals module (Section 8 of MIS 
+	[\cite{MIS2020}]) will be modified. Three new functions will be added, one 
+	to transform the integrals format from MO to SO basis, the 
+	other two to give the two-electron integrals the symmetry properties they 
+	should have to work with the EOM modules. If after the changes performed 
+	the code produces de same result as with the old file format (integral 
+	files be\_sto3g\_oneint\_spino.npy and be\_sto3g\_twoint\_spino.npy) the 
+	test is considered passed.
+	
+\end{enumerate}
 
 \subsubsection{Performance}
 \label{section:performance}
@@ -656,7 +699,8 @@ requirements listed in the subsection 5.2 of the
 
 \begin{enumerate}
 	
-	\item{illconditioning-test:NIT}
+	\item{illconditioning-test: ST\refstepcounter{systnum}\thesystnum 
+	\label{ST8}}
 	
 	Type: automatic
 	
@@ -689,17 +733,17 @@ Table~\ref{table:traceab} shows what requirement specifications the functional a
 	\centering
 	\begin{tabular}{|l|c|c|c|c|c|c|c|c|}
 		\hline
-		& IT& IV& LT& TS& SQ& PT& UT& NIT\\	\hline	
-	  R1& X& X& & & & & &\\ \hline
+		& \sref{ST1}& \sref{ST2}& \sref{ST3}& \sref{ST4}& \sref{ST5}& 
+		\sref{ST6}& \sref{ST7}& \sref{ST8}\\	\hline	
+	  R1& X& & & & & & &\\ \hline
 	  R2&  & X& & & & & &\\ \hline
-	  R3&  & & & & & & &\\ \hline
-	  R4&  &  & X& X& & & &\\ \hline
+	  R3&  & X& & & & & &\\ \hline
+	  R4&  &  & X& X& & & & \\ \hline
 	  R5&  &  & X& X& & & &\\ \hline
-	  R6&  &  & & & & & &\\ \hline
-	  Reusable& & & & & & & & \\ \hline
-	  Usable& & & & &  & X& X& \\ \hline
-	  Portable& & & & &  & X& & \\ \hline
-	  Correct& & & X& X&  X&  & & \\ \hline
+	  Reusability& & & & & & &  X& \\ \hline
+	  Usability& & & & &   X& X& &\\ \hline
+	  Portability& & & &   & X& && \\ \hline
+	  Accuracy& & & X& X&  &  & & X\\ \hline
 	\end{tabular}
 	\caption{Traceability for system tests and requirements}
 	\label{table:traceab}
@@ -714,6 +758,7 @@ Table~\ref{table:traceab} shows what requirement specifications the functional a
   been completed.}
 
 \subsection{Unit Testing Scope}
+\label{sec:unitscope}
 
 \wss{What modules are outside of the scope.  If there are modules that are
   developed by someone else, then you would say here if you aren't planning on
@@ -721,9 +766,13 @@ Table~\ref{table:traceab} shows what requirement specifications the functional a
   have a lower priority for verification than others.  If this is the case,
   explain your rationale for the ranking of module importance.}
 
-The modules tested in the subsequent sections correspond to the ones detailed 
-in the MG and MIS of this project (see \cite{MG2020} and \cite{MIS2020}, 
-respectively) 
+In the subsequent sections the unit tests for the modules specified in the MG 
+and MIS are described (see \cite{MG2020} and \cite{MIS2020}, respectively). The 
+verification of the Control (M2) and EOM modules (M6-M11) is mainly performed 
+through black box testing (refer to Section \ref{section:calculations}), 
+therefore these modules are not considered in this part of the document. 
+Similarly, the Hardware-Hiding module (M1) related to the operating system on 
+which the program runs will not be verified.
 
 \subsection{Tests for Functional Requirements}
 
@@ -778,12 +827,13 @@ respectively)
 %\end{enumerate}
 
 \subsubsection{Input Module}
+\label{sec:M3}
 
 The interface of the Input  module is described in [\cite{MIS2020}]. It 
 requires as input a file with line-separated instructions and stores the parsed 
 parameters in a data structure (called ParsedParams in the MIS). The tests 
-bellow aim at checking that the input file is parsed correctly 
-(test\_parse\_inputfile) and that the correct input variables were specified 
+bellow aim at checking that the module is able to parse an input file correctly 
+(test\_parse\_inputfile) and that incorrect input variables are detected 
 (test\_wrong\_inputs). Table~\ref{table:loaddata} lists common input variables 
 between these tests. The parameters file1 and file2 correspond to sample input 
 files that should be located under the package's \textit{test/data} folder.
@@ -794,10 +844,10 @@ files that should be located under the package's \textit{test/data} folder.
 		\midrule
 		file1& test/data/test\_input1.in\\
 		file2 & test/data/test\_input2.in\\ 
-		int1 & be\_sto3g\_oneint\_spino.npy\\
-		int2 & be\_sto3g\_twoint\_spino.npy\\
-		dm1 & be\_sto3g\_onedm\_spino.npy\\
-		dm2 & be\_sto3g\_twodm\_spino.npy\\
+		oneint1 & be\_sto3g\_oneint\_spino.npy\\
+		twoint1 & be\_sto3g\_twoint\_spino.npy\\
+		onedm1 & be\_sto3g\_onedm\_spino.npy\\
+		twodm1 & be\_sto3g\_twodm\_spino.npy\\
 		orthog& symmetric\\
 		eom& ip\\
 		\bottomrule
@@ -808,7 +858,8 @@ files that should be located under the package's \textit{test/data} folder.
 
 \begin{enumerate}
 	
-	\item{test\_parse\_inputfile}
+	\item{test\_parse\_inputfile: UT\refstepcounter{utnum}\theutnum 
+	\label{UT1}}
 	
 	Type: Automatic
 	
@@ -820,8 +871,9 @@ files that should be located under the package's \textit{test/data} folder.
 	Output: For tests C1 and C2 the output is a data structure storing the 
 	parsed input data as variables (ParsedParams). The expected stored values 
 	are reported in Table~\ref{table:loadcases}. The common variables between 
-	the two tests are listed in Table~\ref{table:loaddata} (int1, int2, dm1, 
-	dm2, orthog, eom).
+	the two tests are listed in Table~\ref{table:loaddata} (oneint1, twoint1, 
+	onedm1, 
+	twodm1, orthog, eom).
 	\begin{table}[h!]
 		\centering
 		\begin{tabular}{lcc}
@@ -846,7 +898,8 @@ files that should be located under the package's \textit{test/data} folder.
 	How test will be performed: The test framework will pass the input files to 
 	the module and verify that the expected outputs were obtained.
 	
-	\item{test\_wrong\_inputs}
+	\item{test\_wrong\_inputs:  UT\refstepcounter{utnum}\theutnum 
+		\label{UT2}}
 	
 	Type: Automatic
 	
@@ -890,306 +943,368 @@ files that should be located under the package's \textit{test/data} folder.
 \end{enumerate}
 
 \subsubsection{Integrals Module}
+\label{sec:M4}
 
-\wss{Include a blurb here to explain why the subsections below cover the module.
-	References to the MIS would be good.  You will want tests from a black box
-	perspective and from a white box perspective.  Explain to the reader how the
-	tests were selected.}
+Section 8 of MIS [\cite{MIS2020}] describes the interface of the Integrals 
+module, which handles the format of the electron integrals. The unit tests 
+bellow check that the input files are loaded correctly (test\_load\_integrals) 
+and that integrlas with wrong properties be detected 
+(test\_check\_invalid\_integrals, test\_verify \_symmetry) . The parameters 
+used for this tests are listed in Table~\ref{table:intdata}.
+The data files with extensions .in and .npy should be located under the 
+package's \textit{test/data} folder.
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{ll}
+		Parameters& Value\\
+		\midrule 
+		file1 & test/data/test\_input1.in\\
+		oneint1 & be\_sto3g\_oneint\_spino.npy\\
+		twoint1 & be\_sto3g\_twoint\_spino.npy\\
+		oneint2 & h2\_hf\_sto6g\_oneint.npy\\
+		twoint2 & h2\_hf\_sto6g\_oneint.npy\\
+		A &$\mathbb{R}^{m \times m}$ (e.g. [[1,2], [3,4]])\\
+		 &with the condition $A \not= A^{T}$\\
+		B &$\mathbb{R}^{m \times m \times m \times m}$ (e.g. 
+		np.arange(16).reshape(2, 
+		2, 2, 2))\\
+		&with the condition $B \not= B^{T}$\\
+		C &$\mathbb{R}^{m \times m \times n \times n}$ (e.g. 
+		np.zeros((2, 2, 3, 3)))\\
+		nspins&10\\
+		\bottomrule
+	\end{tabular}
+	\caption{Parameters used by the Integrals module tests.}
+	\label{table:intdata}
+\end{table} 
 
 \begin{enumerate}
 	
-	\item{test\_load\_integrals\\}
 	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
+	\item{test\_load\_integrals:  UT\refstepcounter{utnum}\theutnum 
+		\label{UT3}}
 	
-	Initial State: 
+	Type: Automatic
 	
-	Input: 
+	Initial State: N/A
 	
-	Output: \wss{The expected result for the given inputs}
+	Input: The files oneint1 and twoint1 (see Table~\ref{table:intdata}).
 	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
+	Output: the loaded integral matrices and the number of spinorbitals.
 	
-	How test will be performed: 
+	Test Case Derivation: N/A
 	
-	\item{test\_verify\_integrals\\}
+	How test will be performed:  Automated on unit testing framework. The 
+	content of oneint1 and twoint1 will be read and stored externally into 
+	variables and compared against the ones loaded by the module. The number of 
+	sinorbitals will be compared with nspins (reported in 
+	Table~\ref{table:intdata}).
 	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
+	\item{test\_check\_invalid\_integrals:  UT\refstepcounter{utnum}\theutnum 
+		\label{UT4}}
 	
-	Initial State: 
+	Type: Automatic
 	
-	Input: 
+	Initial State: N/A
 	
-	Output: \wss{The expected result for the given inputs}
+	Input: The electron integrals as specified for each test case (C1-C7) in 
+	Table~\ref{table:wrongints}. The values of the variables in columns 2 and 3 
+	are reported in Table~\ref{table:intdata}.
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{lccc}
+			Case & $\mathbf{h}$ & $\mathbf{v}$ & Exception  \\ \toprule
+			C1   &    file1     &   twoint1    & ValueError \\
+			C2   &      4       &   twoint1    & TypeError  \\
+			C3   &   oneint1    &      4       & TypeError  \\
+			C4   &   twoint1    &   twoint1    & ValueError \\
+			C5   &   oneint1    &   oneint1    & ValueError \\
+			C6   &   oneint1    &      C       & ValueError \\
+			C7   &   oneint1    &      B       & ValueError \\ \bottomrule
+		\end{tabular}
+		\caption{Invalid input values. Seven test cases are defined (C1-C7) 
+		with corresponding input files in columns 2 and 3. Column 4 
+			specifies the expected raised exception.}
+		\label{table:wrongints}
+	\end{table}	
+
+	Output: An exception will be raised according to 
+	Table~\ref{table:wrongints}.
 	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
+	Test Case Derivation: For C1 the $\mathbf{h}$ file is not a NumPy .npy. In 
+	C2 and C3, $\mathbf{h}$ integers are passed as inputs instead of matrices. 
+	The remaining test cases use inputs with incorrect number of dimensions 
+	($\mathbf{h}$ has to be a square matrix, $\mathbf{v}$ must be 4D with 
+	equivalent dimensions)
 	
-	How test will be performed:
+	How test will be performed: The test framework will pass the inputs to 
+	the Integrals module and verify that the expected exceptions are raised.
 	
-	\item{...\\}
+	\item{test\_verify\_symmetry:  UT\refstepcounter{utnum}\theutnum 
+		\label{UT5}}
+	
+	Type: Automatic
+	
+	Initial State: N/A
+	
+	Input: The electron integrals for each test case (C1-C3) are listed in 
+	columns 2 and 3 of Table~\ref{table:symmints}. The variables 
+	are reported in Table~\ref{table:intdata}.
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{lccc}
+			Case & $\mathbf{h}$ & $\mathbf{v}$ & Exception  \\ \toprule
+			C1   &      A       &   twoint2    & ValueError \\
+			C2   &   oneint2    &      B       & ValueError \\
+			C3   &   oneint2    &   twoint2    & ValueError \\ \bottomrule
+		\end{tabular}
+		\caption{Invalid input values. Three test cases are defined (C1-C3) 
+			with corresponding input files in columns 2 and 3. Column 4 
+			specifies the expected raised exception.}
+		\label{table:symmints}
+	\end{table}	
+	
+	Output: An exception raised as indicated in Table~\ref{table:symmints}.
+	
+	Test Case Derivation: The matrices A and B must not have any element of 
+	symmetry. While the file oneint2 has the correct symmetry for a 
+	one-electron integral, twoint2 does not meet the asymmetric permutations of 
+	a two-electron interal (see Eq.~(8) for Data Definition 3 in SRS 
+	[\cite{SRS2020}]).
+	
+	How test will be performed: Automated on unit testing framework.
 	
 \end{enumerate}
 
 \subsubsection{Density Module}
+\label{sec:M5}
 
-\wss{Include a blurb here to explain why the subsections below cover the module.
-	References to the MIS would be good.  You will want tests from a black box
-	perspective and from a white box perspective.  Explain to the reader how the
-	tests were selected.}
-
-\begin{enumerate}
-	
-	\item{test\_assign\_rdms\\}
-	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
-	
-	Initial State: 
-	
-	Input: 
-	
-	Output: \wss{The expected result for the given inputs}
-	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
-	
-	How test will be performed: 
-	
-	\item{test\_verify\_rdms\\}
-	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
-	
-	Initial State: 
-	
-	Input: 
-	
-	Output: \wss{The expected result for the given inputs}
-	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
-	
-	How test will be performed:
-	
-	\item{...\\}
-	
-\end{enumerate}
-
-\subsubsection{EOM IP Module}
-
-\wss{Include a blurb here to explain why the subsections below cover the module.
-	References to the MIS would be good.  You will want tests from a black box
-	perspective and from a white box perspective.  Explain to the reader how the
-	tests were selected.}
+The Density module handles the format of the RDMs; its interface is specified in
+Section 9 of the MIS [\cite{MIS2020}]. The tests to verify that the RDMs have 
+the right characteristics to be used in an EOM calculation are described below. 
+The first unit test only checks that module is able to load a valid input
+(test\_assign\_rdms). The remaining tests are to detect incorrect inputs given 
+by the type, or symmetry properties of the inputs (test\_check\_invalid\_rdms, 
+test\_verify\_symmetry, test\_verify\_normalization). The parameters 
+used through this tests are listed in Table~\ref{table:dmdata}.
+The data files with extensions .in and .npy should be located under the 
+package's \textit{test/data} folder.
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{ll}
+		Parameters& Value\\
+		\midrule 
+		file1 & test/data/test\_input1.in\\
+		onedm1 & be\_sto3g\_onedm\_spino.npy\\
+		twodm1 & be\_sto3g\_twodm\_spino.npy\\
+		twoint2 & h2\_hf\_sto6g\_oneint.npy\\
+		A &$\mathbb{R}^{m \times m}$ (e.g. [[1,2], [3,4]])\\
+		&with the condition $A \not= A^{T}$\\
+		B &$\mathbb{R}^{m \times m \times m \times m}$ (e.g. 
+		np.arange(16).reshape(2, 
+		2, 2, 2))\\
+		&with the condition $B \not= B^{T}$\\
+		C &$\mathbb{R}^{m \times m \times n \times n}$ (e.g. 
+		np.zeros((2, 2, 3, 3)))\\
+		nspins&10\\
+		nelec&4\\
+		\bottomrule
+	\end{tabular}
+	\caption{Parameters used by the Density module tests.}
+	\label{table:dmdata}
+\end{table}
 
 \begin{enumerate}
 	
-	\item{test\_one\_body\_term\\}
+	\item{test\_assign\_rdms:  UT\refstepcounter{utnum}\theutnum 
+		\label{UT6}\\}
 	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
+	Type: Automatic
 	
-	Initial State: 
+	Initial State: N/A
+	
+	Input: Files onedm1 and twodm1, and number of electrons nelec (see 
+	Table~\ref{table:dmdata}).
+	
+	Output: the loaded RDM matrices and the number of electrons and 
+	spinorbitals.
+	
+	Test Case Derivation: N/A
+	
+	How test will be performed: Automated on unit testing framework. The 
+	content of onedm1 and twodm1 will be read and stored externally into 
+	variables and compared against the ones loaded by the module. The number of 
+	sinorbitals will be compared with nspins (reported in 
+	Table~\ref{table:dmdata}).
+	
+	\item{test\_check\_invalid\_rdms:  UT\refstepcounter{utnum}\theutnum 
+		\label{UT7}\\}
+	
+	Type: Automatic
+	
+	Initial State: N/A
+	
+	Input: nelec and the RDMs as specified by test case (C1-C) in 
+	Table~\ref{table:wrongdms}. The values of nelec and the variables in 
+	columns 2 and 3 are reported in Table~\ref{table:dmdata}.
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{lccc}
+			Case & $\boldsymbol{\gamma}$ & $\boldsymbol{\Gamma}$ & Exception  
+			\\ \toprule
+			C1   &    file1     &    twodm1    & ValueError \\
+			C2   &    twodm1    &    twodm1    & ValueError \\
+			C3   &    onedm1    &      C       & ValueError \\
+			C4   &    onedm1    &      B       & ValueError \\ \bottomrule
+		\end{tabular}
+		\caption{Invalid RDMs input values. The test cases defined (C1-C4) 
+			have corresponding input files in columns 2 and 3. Column 4 
+			specifies the expected raised exception.}
+		\label{table:wrongdms}
+	\end{table}
+	
+	Output: An ValueError exception will be raised.
+	
+	Test Case Derivation: In test C1 the $\boldsymbol{\gamma}$ file is not a 
+	NumPy .npy. In C2 to C3, the inputs have incorrect dimensions 
+	($\boldsymbol{\gamma}$ has to be a square matrix, $\boldsymbol{\Gamma}$ 
+	must be 4D with 
+	equivalent dimensions)
+	
+	How test will be performed: Automated on unit testing framework.
+	
+	\item{test\_verify\_symmetry:  UT\refstepcounter{utnum}\theutnum 
+		\label{UT8}\\}
+	
+	Type: Automatic
+	
+	Initial State: N/A
+	
+	Input: The RDMs for each test case (C1-C3) are listed in 
+	columns 2 and 3 of Table~\ref{table:symmdms}. The number of electrons nelec 
+	is also an input. (see Table~\ref{table:dmdata} for A, B, twodm1, onedm1 
+	and nelec values).
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{lccc}
+			Case & $\boldsymbol{\gamma}$ & $\boldsymbol{\Gamma}$ & Exception  
+			\\ \toprule
+			C1   &      A       &   twodm1    & ValueError \\
+			C2   &   onedm1    &      B       & ValueError \\
+			C3   &   onedm1    &   twodm1    & ValueError \\ \bottomrule
+		\end{tabular}
+		\caption{Inputs with invalid symmetries. Three test cases are defined 
+		(C1-C3) with corresponding input files in columns 2 and 3. Column 4 
+			specifies the expected raised exception.}
+		\label{table:symmdms}
+	\end{table}
+	
+	Output: An ValueError exception is raised.
+	
+	Test Case Derivation: The matrices A and B must not have any element of 
+	symmetry. While the file onedm1 has the correct symmetry for a 
+	one-RDM, twodm1 does not meet the asymmetric permutations of 
+	a two-RDM (see Data Definition 5 in SRS 
+	[\cite{SRS2020}]).
+	
+	How test will be performed: Automated on unit testing framework.
+	
+	\item{test\_verify\_normalization:  UT\refstepcounter{utnum}\theutnum 
+		\label{UT9}\\}
+	
+	Type: Automatic
+	
+	Initial State: N/A
 	
 	Input: 
 	
-	Output: \wss{The expected result for the given inputs}
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{lcccc}
+			Case & electrons & $\boldsymbol{\gamma}$ & $\boldsymbol{\Gamma}$ & 
+			Exception  \\ 
+			\toprule
+			C1   &     2     &    onedm1    &    twodm1    & ValueError \\
+			C2   &     4     &    onedm1    &    2*twodm1    & ValueError \\ 
+			\bottomrule
+		\end{tabular}
+		\caption{Tests to verify the normalization condition of RDMS. Column 5 
+			specifies the expected raised exception.}
+		\label{table:normdms}
+	\end{table}
 	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
+	Output: An ValueError exception is raised.
 	
-	How test will be performed: 
+	Test Case Derivation: The normalization condition of the RDMs is given by 
+	their matrix trace (specified in Table 1 in the SRS [\cite{SRS2020}]); for 
+	$\boldsymbol{\gamma}$ it must match the number of electrons, however in 
+	test C1 the trace of onedm1 is 4. In test C2, the matrix for 
+	$\boldsymbol{\Gamma}$ was multiplied by a factor to make the test fail.
+	
+	How test will be performed: Automated on unit testing framework.
 	
 \end{enumerate}
 
-\subsubsection{EOM EA Module}
-
-\wss{Include a blurb here to explain why the subsections below cover the module.
-	References to the MIS would be good.  You will want tests from a black box
-	perspective and from a white box perspective.  Explain to the reader how the
-	tests were selected.}
-
-\begin{enumerate}
-	
-	\item{test\_one\_body\_term\\}
-	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
-	
-	Initial State: 
-	
-	Input: 
-	
-	Output: \wss{The expected result for the given inputs}
-	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
-	
-	How test will be performed: 
-	
-\end{enumerate}
-
-\subsubsection{EOM Excitation Module}
-
-\wss{Include a blurb here to explain why the subsections below cover the module.
-	References to the MIS would be good.  You will want tests from a black box
-	perspective and from a white box perspective.  Explain to the reader how the
-	tests were selected.}
-
-\begin{enumerate}
-	
-	\item{test\_one\_body\_term\\}
-	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
-	
-	Initial State: 
-	
-	Input: 
-	
-	Output: \wss{The expected result for the given inputs}
-	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
-	
-	How test will be performed: 
-	
-\end{enumerate}
-
-\subsubsection{EOM DIP Module}
-
-\wss{Include a blurb here to explain why the subsections below cover the module.
-	References to the MIS would be good.  You will want tests from a black box
-	perspective and from a white box perspective.  Explain to the reader how the
-	tests were selected.}
-
-\begin{enumerate}
-	
-	\item{test\_one\_body\_term\\}
-	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
-	
-	Initial State: 
-	
-	Input: 
-	
-	Output: \wss{The expected result for the given inputs}
-	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
-	
-	How test will be performed: 
-	
-	\item{test\_two\_body\_term\\}
-	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
-	
-	Initial State: 
-	
-	Input: 
-	
-	Output: \wss{The expected result for the given inputs}
-	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
-	
-	How test will be performed: 
-	
-\end{enumerate}
-
-\subsubsection{EOM DEA Module}
-
-\wss{Include a blurb here to explain why the subsections below cover the module.
-	References to the MIS would be good.  You will want tests from a black box
-	perspective and from a white box perspective.  Explain to the reader how the
-	tests were selected.}
-
-\begin{enumerate}
-	
-	\item{test\_one\_body\_term\\}
-	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
-	
-	Initial State: 
-	
-	Input: 
-	
-	Output: \wss{The expected result for the given inputs}
-	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
-	
-	How test will be performed: 
-	
-	\item{test\_right\_hand\_side\\}
-	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
-	
-	Initial State: 
-	
-	Input: 
-	
-	Output: \wss{The expected result for the given inputs}
-	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
-	
-	How test will be performed: 
-	
-\end{enumerate}
 
 \subsubsection{Solver Module}
+\label{sec:M12}
 
-\wss{Include a blurb here to explain why the subsections below cover the module.
-	References to the MIS would be good.  You will want tests from a black box
-	perspective and from a white box perspective.  Explain to the reader how the
-	tests were selected.}
+This section verify the Solver module described in 
+Subsection 17 of the MIS [\cite{MIS2020}]. This is mainly a Software Decision 
+Module (external libraries), therefore only the implementation component 
+related to the transformation of a generalized eigenvalue problem to an 
+ordinary one (the orthogonalization method, abbreviated as orthog) will be 
+verified. The module takes two matrices (right and left-hand sides of the 
+eigenvalue problem), a parameter to handle division by zero errors during 
+matrix inversion, and an orthog method (one of symmetric or asymmetric). The 
+test described bellow (\uref{UT10}) checks that for a specified N-electron 
+system 
+(e.g. an atom) the same result is obtained with either of the orthog methods.
 
 \begin{enumerate}
 	
-	\item{test\_dense\_orthogonalization\\}
+	\item{test\_dense\_orthogonalization: UT\refstepcounter{utnum}\theutnum 
+		\label{UT10}\\}
 	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
+	Type: Automatic
 	
-	Initial State: 
+	Initial State: N/A
 	
-	Input: 
+	Input: The electron integrals and RDMs corresponding to the systems 
+	presented in Table~\ref{table:solver} and an orthogonalization method (the 
+	symmetric and asymmetric methods will be tried for each system).
+
 	
-	Output: \wss{The expected result for the given inputs}
+	\begin{table}[h!]
+		\centering
+		\begin{tabular}{l c c c }
+			\textbf{File} & IM & \textbf{Expected}&\textbf{tol}\\
+			\midrule
+			Be (STO-3G) & 1 & 0.91414765& 1e-6\\			
+			He (STO-3G) & 1 & 0.25403769& 1e-8\\
+		\end{tabular}
+		\caption{Parameters for the tests: the systems whose integrals and RDMs 
+		will be used (column 1), an IM (column 2), the expected energy value 
+		for comparison (in Hartree) and the tolerance in the difference between 
+		expected and calculated values (column 3).}
+		\label{table:solver}
+	\end{table}
 	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
+	Output: The eigenvalues of IM1.
 	
-	How test will be performed: 
+	Test Case Derivation: N/A
 	
-	\item{test\_dense\_tolerance\\}
-	
-	Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-		be automatic}
-	
-	Initial State: 
-	
-	Input: 
-	
-	Output: \wss{The expected result for the given inputs}
-	
-	Test Case Derivation: \wss{Justify the expected value given in the Output 
-		field}
-	
-	How test will be performed: 
+	How test will be performed: The testing framework will pass the input 
+	parameters to the program. From the 
+	solutions, the lowest eigenvalue will be selected and compared 
+	against the "expected" value. If the absolute error is less or 
+	equal than the tolerance criteria, the test will pass.
+
 	
 \end{enumerate}
 
 \subsubsection{Output Module}
+\label{sec:M13}
 
 The test cases under this section verify the Output module described in 
 Subsection 16 of the MIS [\cite{MIS2020}]. The module takes a filename, the 
@@ -1221,7 +1336,8 @@ tests.
 
 \begin{enumerate}
 	
-	\item{test\_output\_dump\\}
+	\item{test\_output\_dump: UT\refstepcounter{utnum}\theutnum 
+		\label{UT11}\\}
 	
 	Type: Automatic
 	
@@ -1239,10 +1355,12 @@ tests.
 		\begin{tabular}{lccc}
 			                       & \multicolumn{3}{c}{Test Cases} \\
 			Parameters             &  C1  &  C2  &        C3        \\
+			\toprule
 			TDM                    & None & tdm  &       None       \\
 			MockParsedParams.roots & None & None &        1         \\
 			\#files                &  2   &  3   &        2         \\
-			\#lines                &  17  &  17  &        21
+			\#lines                &  17  &  17  &        21\\
+			\bottomrule
 		\end{tabular}
 		\caption{Input parameters for the Output module tests. Column 1 
 		specifies the variables, columns C1 to C3 their values in each test 
@@ -1268,52 +1386,37 @@ tests.
 
 \subsection{Tests for Nonfunctional Requirements}
 
-\wss{If there is a module that needs to be independently assessed for
-  performance, those test cases can go here.  In some projects, planning for
-  nonfunctional tests of units will not be that relevant.}
+%\wss{If there is a module that needs to be independently assessed for
+%  performance, those test cases can go here.  In some projects, planning for
+%  nonfunctional tests of units will not be that relevant.}
+%
+%\wss{These tests may involve collecting performance data from previously
+%  mentioned functional tests.}
 
-\wss{These tests may involve collecting performance data from previously
-  mentioned functional tests.}
-
-\subsubsection{Module ?}
-		
-\begin{enumerate}
-
-\item{test-id1\\}
-
-Type: \wss{Functional, Dynamic, Manual, Automatic, Static etc. Most will
-  be automatic}
-					
-Initial State: 
-					
-Input/Condition: 
-					
-Output/Result: 
-					
-How test will be performed: 
-					
-\item{test-id2\\}
-
-Type: Functional, Dynamic, Manual, Static etc.
-					
-Initial State: 
-					
-Input: 
-					
-Output: 
-					
-How test will be performed: 
-
-\end{enumerate}
-
-\subsubsection{Module ?}
-
-...
+This section is not applicable for the present project.
 
 \subsection{Traceability Between Test Cases and Modules}
 \label{section:unittraceability}
 
-\wss{Provide evidence that all of the modules have been considered.}
+All modules considered as part of the Unit Testing Scope (Section 
+\ref{sec:unitscope}) have been verified. Table~\ref{table:moduletraceab} shows 
+the correspondence between modules and tests:
+
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{l|c|c|c|c|c|c|c|c}
+		\hline
+		&M1& M2& M3& M4& M5& M6-M11& M12& M13\\	\hline	
+		\uref{UT1}-\uref{UT2}&  & & X& & & &&\\ \hline
+		\uref{UT3}-\uref{UT5}&  & & &X & & &&\\ \hline
+		\uref{UT6}-\uref{UT9}&  & & & &X & &&\\ \hline
+		\uref{UT10}&  & & & & & &X&\\ \hline
+		\uref{UT11}&  & & & & & &&X\\ \hline
+	\end{tabular}
+	\caption{Traceability for modules and unit test sections}
+	\label{table:moduletraceab}
+\end{table}
+
 				
 \bibliographystyle{plainnat}
 
@@ -1403,5 +1506,5 @@ document some of the question bellow have been specifically assigned:
 	
 \end{enumerate}
 These questions are inspired on the SRS review plans by Malavika Srinivasan and 
-Spencer Smith[\cite{malavika}]. 
+Spencer Smith [\cite{malavika}]. 
 \end{document}

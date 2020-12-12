@@ -10,7 +10,7 @@ import pytest
 @pytest.mark.parametrize(
     "filename, astype", [("be_sto3g", "asfiles"), ("be_sto3g", "asarrays")],
 )
-def test_load_valid_integrals(filename, astype):
+def test_load_integrals(filename, astype):
     """Check the one- and two-electron integrals are
     loaded properly.
 
@@ -43,7 +43,7 @@ def test_load_valid_integrals(filename, astype):
         ("hvshape", ValueError),
     ],
 )
-def test_load_invalid_integrals(astype, error):
+def test_check_invalid_integrals(astype, error):
     """Check that bad integral inputs are
     detected. The cases considered are:
     Case 1: Incorrect file extension (only .npy is allowed)
@@ -90,6 +90,6 @@ def example_integrals():
 @pytest.mark.parametrize(
     "oneint, twoint", example_integrals(),
 )
-def test_verify_wrong_symmetry(oneint, twoint):
+def test_verify_symmetry(oneint, twoint):
     with pytest.raises(ValueError):
         ElectronIntegrals(oneint, twoint)

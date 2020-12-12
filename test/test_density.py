@@ -42,7 +42,7 @@ def test_assign_rdms(filename, nelec):
         ("dmsshape", ValueError),
     ],
 )
-def test_load_invalid_rdms(astype, error):
+def test_check_invalid_rdms(astype, error):
     """Check that bad DM inputs are
     detected. The cases considered are:
     Case 1: Incorrect file extension (only .npy is allowed)
@@ -94,7 +94,7 @@ def example_rdms():
 @pytest.mark.parametrize(
     "onedm, twodm", example_rdms(),
 )
-def test_verify_wrong_symmetry(onedm, twodm):
+def test_verify_symmetry(onedm, twodm):
     nparts = 2
     # setup temporal files
     # DM1
