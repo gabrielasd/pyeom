@@ -225,10 +225,13 @@ The symbols and notation used through this document are consistent with the
 quantum chemistry literature and with existing documentation for 
 equation-of-motion methods (see, e.g., \cite{Pernal2018}, \cite{McKoy1977} and 
 Chapters 1 nad 2 of \cite{szabo-ostlund}). Some examples of this notation are: 
-the operator of an observable O is denoted by $\hat{O}$, Dirac's bra-ket 
-notation ($\bra{}$ $\ket{}$) is used for the representation of a state's wave 
-function and vector or matrix parameters are indicated with bold face (like the 
-identity matrix in the table above).
+\begin{itemize}
+\item the operator of an observable O is denoted by $\hat{O}$.
+\item Dirac's bra-ket notation ($\bra{}$ $\ket{}$) is used for the 
+representation of a state's wave function.
+\item vector or matrix parameters are indicated with bold face (like the 
+identity matrix in the table above)
+\end{itemize}
 
 
 \subsection{Abbreviations and Acronyms}
@@ -484,7 +487,8 @@ area. Information pertinent to the input and output data are indicated at the
 left and right of the program.
 
 \noindent The user will submit the programs arguments (1- and 2-electron 
-integrals, 1- and 2- reduced density matrices (RDMs), and an EOM 
+integrals, 1- and 2- reduced density matrices (RDMs), and a string of 
+characters selecting an EOM 
 method); then EOMEE will process that information and return the resulting 
 transition energies and density matrices (TDMs). 
 
@@ -1270,8 +1274,7 @@ solved by \iref{IM_IP} to \iref{I_transDM}.
   \hline
   Label& \bf Electron removal\\
   \hline
-  Input&$h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$ and 
-  IP\_EOM($h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$)\\
+  Input&$h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$ \\
   \hline
   Output&$\Delta E_k$ and $c_{n;k}$\\
   \hline
@@ -1279,10 +1282,9 @@ solved by \iref{IM_IP} to \iref{I_transDM}.
   the SO base\\
   & $\gamma_{pq}$ and $\Gamma_{pqrs}$ are the RDMs for the reference N-electron 
   state.\\
-  & IP\_EOM() is the EOM method corresponding to the electron removal 
-  transition operator.\\
   &$\Delta E_k$ and $c_{n;k}$ are the ionization potentials and 
-  coefficients from the BS expansion respectively.\\
+  coefficients from the BS expansion respectively (the solutions to the linear 
+  system of equations derived bellow).\\
   \hline
   Sources& -- \\
   \hline
@@ -1332,8 +1334,7 @@ Hamiltonian integrals:
 		\hline
 		Label& \bf Electron attachment\\
 		\hline
-		Input&$h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$ and 
-		EA\_EOM($h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$)\\
+		Input&$h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$\\
 		\hline
 		Output&$\Delta E_k$ and $c_{n;k}$\\
 		\hline
@@ -1343,10 +1344,10 @@ Hamiltonian integrals:
 		& $\gamma_{pq}$ and $\Gamma_{pqrs}$ are the RDMs for the reference 
 		N-electron 
 		state.\\
-		& EA\_EOM() is the EOM method corresponding to the electron attachment 
-		transition operator.\\
 		&$\Delta E_k$ and $c_{n;k}$ are the electron affinities and 
-		coefficients from the BS expansion respectively.\\
+		coefficients from the BS expansion respectively. (the solutions to the 
+		linear 
+		system of equations derived bellow)\\
 		\hline
 		Sources& -- \\
 		\hline
@@ -1465,8 +1466,7 @@ v_{jqks}\Gamma_{iqls})\biggr] c_{ij;k}\\
 		\hline
 		Label& \bf Double IP\\
 		\hline
-		Input&$h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$ and 
-		DIP\_EOM($h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$)\\
+		Input&$h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$\\
 		\hline
 		Output&$\Delta E_k$ and $c_{ij;k}$\\
 		\hline
@@ -1474,10 +1474,10 @@ v_{jqks}\Gamma_{iqls})\biggr] c_{ij;k}\\
 		integrals in the SO base\\
 		& $\gamma_{pq}$ and $\Gamma_{pqrs}$ are the RDMs for the reference 
 		N-electron state.\\
-		& DIP\_EOM() is the EOM method corresponding to the double electron 
-		removal transition operator.\\
 		&$\Delta E_k$ and $c_{ij;k}$ are the double ionization energies and 
-		coefficients from the BS expansion respectively.\\
+		coefficients from the BS expansion respectively. (the solutions to the 
+		linear 
+		system of equations derived bellow)\\
 		\hline
 		Sources& -- \\
 		\hline
@@ -1543,8 +1543,7 @@ c_{ij;k} \\
 		\hline
 		Label& \bf Double EA\\
 		\hline
-		Input&$h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$ and 
-		DEA\_EOM($h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$)\\
+		Input&$h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$, $\Gamma_{pqrs}$ \\
 		\hline
 		Output&$\Delta E_k$ and $c_{ij;k}$\\
 		\hline
@@ -1552,10 +1551,10 @@ c_{ij;k} \\
 		integrals in the SO base\\
 		& $\gamma_{pq}$ and $\Gamma_{pqrs}$ are the RDMs for the reference 
 		N-electron state.\\
-		& DEA\_EOM() is the EOM method corresponding to the double electron 
-		attachment transition operator.\\
 		&$\Delta E_k$ and $c_{ij;k}$ are the double electron attachment 
-		energies and coefficients from the BS expansion respectively.\\
+		energies and coefficients from the BS expansion respectively. (the 
+		solutions to the linear 
+		system of equations derived bellow)\\
 		\hline
 		Sources& -- \\
 		\hline
@@ -1797,7 +1796,9 @@ selected by the user (\iref{IM_IP} - \iref{I_transDM})
 
 \item[NFR\refstepcounter{nfrnum}\thenfrnum \label{NFR_Reusability}:]
 \textbf{Reusability} The code should be modular so that future improvements 
-(like the implementation of new EOMs) don't imply major feature changes.
+(like the implementation of new EOMs) don't imply major feature changes. 
+Section 5.2.2 of the Verification and Validation Plan 
+[\cite{VnV2020}] describes how to verify this NFR.
 
 \item[NFR\refstepcounter{nfrnum}\thenfrnum \label{NFR_Usability}:] 
 \textbf{Usability} The software should be well documented so that an 
