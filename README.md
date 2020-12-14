@@ -56,3 +56,12 @@ To unistall eomee run:
 ```
 $ pip uninstall eomee
 ```
+
+## Running tests
+Please see the README.md file under the _test_ file.
+
+
+## Running an example
+Please see the README.md file under the _examples_ file.
+
+
