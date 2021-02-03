@@ -114,8 +114,8 @@ def test_ph_rpa_h2_scuseria():
 
     """
     files = glob.glob("scuseria/h2_sc_*")
-    energies_1 = []
-    for i, _ in enumerate(files, start=1):
+    # energies_1 = []
+    for i, _ in enumerate(files[:3], start=1):
         word = "h2_sc_{0}".format(i)
         print("Molecule, ", word)
         path = "scuseria/" + word + "/hartreefock_pyscf_energy.npy"
@@ -124,7 +124,7 @@ def test_ph_rpa_h2_scuseria():
 
         one_mo = np.load("scuseria/{0}/{0}_cc-pvdz_oneint.npy".format(word))
         two_mo = np.load("scuseria/{0}/{0}_cc-pvdz_twoint.npy".format(word))
-        # # # two_mo = antisymmetrize(two_mo)
+        # # two_mo = antisymmetrize(two_mo)
         nbasis = one_mo.shape[0]
         one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
@@ -135,48 +135,129 @@ def test_ph_rpa_h2_scuseria():
         Fk += np.einsum("piqj,ij->pq", antisymmetrize(two_mo), one_dm)
         # energy
         Fk_energy = np.einsum("pq, pq", Fk, one_dm)
-        # print(
-        #     "reference E_fock",
-        #     (
-        #         np.einsum("ij,ij", one_mo, one_dm)
-        #         + 0.5 * np.einsum("ijkl,ijkl", two_mo, two_dm)
-        #     )
-        #     + nuc_nuc,
-        # )
+        print(
+            "reference E_fock",
+            (
+                np.einsum("ij,ij", one_mo, one_dm)
+                + np.einsum("ijkl,ijkl", two_mo, two_dm)
+            )
+            + nuc_nuc,
+        )
 
         one_mo_0 = Fk
         two_mo_0 = np.zeros_like(two_mo)
-        dE = eomee.ExcitationEOM.erpa(
+        # dE = eomee.ExcitationEOM.erpa(
+        #     one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
+        # )
+        dE = eomee.DoubleElectronAttachmentEOM.erpa(
             one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
         )
         print("1st order correction", Fk_energy + dE + nuc_nuc)
-        energy_1 = Fk_energy + dE + nuc_nuc
-        energies_1.append(energy_1)
-        # # # print(ecorr)
-        # # # ecorr = eomee.DoubleElectronRemovalEOM.erpa(
-        # # #     one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
-        # # # )
-        # # # print(ecorr)
+        # energy_1 = Fk_energy + dE + nuc_nuc
+        # energies_1.append(energy_1)
     print("DONE")
 
-    output = "energy1_h2_scuseria_nonlinearterm.csv"
+    # output = "energy1_h2_scuseria_nonlinearterm.csv"
 
-    with open(output, "w") as output_file:
-        energy_data = csv.writer(output_file, dialect="excel")
-        fieldnames = [
-            "Molecules",
-            "HH bohr",
-            "Energy_linear",
-        ]
-        energy_data.writerow(fieldnames)
+    # with open(output, "w") as output_file:
+    #     energy_data = csv.writer(output_file, dialect="excel")
+    #     fieldnames = [
+    #         "Molecules",
+    #         "HH bohr",
+    #         "Energy_linear",
+    #     ]
+    #     energy_data.writerow(fieldnames)
 
-        for i, _ in enumerate(files):
-            molname = "h2_sc_{0}".format(i + 1)
-            bond = "{:.1f}".format(1.0 + (i) * 0.1)
-            energy_data.writerow((molname, bond, energies_1[i]))
-    print("Finito")
+    #     for i, _ in enumerate(files):
+    #         molname = "h2_sc_{0}".format(i + 1)
+    #         bond = "{:.1f}".format(1.0 + (i) * 0.1)
+    #         energy_data.writerow((molname, bond, energies_1[i]))
+    # print("Finito")
+
+
+def test_ph_rpa_smallmol():
+    """Test Excitation RPA for H2 (sto-3g)
+    RHF reference wfn.
+
+    """
+    # energies_1 = []
+
+    # one_mo = np.load(find_datafiles("heh+_sto3g_oneint.npy"))
+    # two_mo = np.load(find_datafiles("heh+_sto3g_twoint.npy"))
+    one_mo = np.load(("smallmol/h2_sto-6g_oneint.npy"))
+    two_mo = np.load(("smallmol/h2_sto-6g_twoint.npy"))
+    energyfile = "hartreefock_pyscf_energy.npy"
+    path = "smallmol/" + energyfile
+    data = np.load(path, allow_pickle=True, encoding="bytes",)
+    nuc_nuc = data[2]
+    ehf = data[1] + nuc_nuc
+    print(ehf)
+
+    # # two_mo = antisymmetrize(two_mo)
+    nbasis = one_mo.shape[0]
+    one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
+
+    # # Evaluate particle-hole EOM
+    # phrpa = eomee.ExcitationEOM(
+    #     spinize(one_mo), antisymmetrize(spinize(two_mo)), one_dm, two_dm
+    # )
+
+    # EPH, CPH = phrpa.solve_dense()
+    # print("E(phRPA) = ", np.amax(EPH))
+    # print(sorted(EPH))
+
+    # Build Fock operator
+    one_mo = spinize(one_mo)
+    two_mo = symmetrize(spinize(two_mo))
+    Fk = np.copy(one_mo)
+    Fk += np.einsum("piqj,ij->pq", antisymmetrize(two_mo), one_dm)
+    # energy
+    Fk_energy = np.einsum("pq, pq", Fk, one_dm)
+    # print(
+    #     "reference E_fock",
+    #     (np.einsum("ij,ij", one_mo, one_dm) + np.einsum("ijkl,ijkl", two_mo, two_dm))
+    #     + nuc_nuc,
+    # )
+
+    one_mo_0 = Fk
+    two_mo_0 = np.zeros_like(two_mo)
+    dE = eomee.ExcitationEOM.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
+    # dE = eomee.DoubleElectronAttachmentEOM.erpa(
+    #     one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
+    # )
+    # print("1st order correction", Fk_energy + dE + nuc_nuc)
+    # print("Ecorr", Fk_energy + dE + nuc_nuc - ehf)
+    print("Nonlinear term", dE)
+    print("DONE")
 
 
 # test_excitationeom_erpa_heh_sto3g()
-test_ph_rpa_h2_scuseria()
+# test_ph_rpa_h2_scuseria()
+test_ph_rpa_smallmol()
+
+
+# Comments:
+# =========
+# Based on results for H2 STO-6G, taking HF as the reference at
+# alpha = 0 and TDMs approximated from ph-RPA.
+# Ecorr from our implemented adiabatic connection formula, Ecorr(phrpa),
+# vs the results using Equation (7) from Tahir2019 implemented in
+# the dity_tdhf.py script, Ecorr(phrpa)_tahir:
+# Ecorr(phrpa) = -0.5018403045485365
+# Ecorr(phrpa)_tahir =  -0.026114856279256027
+# We greatly overestimate the correlation correction.
+# The attemp at comparing vs an inpmlentation of Equation (82) from
+# KPernal2018 (also in script dity_tdhf.py) hasn't gone well:
+# Ecorr(phrpa)_pernal =  0.16366164714633863
+# The implementation needs verification of several terms involving the
+# two-electron integrals.
+# Comparing only the nonlinear terms from our equation to the one from
+# the current implementation of Pernal isn't usefull either:
+# Our integrated nonlinear term = 1.0036806090970734
+# Pernal's = 0.16366164714633863
+# TODO:
+# Try equation (77) from KPernal2018, which is writen in terms of the TDMs
+# so I can use it with our ph-RPA implementation. Compare the result with the
+# one I'm getting with eomee.ExcitationEOM.erpa, and the one from the
+# the implementation of equation (82).
 

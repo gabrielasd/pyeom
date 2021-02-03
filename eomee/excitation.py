@@ -145,3 +145,6 @@ class ExcitationEOM(EOMState):
             ]
         )
         # return linear
+        # return integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[
+        #     0
+        # ]
