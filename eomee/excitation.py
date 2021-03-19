@@ -2,6 +2,8 @@ import numpy as np
 
 from scipy.integrate import quad as integrate
 
+# from scipy.integrate import fixed_quad as integrate
+
 from eomee.base import EOMState
 from eomee.tools import antisymmetrize
 
@@ -81,9 +83,12 @@ class ExcitationEOM(EOMState):
         """
         I = np.eye(self._n, dtype=self._h.dtype)
 
-        # M_klij = \gamma_kj \delta_li - \Gamma_kijl
-        m = np.einsum("kj,li->klji", self.dm1, I, optimize=True)
-        m -= np.einsum("kijl->klji", self.dm2, optimize=True)
+        # # M_klij = \gamma_kj \delta_li - \Gamma_kijl
+        # m = np.einsum("kj,li->klji", self.dm1, I, optimize=True)
+        # m -= np.einsum("kijl->klji", self.dm2, optimize=True)
+
+        m = np.einsum("li,kj->klji", I, self.dm1, optimize=True)
+        m -= np.einsum("kj,il->klji", I, self.dm1, optimize=True)
         return m.reshape(self._n ** 2, self._n ** 2)
 
     @classmethod
@@ -99,13 +104,20 @@ class ExcitationEOM(EOMState):
         # V_1 - V_0
         dv = v_1 - v_0
         # \delta_sq * \gamma_pr
+        dm1_eye = np.einsum("sq,pr->pqrs", np.eye(n), dm1, optimize=True)
         # Lets force a \gamma term insteadof a \delta
-        # dm1_eye = np.einsum("sq,pr->pqrs", np.eye(n), dm1, optimize=True)
-        dm1_eye = np.einsum("sq,pr->pqrs", dm1, dm1, optimize=True)
+        # dm1_eye = np.einsum("sq,pr->pqrs", dm1, dm1, optimize=True)
+
+        # Compute linear term (eq. 19)
+        # dh * \gamma + 0.5 * dv * (\delta_sq * \gamma_pr - \gamma_ps * \gamma_qr)
+        linear = dm1_eye - np.einsum("ps,qr->pqrs", dm1, dm1, optimize=True)
+        linear = np.einsum("pq,pq", dh, dm1, optimize=True) + 0.5 * np.einsum(
+            "pqrs,pqrs", dv, linear, optimize=True
+        )
 
         # Compute \delta_sq * \gamma_pr - \Gamma_psrq (eq. 29)
         rdm_terms = dm1_eye - np.transpose(dm2, axes=(0, 3, 2, 1))
-
+        # @np.vectorize
         # Nonlinear term (eq. 19 integrand)
         def nonlinear(alpha):
             # Compute H^alpha
@@ -127,14 +139,8 @@ class ExcitationEOM(EOMState):
             tv = np.zeros_like(dm2)
             for rdm in rdms:
                 tv += np.einsum("ps,qr->pqrs", rdm, rdm, optimize=True)
+            # tv = np.einsum("ps,qr->pqrs", rdms[0], rdms[0], optimize=True)
             return np.einsum("pqrs,pqrs", dv, tv, optimize=True)
-
-        # Compute linear term (eq. 19)
-        # dh * \gamma + 0.5 * dv * (\delta_sq * \gamma_pr - \gamma_ps * \gamma_qr)
-        linear = dm1_eye - np.einsum("ps,qr->pqrs", dm1, dm1, optimize=True)
-        linear = np.einsum("pq,pq", dh, dm1, optimize=True) + 0.5 * np.einsum(
-            "pqrs,pqrs", dv, linear, optimize=True
-        )
 
         # Compute ERPA correlation energy (eq. 19)
         return (
@@ -145,6 +151,10 @@ class ExcitationEOM(EOMState):
             ]
         )
         # return linear
-        # return integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[
-        #     0
-        # ]
+        # return (
+        #     0.5
+        #     * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[
+        #         0
+        #     ]
+        # )
+        # return linear - 0.5 * integrate(nonlinear, 0, 1, n=nint)[0]

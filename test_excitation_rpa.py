@@ -14,6 +14,10 @@ from eomee.tools import (
 import numpy as np
 import csv
 
+from scipy.integrate import fixed_quad as integrate
+
+# from scipy.integrate import quad as integrate
+
 
 def check_inputs_symm(oneint, twoint, onedm, twodm):
     """Check symmetry of electron integrals and Density Matrices."""
@@ -182,42 +186,65 @@ def test_ph_rpa_smallmol():
     """
     # energies_1 = []
 
-    # one_mo = np.load(find_datafiles("heh+_sto3g_oneint.npy"))
-    # two_mo = np.load(find_datafiles("heh+_sto3g_twoint.npy"))
-    one_mo = np.load(("smallmol/h2_sto-6g_oneint.npy"))
-    two_mo = np.load(("smallmol/h2_sto-6g_twoint.npy"))
-    energyfile = "hartreefock_pyscf_energy.npy"
-    path = "smallmol/" + energyfile
-    data = np.load(path, allow_pickle=True, encoding="bytes",)
-    nuc_nuc = data[2]
-    ehf = data[1] + nuc_nuc
-    print(ehf)
+    one_mo = np.load(find_datafiles("be_sto3g_oneint.npy"))
+    two_mo = np.load(find_datafiles("be_sto3g_twoint.npy"))
+    # one_mo = np.load(("smallmol/Be_0_1_3-21g_oneint.npy"))
+    # two_mo = np.load(("smallmol/Be_0_1_3-21g_twoint.npy"))
+    # one_mo = np.load(("vanaggelen/be_ccpvdz_oneint.npy"))
+    # two_mo = np.load(("vanaggelen/be_ccpvdz_twoint.npy"))
+    # ehf = -14.4868202421757  # -14.5723376309534
+    # energyfile = "hartreefock_pyscf_energy.npy"
+    # path = "smallmol/" + energyfile
+    # data = np.load(path, allow_pickle=True, encoding="bytes",)
+    nuc_nuc = 0  # data[2]
+    # ehf = data[1]  # + nuc_nuc
+    # print(ehf)
 
     # # two_mo = antisymmetrize(two_mo)
     nbasis = one_mo.shape[0]
-    one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
+    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
+    # print(nbasis)
 
     # # Evaluate particle-hole EOM
     # phrpa = eomee.ExcitationEOM(
     #     spinize(one_mo), antisymmetrize(spinize(two_mo)), one_dm, two_dm
     # )
 
-    # EPH, CPH = phrpa.solve_dense()
-    # print("E(phRPA) = ", np.amax(EPH))
-    # print(sorted(EPH))
+    # # print(phrpa.rhs)
+    # EPH, CPH = phrpa.solve_dense(orthog="asymmetric")
+    # # print("E(phRPA) = ", np.amax(EPH))
+    # # print(sorted(EPH))
+    # # print()
+    # lowest_e = np.sort(EPH[EPH > 0])
+    # print(lowest_e)
+    # # order = np.argsort(EPH)
+    # # vals, vecs = EPH[order], CPH[order]
+    # # print(vals)
 
     # Build Fock operator
     one_mo = spinize(one_mo)
     two_mo = symmetrize(spinize(two_mo))
     Fk = np.copy(one_mo)
+    # Szabo: <i|h|j> + \sum_b <ib||jb>
+    # Fk += np.einsum("piqi->pq", antisymmetrize(two_mo))
+    #
     Fk += np.einsum("piqj,ij->pq", antisymmetrize(two_mo), one_dm)
-    # energy
+    # e = np.linalg.eig(Fk)[0]
+    # print(e)
+
+    # Energies
     Fk_energy = np.einsum("pq, pq", Fk, one_dm)
-    # print(
-    #     "reference E_fock",
-    #     (np.einsum("ij,ij", one_mo, one_dm) + np.einsum("ijkl,ijkl", two_mo, two_dm))
-    #     + nuc_nuc,
-    # )
+    print(Fk_energy)
+    print(
+        "reference E_fock",
+        (np.einsum("ij,ij", one_mo, one_dm) + np.einsum("ijkl,ijkl", two_mo, two_dm))
+        + nuc_nuc,
+    )
+    ehf = (
+        np.einsum("ij,ij", one_mo, one_dm)
+        + 0.5 * np.einsum("ijkl,ijkl", two_mo, two_dm)
+    ) + nuc_nuc
+    print(ehf)
 
     one_mo_0 = Fk
     two_mo_0 = np.zeros_like(two_mo)
@@ -226,14 +253,117 @@ def test_ph_rpa_smallmol():
     #     one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
     # )
     # print("1st order correction", Fk_energy + dE + nuc_nuc)
-    # print("Ecorr", Fk_energy + dE + nuc_nuc - ehf)
-    print("Nonlinear term", dE)
-    print("DONE")
+
+    # E_1 - E_HF
+    print("Ecorr", Fk_energy + dE - ehf)
+    # print("Nonlinear term", dE)
+
+    # # e_chf = eq77_pernal2018(one_mo, one_mo_0, two_mo, two_mo_0, one_dm, two_dm)
+    # # print("Ecorr pernal", e_chf)
+    # # print("DONE")
+
+
+def test_ph_rpa_ccpvdz_vanaggelen():
+    """Test Excitation RPA for H2 (sto-3g)
+    RHF reference wfn.
+
+    """
+    one_mo = np.load(("vanaggelen/be_ccpvdz_oneint.npy"))
+    two_mo = np.load(("vanaggelen/be_ccpvdz_twoint.npy"))
+    # one_dm = np.load(("vanaggelen/be_ccpvdz_fci_onedm.npy"))
+    # two_dm = np.load(("vanaggelen/be_ccpvdz_fci_twodm.npy"))
+    # HF DMs
+    nbasis = one_mo.shape[0]
+    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
+
+    # Evaluate particle-hole EOM
+    phrpa = eomee.ExcitationEOM(
+        spinize(one_mo), antisymmetrize(spinize(two_mo)), one_dm, two_dm
+    )
+
+    # print(phrpa.rhs)
+    EPH, CPH = phrpa.solve_dense()
+    # print("E(phRPA) = ", np.amax(EPH))
+    print(sorted(EPH))
+
+
+def test_ph_rpa_chatterjee():
+    """Test Excitation RPA for H2 (sto-3g)
+    RHF reference wfn.
+
+    """
+    one_mo = np.load(("chatterjee/h2_aug-cc-pvtz_oneint.npy"))
+    two_mo = np.load(("chatterjee/h2_aug-cc-pvtz_twoint.npy"))
+    # one_mo = np.load(("chatterjee/lih_cc-pvtz_oneint.npy"))
+    # two_mo = np.load(("chatterjee/lih_cc-pvtz_twoint.npy"))
+    # one_mo = np.load(("chatterjee/Be_aug-cc-pvtz_oneint.npy"))
+    # two_mo = np.load(("chatterjee/Be_aug-cc-pvtz_twoint.npy"))
+    # HF DMs
+    nbasis = one_mo.shape[0]
+    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
+    # print(nbasis)
+
+    # Evaluate particle-hole EOM
+    phrpa = eomee.ExcitationEOM(
+        spinize(one_mo), antisymmetrize(spinize(two_mo)), one_dm, two_dm
+    )
+
+    # print(phrpa.rhs)
+    EPH, CPH = phrpa.solve_dense()
+    # print("E(phRPA) = ", np.amax(EPH))
+    print(sorted(EPH))
+
+
+def eq77_pernal2018(h_1, h_0, v_1, v_0, dm1, dm2):
+    # FIXME: This isn't right either, returns positive
+    # ecorr values: 0.3353199240867684
+
+    # Size of dimensions
+    n = h_0.shape[0]
+    # H_1 - H_0
+    dh = h_1 - h_0
+    # V_1 - V_0
+    dv = v_1 - v_0
+
+    dm1_eye = np.einsum(
+        "qr,ps->pqrs", np.eye(n), dm1, optimize=True
+    )  # in our erpa "sq,pr->pqrs"
+    linear = dm1_eye - np.einsum("ps,qr->pqrs", dm1, dm1, optimize=True)
+    linear = 0.5 * np.einsum("pqrs,pqrs", linear, v_1, optimize=True)
+
+    @np.vectorize
+    def integrand(alpha):
+        # Compute H^alpha
+        h = alpha * dh
+        h += h_0
+        v = alpha * dv
+        v += v_0
+        # Antysymmetrize v_pqrs
+        v = antisymmetrize(v)
+
+        phrpa = eomee.ExcitationEOM(h, v, dm1, dm2)
+        _, coeffs = phrpa.solve_dense()
+
+        coeffs = coeffs.reshape(n ** 2, n, n)
+        # Compute transition RDMs
+        tdms = np.einsum("nij,pqij->npq", coeffs, phrpa._rhs.reshape(n, n, n, n))
+        # Compute nonlinear energy term
+        TT = np.zeros_like(dm2)
+        for tv in tdms:
+            TT += np.einsum("pr,qs->pqrs", tv, tv)  # in our erpa "ps,qr->pqrs"
+        TT -= np.einsum("pr,qs->pqrs", tdms[0], tdms[0])
+        return np.einsum("pqrs,pqrs", TT, v_1)
+
+    # return -linear
+    return 0.5 * integrate(integrand, 0, 1, n=50)[0] - linear
+    # return integrate(integrand, 0, 1, limit=50, epsabs=1.49e-04, epsrel=1.49e-04)[0]
 
 
 # test_excitationeom_erpa_heh_sto3g()
 # test_ph_rpa_h2_scuseria()
 test_ph_rpa_smallmol()
+# test_ph_rpa_ccpvdz_vanaggelen()
+# test_ph_rpa_chatterjee()
 
 
 # Comments:
@@ -255,9 +385,17 @@ test_ph_rpa_smallmol()
 # the current implementation of Pernal isn't usefull either:
 # Our integrated nonlinear term = 1.0036806090970734
 # Pernal's = 0.16366164714633863
-# TODO:
+# DONE:
 # Try equation (77) from KPernal2018, which is writen in terms of the TDMs
 # so I can use it with our ph-RPA implementation. Compare the result with the
 # one I'm getting with eomee.ExcitationEOM.erpa, and the one from the
 # the implementation of equation (82).
+# Evaluating Ecorr I get:
+# Ecorr 0.9909121973199415 (nuestro codigo)
+# Ecorr pernal 0.3353199240867684 (Eq. 77 )
+# TODO
+# Evalua manualmente los terminos en la funcion eomee.ExcitationEOM.erpa
+# para alpha=0 y alpha=1
+# Comprueba el convenio de indices usado en eomee.ExcitationEOM.erpa respecto
+# al de ExcitationEOM
 
