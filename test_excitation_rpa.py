@@ -1,7 +1,3 @@
-"""Test eomee.ionization."""
-
-import os
-import glob
 import eomee
 from eomee.tools import (
     find_datafiles,
@@ -9,393 +5,274 @@ from eomee.tools import (
     symmetrize,
     antisymmetrize,
     hartreefock_rdms,
+    from_unrestricted,
 )
 
 import numpy as np
-import csv
-
-from scipy.integrate import fixed_quad as integrate
-
-# from scipy.integrate import quad as integrate
+from scipy.linalg import svd
 
 
-def check_inputs_symm(oneint, twoint, onedm, twodm):
-    """Check symmetry of electron integrals and Density Matrices."""
-    # Electron integrals and DMs symmetric permutations
-    assert np.allclose(oneint, oneint.T)
-    assert np.allclose(onedm, onedm.T)
-    assert np.allclose(twoint, np.einsum("pqrs->rspq", twoint))
-    assert np.allclose(twoint, np.einsum("pqrs->qpsr", twoint))
-    assert np.allclose(twodm, np.einsum("pqrs->rspq", twodm))
-    assert np.allclose(twodm, np.einsum("pqrs->qpsr", twodm))
-    # Two-electron integrals  and 2DM antisymmetric permutations
-    assert np.allclose(twoint, -np.einsum("pqrs->pqsr", twoint))
-    assert np.allclose(twoint, -np.einsum("pqrs->qprs", twoint))
-    assert np.allclose(twodm, -np.einsum("pqrs->pqsr", twodm))
-    assert np.allclose(twodm, -np.einsum("pqrs->qprs", twodm))
-
-
-def test_excitationeom_erpa_heh_sto3g():
-    """Test Excitation ERPA for HeH+ (STO-3G)
+def get_tdm(cv, dm1, dm2, commutator=True):
+    """ Compute the transition RDMs.
+    Two options are possible, to use the commutator of
+    the excitation operators (commutator=True) or not.
 
     """
-    # H2O
-    nbasis = 7
-    data = np.load("gaussian_fchk_energy.npy")
-    # nuc_nuc = data[2]
-    orb_sum = 2 * (
-        -2.02628914e01
-        - 1.20969737e00
-        - 5.47964664e-01
-        - 4.36527222e-01
-        - 3.87586740e-01
+    nspins = dm1.shape[0]
+
+    # Compute transition RDMs
+    if commutator:
+        # gamma_kl;n = \sum_ij < |[k^+ l, j^+ i]| > c_ij;n
+        # c_ij;n (\delta_lj \gamma_ki - \delta_ik \gamma_jl)
+        rdm_terms = np.einsum("lj,ki->klij", np.eye(nspins), dm1, optimize=True)
+        rdm_terms -= np.einsum("ki,jl->klij", np.eye(nspins), dm1, optimize=True)
+    else:
+        # gamma_kl;n = \sum_ij < |k^+ l j^+ i| > c_ij;n
+        # c_ij;n (\delta_lj \gamma_ki - \Gamma_kjil)
+        rdm_terms = np.einsum("ki,lj->klij", dm1, np.eye(nspins), optimize=True)
+        rdm_terms -= np.einsum("kjil->klij", dm2, optimize=True)
+
+    cv = cv.reshape(nspins ** 2, nspins, nspins)
+    tdms = np.einsum("mrs,pqrs->mpq", cv, rdm_terms)
+    return tdms
+
+
+def solve_dense(rhs, lhs, tol=1.0e-7):
+    """
+        Solve the EOM eigenvalue system.
+
+        Parameters
+        ----------
+        tol : float, optional
+            Tolerance for small singular values. Default: 1.0e-10
+        rhs : numpy array
+            Right-hand-side matrix
+        lhs : numpy array
+            Left-hand-side matrix
+
+        """
+    # Invert RHS matrix
+    U, s, V = svd(rhs)
+    s = s ** (-1)
+    # Check singular value threshold
+    s[s >= 1 / tol] = 0.0
+    # rhs^(-1)
+    S_inv = np.diag(s)
+    rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
+
+    # Apply RHS^-1 * LHS and
+    # run eigenvalue solver
+    A = np.dot(rhs_inv, lhs)
+    w, v = np.linalg.eig(A)
+    # Return w (eigenvalues)
+    #    and v (eigenvector column matrix -- so transpose it!)
+    return np.real(w), np.real(v.T)
+
+
+def pickeig(w):
+    "adapted from PySCF TDSCF module"
+    idx = np.where(w > 0.001 ** 2)[0]
+    # get unique eigvals
+    b = np.sort(w[idx])
+    d = np.append(True, np.diff(b))
+    TOL = 1e-6
+    w = b[d > TOL]
+    return w
+
+
+phrpa = [
+    ("be_sto3g", (2, 2), 0.22224316, 4.13573698),
+    ("h2_hf_sto6g", (1, 1), 0.55493436, 0.92954096),
+    ("h2_3-21g", (1, 1), 0.36008273, 0.56873365),
+]
+
+
+def test_phrpa_rhs_comm(filename, nparts, e1, e2):
+    """Test Excitation EOM for RHF reference wfn.
+    The commutator form is used on the right-hand-side.
+    This is equivalent to ph-RPA/TD-HF.
+
+    """
+    one_mo = np.load(find_datafiles("{}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafiles("{}_twoint.npy".format(filename)))
+    nbasis = one_mo.shape[0]
+    na, nb = nparts
+    one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
+
+    # Evaluate particle-hole EOM
+    phrpa = eomee.ExcitationEOM(
+        spinize(one_mo), antisymmetrize(spinize(two_mo)), one_dm, two_dm
     )
-    print("Occ MOs summ", "\n", orb_sum)
+    ev, cv = phrpa.solve_dense(orthog="asymmetric")
+    result = pickeig(ev)
 
-    # nbasis = 4
-    nuc_nuc = 0
-    one_mo = np.load(find_datafiles("h2o_crawford_sto-3g_oneint.npy"))
-    # one_mo = np.load(find_datafiles("h2_3-21g_oneint.npy"))
-    # print(one_mo.shape)
-    two_mo = np.load(find_datafiles("h2o_crawford_sto-3g_twoint.npy"))
-    # two_mo = antisymmetrize(two_mo)
-    one_dm, two_dm = hartreefock_rdms(nbasis, 5, 5)
-    # check_inputs_symm(one_mo, two_mo, one_dm, two_dm)
+    assert np.allclose(result[0], e1)
+    assert np.allclose(result[1], e2)
 
-    # Build Fock operator
+
+cis = [
+    ("be_sto3g", (2, 2), 0.06550711, 0.23850668),
+    ("h2_hf_sto6g", (1, 1), 0.58389584, 0.94711594),
+    ("h2_3-21g", (1, 1), 0.38076394, 0.57817776),
+]
+
+
+def test_phrpa_rhs_nocomm(filename, nparts, e1, e2):
+    """Test Excitation EOM for RHF reference wfn.
+    The right-hand-side is without a commutator.
+    This is equivalent to CIS.
+
+    """
+    one_mo = np.load(find_datafiles("{}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafiles("{}_twoint.npy".format(filename)))
+    nbasis = one_mo.shape[0]
+    na, nb = nparts
+    one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
+
+    # Make particle-hole EOM object
+    phrpa = eomee.ExcitationEOM(
+        spinize(one_mo), antisymmetrize(spinize(two_mo)), one_dm, two_dm
+    )
+    # Compute right-hand-side (no-commutator form)
+    # M_klij = \gamma_kj \delta_li - \Gamma_kijl
+    I = np.eye(2 * nbasis, dtype=one_mo.dtype)
+    rhs = np.einsum("kj,li->klji", one_dm, I, optimize=True)
+    rhs -= np.einsum("kijl->klji", two_dm, optimize=True)
+    rhs = rhs.reshape((2 * nbasis) ** 2, (2 * nbasis) ** 2)
+    # Solve eigenvalue problem
+    ev, cv = solve_dense(rhs, phrpa.lhs)
+    result = pickeig(ev)
+
+    assert np.allclose(result[0], e1)
+    assert np.allclose(result[1], e2)
+
+
+def get_dm2_from_tdms(cv, one_dm, two_dm, comm=True):
+    # Gamma_pqrs = < | p^+ q^+ s r | >
+    #            = - < | p^+ q^+ r s | >
+    #            = - \delta_qr * \gamma_ps
+    #            + \gamma_pr * \gamma_qs
+    #            + \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
+    n = one_dm.shape[0]
+    # \gamma_pr * \gamma_qs - \delta_qr * \gamma_ps
+    dm2 = np.einsum("pr,qs->pqrs", one_dm, one_dm, optimize=True)
+    dm2 -= np.einsum("qr,ps->pqrs", np.eye(n), one_dm, optimize=True)
+
+    # Compute term involvin the tdms
+    # \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
+    tdms = get_tdm(cv, one_dm, two_dm, commutator=comm)
+
+    tv = np.zeros_like(two_dm)
+    for rdm in tdms:
+        tv += np.einsum("pr,qs->pqrs", rdm, rdm, optimize=True)
+    return dm2 + tv
+
+
+normalization = [
+    ("be_sto3g", (2, 2), -14.351880476202),
+    ("h2_hf_sto6g", (1, 1), -1.8384342592562477),
+    ("h2_3-21g", (1, 1), -1.836099198341838),
+    ("ne_321g", (5, 5), -127.803824528206),
+    ("he_ccpvdz", (1, 1), -2.85516047724274),
+]
+
+
+def test_reconstructed_2rdm_phrpa(filename, nparts, ehf):
+    """Evaluate ph-EOM (with commutator on right-hand-side).
+    Approximate the transition RDM (using the commutator
+    of the excitation operator) and reconstruct the 2-RDM.
+
+    """
+    one_mo = np.load(find_datafiles("{}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafiles("{}_twoint.npy".format(filename)))
+    nbasis = one_mo.shape[0]
+    na, nb = nparts
+    one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
+
+    # Evaluate particle-hole EOM
     one_mo = spinize(one_mo)
     two_mo = spinize(two_mo)
-    # two_mo = symmetrize(spinize(two_mo))
-    Fk = np.copy(one_mo)
-    Fk += np.einsum("piqj,ij->pq", antisymmetrize(two_mo), one_dm)
-    # Fk += np.einsum("piqi->pq", two_mo)
-    # Fk -= np.einsum("piiq->pq", two_mo)
-    # w, v = eig(Fk)
-    # print(w)
+    phrpa = eomee.ExcitationEOM(one_mo, antisymmetrize(two_mo), one_dm, two_dm)
+    _, cv = phrpa.solve_dense(orthog="asymmetric")
+    # Reconstruct 2RDM from T-RDM and
+    # check it adds to the right number
+    # of electron pairs
+    rdm2 = get_dm2_from_tdms(cv, one_dm, two_dm, comm=True)
 
-    # Energy Fock operator
-    # one_mo = spinize(one_mo)
-    # two_mo = symmetrize(spinize(two_mo))
-    print(
-        "reference E_fock",
-        "\n",
-        (np.einsum("ij,ij", one_mo, one_dm) + np.einsum("ijkl,ijkl", two_mo, two_dm))
-        + nuc_nuc,
+    def check_dm_normalization_condition(npart, twodm):
+        assert np.einsum("ijij", twodm) == (npart * (npart - 1))
+
+    check_dm_normalization_condition(na + nb, rdm2)
+
+    # Energy from HF RDMs
+    energy1 = np.einsum("ij,ij", one_mo, one_dm) + 0.5 * np.einsum(
+        "ijkl,ijkl", two_mo, two_dm
     )
-
-    # energy
-    Fk_energy = np.einsum("pq, pq", Fk, one_dm)
-    # Fk_energy = 2 * (Fk[0, 0] + Fk[1, 1])
-
-    print()
-    print("Diagonal of generated Fock matrix ", "\n", np.diag(Fk))
-    print("obtained E_fock", "\n", Fk_energy)
-    # print(orb_sum)
-    # print(orb_sum - Fk_energy)
-
-    one_mo_0 = Fk
-    two_mo_0 = np.zeros_like(two_mo)
-    dE = eomee.ExcitationEOM.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
-    print("1st order correction", Fk_energy + dE + nuc_nuc)
-    print(
-        "reference E_fock",
-        (
-            np.einsum("ij,ij", one_mo, one_dm)
-            + 0.5 * np.einsum("ijkl,ijkl", two_mo, two_dm)
-        )
-        + nuc_nuc,
+    assert np.allclose(energy1, ehf)
+    # Energy from reconstructed RDMs
+    energy2 = np.einsum("ij,ij", one_mo, one_dm) + 0.5 * np.einsum(
+        "ijkl,ijkl", two_mo, rdm2
     )
-    # print(ecorr)
-    # ecorr = eomee.DoubleElectronRemovalEOM.erpa(
-    #     one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
-    # )
-    # print(ecorr)
+    print("E_2rdm", energy2)
+    print("E_HF", ehf)
 
 
-def test_ph_rpa_h2_scuseria():
-    """Test Excitation RPA for H2 (cc-pVDZ)
-    RHF reference wfn.
+def test_reconstructed_2rdm_cis(filename, nparts, ehf):
+    """Evaluate ph-EOM (without commutator on right-hand-side).
+    Approximate the transition RDM (using the commutator
+    of the excitation operator) and reconstruct the 2-RDM.
 
     """
-    files = glob.glob("scuseria/h2_sc_*")
-    # energies_1 = []
-    for i, _ in enumerate(files[:3], start=1):
-        word = "h2_sc_{0}".format(i)
-        print("Molecule, ", word)
-        path = "scuseria/" + word + "/hartreefock_pyscf_energy.npy"
-        data = np.load(path, allow_pickle=True, encoding="bytes",)
-        nuc_nuc = data[2]
-
-        one_mo = np.load("scuseria/{0}/{0}_cc-pvdz_oneint.npy".format(word))
-        two_mo = np.load("scuseria/{0}/{0}_cc-pvdz_twoint.npy".format(word))
-        # # two_mo = antisymmetrize(two_mo)
-        nbasis = one_mo.shape[0]
-        one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
-
-        # Build Fock operator
-        one_mo = spinize(one_mo)
-        two_mo = symmetrize(spinize(two_mo))
-        Fk = np.copy(one_mo)
-        Fk += np.einsum("piqj,ij->pq", antisymmetrize(two_mo), one_dm)
-        # energy
-        Fk_energy = np.einsum("pq, pq", Fk, one_dm)
-        print(
-            "reference E_fock",
-            (
-                np.einsum("ij,ij", one_mo, one_dm)
-                + np.einsum("ijkl,ijkl", two_mo, two_dm)
-            )
-            + nuc_nuc,
-        )
-
-        one_mo_0 = Fk
-        two_mo_0 = np.zeros_like(two_mo)
-        # dE = eomee.ExcitationEOM.erpa(
-        #     one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
-        # )
-        dE = eomee.DoubleElectronAttachmentEOM.erpa(
-            one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
-        )
-        print("1st order correction", Fk_energy + dE + nuc_nuc)
-        # energy_1 = Fk_energy + dE + nuc_nuc
-        # energies_1.append(energy_1)
-    print("DONE")
-
-    # output = "energy1_h2_scuseria_nonlinearterm.csv"
-
-    # with open(output, "w") as output_file:
-    #     energy_data = csv.writer(output_file, dialect="excel")
-    #     fieldnames = [
-    #         "Molecules",
-    #         "HH bohr",
-    #         "Energy_linear",
-    #     ]
-    #     energy_data.writerow(fieldnames)
-
-    #     for i, _ in enumerate(files):
-    #         molname = "h2_sc_{0}".format(i + 1)
-    #         bond = "{:.1f}".format(1.0 + (i) * 0.1)
-    #         energy_data.writerow((molname, bond, energies_1[i]))
-    # print("Finito")
-
-
-def test_ph_rpa_smallmol():
-    """Test Excitation RPA for H2 (sto-3g)
-    RHF reference wfn.
-
-    """
-    # energies_1 = []
-
-    one_mo = np.load(find_datafiles("be_sto3g_oneint.npy"))
-    two_mo = np.load(find_datafiles("be_sto3g_twoint.npy"))
-    # one_mo = np.load(("smallmol/Be_0_1_3-21g_oneint.npy"))
-    # two_mo = np.load(("smallmol/Be_0_1_3-21g_twoint.npy"))
-    # one_mo = np.load(("vanaggelen/be_ccpvdz_oneint.npy"))
-    # two_mo = np.load(("vanaggelen/be_ccpvdz_twoint.npy"))
-    # ehf = -14.4868202421757  # -14.5723376309534
-    # energyfile = "hartreefock_pyscf_energy.npy"
-    # path = "smallmol/" + energyfile
-    # data = np.load(path, allow_pickle=True, encoding="bytes",)
-    nuc_nuc = 0  # data[2]
-    # ehf = data[1]  # + nuc_nuc
-    # print(ehf)
-
-    # # two_mo = antisymmetrize(two_mo)
+    one_mo = np.load(find_datafiles("{}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafiles("{}_twoint.npy".format(filename)))
     nbasis = one_mo.shape[0]
-    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
-    # print(nbasis)
+    na, nb = nparts
+    one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
-    # # Evaluate particle-hole EOM
-    # phrpa = eomee.ExcitationEOM(
-    #     spinize(one_mo), antisymmetrize(spinize(two_mo)), one_dm, two_dm
-    # )
-
-    # # print(phrpa.rhs)
-    # EPH, CPH = phrpa.solve_dense(orthog="asymmetric")
-    # # print("E(phRPA) = ", np.amax(EPH))
-    # # print(sorted(EPH))
-    # # print()
-    # lowest_e = np.sort(EPH[EPH > 0])
-    # print(lowest_e)
-    # # order = np.argsort(EPH)
-    # # vals, vecs = EPH[order], CPH[order]
-    # # print(vals)
-
-    # Build Fock operator
+    # Evaluate particle-hole EOM (rhs no-commutator form)
     one_mo = spinize(one_mo)
-    two_mo = symmetrize(spinize(two_mo))
-    Fk = np.copy(one_mo)
-    # Szabo: <i|h|j> + \sum_b <ib||jb>
-    # Fk += np.einsum("piqi->pq", antisymmetrize(two_mo))
-    #
-    Fk += np.einsum("piqj,ij->pq", antisymmetrize(two_mo), one_dm)
-    # e = np.linalg.eig(Fk)[0]
-    # print(e)
+    two_mo = spinize(two_mo)
+    phrpa = eomee.ExcitationEOM(one_mo, antisymmetrize(two_mo), one_dm, two_dm)
+    # M_klij = \gamma_kj \delta_li - \Gamma_kijl
+    I = np.eye(2 * nbasis, dtype=one_mo.dtype)
+    rhs = np.einsum("kj,li->klji", one_dm, I, optimize=True)
+    rhs -= np.einsum("kijl->klji", two_dm, optimize=True)
+    rhs = rhs.reshape((2 * nbasis) ** 2, (2 * nbasis) ** 2)
+    # Solve eigenvalue problem
+    _, cv = solve_dense(rhs, phrpa.lhs)
 
-    # Energies
-    Fk_energy = np.einsum("pq, pq", Fk, one_dm)
-    print(Fk_energy)
-    print(
-        "reference E_fock",
-        (np.einsum("ij,ij", one_mo, one_dm) + np.einsum("ijkl,ijkl", two_mo, two_dm))
-        + nuc_nuc,
+    # Reconstruct 2RDM from T-RDM and
+    # check it adds to the right number
+    # of electron pairs
+    rdm2 = get_dm2_from_tdms(cv, one_dm, two_dm, comm=True)
+
+    def check_dm_normalization_condition(npart, twodm):
+        assert np.einsum("ijij", twodm) == (npart * (npart - 1))
+
+    check_dm_normalization_condition(na + nb, rdm2)
+
+    # Energy from HF RDMs
+    energy1 = np.einsum("ij,ij", one_mo, one_dm) + 0.5 * np.einsum(
+        "ijkl,ijkl", two_mo, two_dm
     )
-    ehf = (
-        np.einsum("ij,ij", one_mo, one_dm)
-        + 0.5 * np.einsum("ijkl,ijkl", two_mo, two_dm)
-    ) + nuc_nuc
-    print(ehf)
-
-    one_mo_0 = Fk
-    two_mo_0 = np.zeros_like(two_mo)
-    dE = eomee.ExcitationEOM.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
-    # dE = eomee.DoubleElectronAttachmentEOM.erpa(
-    #     one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
-    # )
-    # print("1st order correction", Fk_energy + dE + nuc_nuc)
-
-    # E_1 - E_HF
-    print("Ecorr", Fk_energy + dE - ehf)
-    # print("Nonlinear term", dE)
-
-    # # e_chf = eq77_pernal2018(one_mo, one_mo_0, two_mo, two_mo_0, one_dm, two_dm)
-    # # print("Ecorr pernal", e_chf)
-    # # print("DONE")
-
-
-def test_ph_rpa_ccpvdz_vanaggelen():
-    """Test Excitation RPA for H2 (sto-3g)
-    RHF reference wfn.
-
-    """
-    one_mo = np.load(("vanaggelen/be_ccpvdz_oneint.npy"))
-    two_mo = np.load(("vanaggelen/be_ccpvdz_twoint.npy"))
-    # one_dm = np.load(("vanaggelen/be_ccpvdz_fci_onedm.npy"))
-    # two_dm = np.load(("vanaggelen/be_ccpvdz_fci_twodm.npy"))
-    # HF DMs
-    nbasis = one_mo.shape[0]
-    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
-
-    # Evaluate particle-hole EOM
-    phrpa = eomee.ExcitationEOM(
-        spinize(one_mo), antisymmetrize(spinize(two_mo)), one_dm, two_dm
+    assert np.allclose(energy1, ehf)
+    # Energy from reconstructed RDMs
+    energy2 = np.einsum("ij,ij", one_mo, one_dm) + 0.5 * np.einsum(
+        "ijkl,ijkl", two_mo, rdm2
     )
-
-    # print(phrpa.rhs)
-    EPH, CPH = phrpa.solve_dense()
-    # print("E(phRPA) = ", np.amax(EPH))
-    print(sorted(EPH))
+    print("E_2rdm", energy2)
+    print("E_HF", ehf)
 
 
-def test_ph_rpa_chatterjee():
-    """Test Excitation RPA for H2 (sto-3g)
-    RHF reference wfn.
+for test in phrpa:
+    test_phrpa_rhs_comm(*test)
 
-    """
-    one_mo = np.load(("chatterjee/h2_aug-cc-pvtz_oneint.npy"))
-    two_mo = np.load(("chatterjee/h2_aug-cc-pvtz_twoint.npy"))
-    # one_mo = np.load(("chatterjee/lih_cc-pvtz_oneint.npy"))
-    # two_mo = np.load(("chatterjee/lih_cc-pvtz_twoint.npy"))
-    # one_mo = np.load(("chatterjee/Be_aug-cc-pvtz_oneint.npy"))
-    # two_mo = np.load(("chatterjee/Be_aug-cc-pvtz_twoint.npy"))
-    # HF DMs
-    nbasis = one_mo.shape[0]
-    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
-    # print(nbasis)
+for test in cis:
+    test_phrpa_rhs_nocomm(*test)
 
-    # Evaluate particle-hole EOM
-    phrpa = eomee.ExcitationEOM(
-        spinize(one_mo), antisymmetrize(spinize(two_mo)), one_dm, two_dm
-    )
+for test in normalization:
+    test_reconstructed_2rdm_phrpa(*test)
 
-    # print(phrpa.rhs)
-    EPH, CPH = phrpa.solve_dense()
-    # print("E(phRPA) = ", np.amax(EPH))
-    print(sorted(EPH))
-
-
-def eq77_pernal2018(h_1, h_0, v_1, v_0, dm1, dm2):
-    # FIXME: This isn't right either, returns positive
-    # ecorr values: 0.3353199240867684
-
-    # Size of dimensions
-    n = h_0.shape[0]
-    # H_1 - H_0
-    dh = h_1 - h_0
-    # V_1 - V_0
-    dv = v_1 - v_0
-
-    dm1_eye = np.einsum(
-        "qr,ps->pqrs", np.eye(n), dm1, optimize=True
-    )  # in our erpa "sq,pr->pqrs"
-    linear = dm1_eye - np.einsum("ps,qr->pqrs", dm1, dm1, optimize=True)
-    linear = 0.5 * np.einsum("pqrs,pqrs", linear, v_1, optimize=True)
-
-    @np.vectorize
-    def integrand(alpha):
-        # Compute H^alpha
-        h = alpha * dh
-        h += h_0
-        v = alpha * dv
-        v += v_0
-        # Antysymmetrize v_pqrs
-        v = antisymmetrize(v)
-
-        phrpa = eomee.ExcitationEOM(h, v, dm1, dm2)
-        _, coeffs = phrpa.solve_dense()
-
-        coeffs = coeffs.reshape(n ** 2, n, n)
-        # Compute transition RDMs
-        tdms = np.einsum("nij,pqij->npq", coeffs, phrpa._rhs.reshape(n, n, n, n))
-        # Compute nonlinear energy term
-        TT = np.zeros_like(dm2)
-        for tv in tdms:
-            TT += np.einsum("pr,qs->pqrs", tv, tv)  # in our erpa "ps,qr->pqrs"
-        TT -= np.einsum("pr,qs->pqrs", tdms[0], tdms[0])
-        return np.einsum("pqrs,pqrs", TT, v_1)
-
-    # return -linear
-    return 0.5 * integrate(integrand, 0, 1, n=50)[0] - linear
-    # return integrate(integrand, 0, 1, limit=50, epsabs=1.49e-04, epsrel=1.49e-04)[0]
-
-
-# test_excitationeom_erpa_heh_sto3g()
-# test_ph_rpa_h2_scuseria()
-test_ph_rpa_smallmol()
-# test_ph_rpa_ccpvdz_vanaggelen()
-# test_ph_rpa_chatterjee()
-
-
-# Comments:
-# =========
-# Based on results for H2 STO-6G, taking HF as the reference at
-# alpha = 0 and TDMs approximated from ph-RPA.
-# Ecorr from our implemented adiabatic connection formula, Ecorr(phrpa),
-# vs the results using Equation (7) from Tahir2019 implemented in
-# the dity_tdhf.py script, Ecorr(phrpa)_tahir:
-# Ecorr(phrpa) = -0.5018403045485365
-# Ecorr(phrpa)_tahir =  -0.026114856279256027
-# We greatly overestimate the correlation correction.
-# The attemp at comparing vs an inpmlentation of Equation (82) from
-# KPernal2018 (also in script dity_tdhf.py) hasn't gone well:
-# Ecorr(phrpa)_pernal =  0.16366164714633863
-# The implementation needs verification of several terms involving the
-# two-electron integrals.
-# Comparing only the nonlinear terms from our equation to the one from
-# the current implementation of Pernal isn't usefull either:
-# Our integrated nonlinear term = 1.0036806090970734
-# Pernal's = 0.16366164714633863
-# DONE:
-# Try equation (77) from KPernal2018, which is writen in terms of the TDMs
-# so I can use it with our ph-RPA implementation. Compare the result with the
-# one I'm getting with eomee.ExcitationEOM.erpa, and the one from the
-# the implementation of equation (82).
-# Evaluating Ecorr I get:
-# Ecorr 0.9909121973199415 (nuestro codigo)
-# Ecorr pernal 0.3353199240867684 (Eq. 77 )
-# TODO
-# Evalua manualmente los terminos en la funcion eomee.ExcitationEOM.erpa
-# para alpha=0 y alpha=1
-# Comprueba el convenio de indices usado en eomee.ExcitationEOM.erpa respecto
-# al de ExcitationEOM
+for test in normalization:
+    test_reconstructed_2rdm_cis(*test)
 
