@@ -2,10 +2,8 @@ import numpy as np
 
 from scipy.integrate import quad as integrate
 
-# from scipy.integrate import fixed_quad as integrate
-
 from eomee.base import EOMState
-from eomee.tools import antisymmetrize
+from eomee.tools import antisymmetrize, pickpositiveeig
 
 
 __all__ = [
@@ -93,76 +91,6 @@ class ExcitationEOM(EOMState):
         m -= np.einsum("kj,il->klji", I, self.dm1, optimize=True)
         return m.reshape(self._n ** 2, self._n ** 2)
 
-    # @classmethod
-    # def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
-    #     """
-    #     Compute the ERPA correlation energy for the operator.
-
-    #     """
-    #     # Size of dimensions
-    #     n = h_0.shape[0]
-    #     # H_1 - H_0
-    #     dh = h_1 - h_0
-    #     # V_1 - V_0
-    #     dv = v_1 - v_0
-    #     # \delta_sq * \gamma_pr
-    #     dm1_eye = np.einsum("sq,pr->pqrs", np.eye(n), dm1, optimize=True)
-    #     # Lets force a \gamma term insteadof a \delta
-    #     # dm1_eye = np.einsum("sq,pr->pqrs", dm1, dm1, optimize=True)
-
-    #     # Compute linear term (eq. 19)
-    #     # dh * \gamma + 0.5 * dv * (\delta_sq * \gamma_pr - \gamma_ps * \gamma_qr)
-    #     linear = dm1_eye - np.einsum("ps,qr->pqrs", dm1, dm1, optimize=True)
-    #     linear = np.einsum("pq,pq", dh, dm1, optimize=True) + 0.5 * np.einsum(
-    #         "pqrs,pqrs", dv, linear, optimize=True
-    #     )
-
-    #     # Compute \delta_sq * \gamma_pr - \Gamma_psrq (eq. 29)
-    #     rdm_terms = dm1_eye - np.transpose(dm2, axes=(0, 3, 2, 1))
-    #     # # Compute \delta_sq * \gamma_pr - \delta_pr * \gamma_sq
-    #     # rdm_terms = dm1_eye - np.einsum("pr,sq->pqrs", np.eye(n), dm1, optimize=True)
-    #     # @np.vectorize
-    #     # Nonlinear term (eq. 19 integrand)
-    #     def nonlinear(alpha):
-    #         # Compute H^alpha
-    #         h = alpha * dh
-    #         h += h_0
-    #         v = alpha * dv
-    #         v += v_0
-    #         # Antysymmetrize v_pqrs
-    #         v = antisymmetrize(v)
-    #         # Solve EOM equations
-    #         c = (
-    #             cls(h, v, dm1, dm2)
-    #             .solve_dense(*args, **kwargs)[1]
-    #             .reshape(n ** 2, n, n)
-    #         )
-    #         # Compute transition RDMs (eq. 29)
-    #         rdms = np.einsum("mrs,pqrs->mpq", c, rdm_terms)
-    #         # Compute nonlinear energy term
-    #         tv = np.zeros_like(dm2)
-    #         for rdm in rdms:
-    #             tv += np.einsum("ps,qr->pqrs", rdm, rdm, optimize=True)
-    #         # tv = np.einsum("ps,qr->pqrs", rdms[0], rdms[0], optimize=True)
-    #         return np.einsum("pqrs,pqrs", dv, tv, optimize=True)
-
-    #     # Compute ERPA correlation energy (eq. 19)
-    #     return (
-    #         linear
-    #         - 0.5
-    #         * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[
-    #             0
-    #         ]
-    #     )
-    #     # return linear
-    #     # return (
-    #     #     0.5
-    #     #     * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[
-    #     #         0
-    #     #     ]
-    #     # )
-    #     # return linear - 0.5 * integrate(nonlinear, 0, 1, n=nint)[0]
-
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
         """
@@ -175,23 +103,26 @@ class ExcitationEOM(EOMState):
         dh = h_1 - h_0
         # V_1 - V_0
         dv = v_1 - v_0
-        # \delta_sq * \gamma_pr
-        eye_dm1 = np.einsum("rq,ps->pqrs", np.eye(n), dm1, optimize=True)
 
+        # Gamma_pqrs = < | p^+ q^+ s r | > = - < | p^+ q^+ r s | >
+        #            = - \delta_qr * \gamma_ps
+        #            + \gamma_pr * \gamma_qs
+        #            + \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
+        dm1_eye = np.einsum("qr,ps->pqrs", np.eye(n), dm1, optimize=True)
         # Compute linear term (eq. 19)
-        # dh * \gamma + 0.5 * dv * (\delta_sq * \gamma_pr - \gamma_ps * \gamma_qr)
-        linear = np.einsum("pr,qs->pqrs", dm1, dm1, optimize=True) - eye_dm1
+        # dh * \gamma + 0.5 * dv * (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
+        linear = np.einsum("ps,qr->pqrs", dm1, dm1, optimize=True) - dm1_eye
         linear = np.einsum("pq,pq", dh, dm1, optimize=True) + 0.5 * np.einsum(
             "pqrs,pqrs", dv, linear, optimize=True
         )
 
-        # # Compute \delta_sq * \gamma_pr - \Gamma_psrq (eq. 29)
-        # # rdm_terms = eye_dm1 - np.transpose(dm2, axes=(0, 3, 2, 1))
-        # rdm_terms = np.einsum("kj,li->klji", dm1, np.eye(n), optimize=True)
-        # rdm_terms -= np.einsum("kijl->klji", dm2, optimize=True)
-        # Compute \delta_iq * \gamma_pj - \Gamma_piqj
-        rdm_terms = np.einsum("li,kj->klji", np.eye(n), dm1, optimize=True)
-        rdm_terms -= np.einsum("kj,il->klji", np.eye(n), dm1, optimize=True)
+        # Compute RDM terms of transition RDM
+        # \delta_sq * \gamma_pr - \Gamma_psrq (eq. 29)
+        # rdm_terms = dm1_eye - np.transpose(dm2, axes=(0, 3, 2, 1))
+        # Commutator form: < |[p+q,s+r]| >
+        # \delta_qs \gamma_pr - \delta_pr \gamma_sq
+        rdm_terms = np.einsum("ps,qr->pqrs", np.eye(n), dm1, optimize=True)
+        rdm_terms -= np.einsum("pr,sq->pqrs", np.eye(n), dm1, optimize=True)
         # @np.vectorize
         # Nonlinear term (eq. 19 integrand)
         def nonlinear(alpha):
@@ -208,13 +139,16 @@ class ExcitationEOM(EOMState):
                 .solve_dense(*args, **kwargs)[1]
                 .reshape(n ** 2, n, n)
             )
+            # w, c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)
+            # _, c, _ = pickpositiveeig(w, c)
             # Compute transition RDMs (eq. 29)
-            rdms = np.einsum("mji,pqji->mpq", c, rdm_terms)
+            rdms = np.einsum("mrs,pqrs->mpq", c.reshape(n ** 2, n, n), rdm_terms)
+            # rdms = np.einsum("mrs,pqrs->mpq", c.reshape(c.shape[0], n, n), rdm_terms)
             # Compute nonlinear energy term
             tv = np.zeros_like(dm2)
             for rdm in rdms:
-                tv += np.einsum("ps,qr->pqrs", rdm, rdm.T, optimize=True)
-            return np.einsum("pqrs,pqsr", dv, tv, optimize=True)
+                tv += np.einsum("pr,qs->pqrs", rdm, rdm, optimize=True)
+            return np.einsum("pqrs,pqrs", dv, tv, optimize=True)
 
         # Compute ERPA correlation energy (eq. 19)
         return (

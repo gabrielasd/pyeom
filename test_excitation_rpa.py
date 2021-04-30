@@ -270,6 +270,31 @@ def test_reconstructed_2rdm_cis(filename, nparts, ehf):
     print("E_HF", ehf, "E_2rdm", energy2, "\n")
 
 
+def test_phrpa_adiabaticconection(filename, nparts, ehf):
+    """Test energy correction from ERPA.
+    The commutator form is used on the ph-EOM right-hand-side.
+
+    """
+    one_mo = np.load(find_datafiles("{}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafiles("{}_twoint.npy".format(filename)))
+    nbasis = one_mo.shape[0]
+    na, nb = nparts
+    one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
+
+    # Build Fock operator
+    one_mo = spinize(one_mo)
+    two_mo = symmetrize(spinize(two_mo))
+    Fk = np.copy(one_mo)
+    Fk += np.einsum("piqj,ij->pq", antisymmetrize(two_mo), one_dm)
+
+    # Evaluate ERPA
+    one_mo_0 = Fk
+    two_mo_0 = np.zeros_like(two_mo)
+    dE = eomee.ExcitationEOM.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
+    print("E_HF", ehf)
+    print("E_erpa", np.einsum("pq, pq", Fk, one_dm) + dE)
+
+
 for test in phrpa:
     test_phrpa_rhs_comm(*test)
 
@@ -281,4 +306,7 @@ for test in normalization:
 
 for test in normalization:
     test_reconstructed_2rdm_cis(*test)
+
+for test in normalization:
+    test_phrpa_adiabaticconection(*test)
 

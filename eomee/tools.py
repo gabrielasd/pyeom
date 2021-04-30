@@ -15,6 +15,7 @@ __all__ = [
     "from_unrestricted",
     "hartreefock_rdms",
     "find_datafiles",
+    "pickpositiveeig",
 ]
 
 DIRPATH = path.join(path.dirname(__file__), "test/", "data/")
@@ -181,3 +182,9 @@ def hartreefock_rdms(nbasis, na, nb):
     dm2 = np.kron(dm1, dm1).reshape(k, k, k, k)
     dm2 -= dm2.transpose(0, 1, 3, 2)
     return dm1, dm2
+
+
+def pickpositiveeig(w, cv, tol=0.01):
+    "adapted from PySCF TDSCF module"
+    idx = np.where(w > tol ** 2)[0]
+    return w[idx], cv[idx], idx
