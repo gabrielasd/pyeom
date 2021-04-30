@@ -32,7 +32,7 @@ def get_tdm(cv, dm1, dm2, commutator=True):
         rdm_terms = np.einsum("ki,lj->klij", dm1, np.eye(nspins), optimize=True)
         rdm_terms -= np.einsum("kjil->klij", dm2, optimize=True)
 
-    cv = cv.reshape(nspins ** 2, nspins, nspins)
+    cv = cv.reshape(cv.shape[0], nspins, nspins)
     tdms = np.einsum("mrs,pqrs->mpq", cv, rdm_terms)
     return tdms
 
@@ -168,6 +168,12 @@ def get_dm2_from_tdms(cv, one_dm, two_dm, comm=True):
     return dm2 + tv
 
 
+def pickpositiveeig(w, cv):
+    "adapted from PySCF TDSCF module"
+    idx = np.where(w > 0.01 ** 2)[0]
+    return w[idx], cv[idx], idx
+
+
 normalization = [
     ("be_sto3g", (2, 2), -14.351880476202),
     ("h2_hf_sto6g", (1, 1), -1.8384342592562477),
@@ -193,14 +199,15 @@ def test_reconstructed_2rdm_phrpa(filename, nparts, ehf):
     one_mo = spinize(one_mo)
     two_mo = spinize(two_mo)
     phrpa = eomee.ExcitationEOM(one_mo, antisymmetrize(two_mo), one_dm, two_dm)
-    _, cv = phrpa.solve_dense(orthog="asymmetric")
+    w, cv = phrpa.solve_dense(orthog="asymmetric")
     # Reconstruct 2RDM from T-RDM and
     # check it adds to the right number
     # of electron pairs
-    rdm2 = get_dm2_from_tdms(cv, one_dm, two_dm, comm=True)
+    _, pcv, _ = pickpositiveeig(w, cv)
+    rdm2 = get_dm2_from_tdms(pcv, one_dm, two_dm, comm=True)
 
     def check_dm_normalization_condition(npart, twodm):
-        assert np.einsum("ijij", twodm) == (npart * (npart - 1))
+        assert np.allclose(np.einsum("ijij", twodm), (npart * (npart - 1)))
 
     check_dm_normalization_condition(na + nb, rdm2)
 
@@ -213,8 +220,7 @@ def test_reconstructed_2rdm_phrpa(filename, nparts, ehf):
     energy2 = np.einsum("ij,ij", one_mo, one_dm) + 0.5 * np.einsum(
         "ijkl,ijkl", two_mo, rdm2
     )
-    print("E_2rdm", energy2)
-    print("E_HF", ehf)
+    print("E_HF", ehf, "E_2rdm", energy2, "\n")
 
 
 def test_reconstructed_2rdm_cis(filename, nparts, ehf):
@@ -239,15 +245,16 @@ def test_reconstructed_2rdm_cis(filename, nparts, ehf):
     rhs -= np.einsum("kijl->klji", two_dm, optimize=True)
     rhs = rhs.reshape((2 * nbasis) ** 2, (2 * nbasis) ** 2)
     # Solve eigenvalue problem
-    _, cv = solve_dense(rhs, phrpa.lhs)
+    w, cv = solve_dense(rhs, phrpa.lhs)
 
     # Reconstruct 2RDM from T-RDM and
     # check it adds to the right number
     # of electron pairs
-    rdm2 = get_dm2_from_tdms(cv, one_dm, two_dm, comm=True)
+    _, pcv, _ = pickpositiveeig(w, cv)
+    rdm2 = get_dm2_from_tdms(pcv, one_dm, two_dm, comm=True)
 
     def check_dm_normalization_condition(npart, twodm):
-        assert np.einsum("ijij", twodm) == (npart * (npart - 1))
+        assert np.allclose(np.einsum("ijij", twodm), (npart * (npart - 1)))
 
     check_dm_normalization_condition(na + nb, rdm2)
 
@@ -260,8 +267,7 @@ def test_reconstructed_2rdm_cis(filename, nparts, ehf):
     energy2 = np.einsum("ij,ij", one_mo, one_dm) + 0.5 * np.einsum(
         "ijkl,ijkl", two_mo, rdm2
     )
-    print("E_2rdm", energy2)
-    print("E_HF", ehf)
+    print("E_HF", ehf, "E_2rdm", energy2, "\n")
 
 
 for test in phrpa:
