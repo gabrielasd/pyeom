@@ -111,17 +111,15 @@ class ExcitationEOM(EOMState):
         dm1_eye = np.einsum("qr,ps->pqrs", np.eye(n), dm1, optimize=True)
         # Compute linear term (eq. 19)
         # dh * \gamma + 0.5 * dv * (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
-        linear = np.einsum("ps,qr->pqrs", dm1, dm1, optimize=True) - dm1_eye
+        linear = np.einsum("pr,qs->pqrs", dm1, dm1, optimize=True) - dm1_eye
         linear = np.einsum("pq,pq", dh, dm1, optimize=True) + 0.5 * np.einsum(
             "pqrs,pqrs", dv, linear, optimize=True
         )
 
         # Compute RDM terms of transition RDM
-        # \delta_sq * \gamma_pr - \Gamma_psrq (eq. 29)
-        # rdm_terms = dm1_eye - np.transpose(dm2, axes=(0, 3, 2, 1))
         # Commutator form: < |[p+q,s+r]| >
         # \delta_qs \gamma_pr - \delta_pr \gamma_sq
-        rdm_terms = np.einsum("ps,qr->pqrs", np.eye(n), dm1, optimize=True)
+        rdm_terms = np.einsum("qs,pr->pqrs", np.eye(n), dm1, optimize=True)
         rdm_terms -= np.einsum("pr,sq->pqrs", np.eye(n), dm1, optimize=True)
         # @np.vectorize
         # Nonlinear term (eq. 19 integrand)
@@ -134,16 +132,10 @@ class ExcitationEOM(EOMState):
             # Antysymmetrize v_pqrs
             v = antisymmetrize(v)
             # Solve EOM equations
-            c = (
-                cls(h, v, dm1, dm2)
-                .solve_dense(*args, **kwargs)[1]
-                .reshape(n ** 2, n, n)
-            )
-            # w, c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)
-            # _, c, _ = pickpositiveeig(w, c)
+            w, c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)
+            _, c, _ = pickpositiveeig(w, c)
             # Compute transition RDMs (eq. 29)
-            rdms = np.einsum("mrs,pqrs->mpq", c.reshape(n ** 2, n, n), rdm_terms)
-            # rdms = np.einsum("mrs,pqrs->mpq", c.reshape(c.shape[0], n, n), rdm_terms)
+            rdms = np.einsum("mrs,pqrs->mpq", c.reshape(c.shape[0], n, n), rdm_terms)
             # Compute nonlinear energy term
             tv = np.zeros_like(dm2)
             for rdm in rdms:

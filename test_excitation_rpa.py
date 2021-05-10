@@ -290,7 +290,9 @@ def test_phrpa_adiabaticconection(filename, nparts, ehf):
     # Evaluate ERPA
     one_mo_0 = Fk
     two_mo_0 = np.zeros_like(two_mo)
-    dE = eomee.ExcitationEOM.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
+    dE = eomee.ExcitationEOM.erpa(
+        one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm, orthog="asymmetric"
+    )
     print("E_HF", ehf)
     print("E_erpa", np.einsum("pq, pq", Fk, one_dm) + dE)
 
@@ -309,4 +311,3 @@ for test in normalization:
 
 for test in normalization:
     test_phrpa_adiabaticconection(*test)
-
