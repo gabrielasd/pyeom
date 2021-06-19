@@ -1,23 +1,44 @@
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Double electron affinity EOM state class."""
+
+
 import numpy as np
 
 from eomee.base import EOMState
 from eomee.tools import antisymmetrize
+
 from scipy.integrate import quad as integrate
 
-__all__ = ["DoubleElectronAttachmentEOM"]
+
+__all__ = [
+    "DoubleElectronAttachmentEOM",
+]
 
 
 class DoubleElectronAttachmentEOM(EOMState):
-    """
-
-    """
+    r""" """
 
     @property
     def neigs(self):
+        r""" """
         return self._n ** 2
 
     def _compute_lhs(self):
-        """
+        r"""
         Compute A = 2 (h_{li} \delta_{kj} - h_{ki} \delta_{lj})
                   + 2 (h_{ki} \gamma_{jl} - h_{li} \gamma_{jk})
                   + 2 \sum_{p} (h_{pi} \gamma_{pk} \delta_{lj} + h_{pj} \gamma_{pl} \delta_{ki})
@@ -64,7 +85,7 @@ class DoubleElectronAttachmentEOM(EOMState):
         return a.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
-        """
+        r"""
         Compute M = \Gamma_{ijlk}
                   + \delta_{li} \delta_{kj} - \delta_{ki} \delta_{lj}
                   + \delta_{ki} \gamma_{jl} - \delta_{kj} \gamma_{li}
@@ -86,7 +107,7 @@ class DoubleElectronAttachmentEOM(EOMState):
 
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
-        """
+        r"""
         Compute the ERPA correlation energy for the operator.
 
         """
@@ -123,6 +144,7 @@ class DoubleElectronAttachmentEOM(EOMState):
 
         # Nonlinear term (eq. 19 integrand)
         def nonlinear(alpha):
+            r""" """
             # Compute H^alpha
             h = alpha * dh
             h += h_0
@@ -131,11 +153,7 @@ class DoubleElectronAttachmentEOM(EOMState):
             # Antysymmetrize v_pqrs
             v = antisymmetrize(v)
             # Solve EOM equations
-            c = (
-                cls(h, v, dm1, dm2)
-                .solve_dense(*args, **kwargs)[1]
-                .reshape(n ** 2, n, n)
-            )
+            c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)[1].reshape(n ** 2, n, n)
             # Compute transition RDMs (eq. 35)
             rdms = np.einsum("mrs,pqsr->mpq", c, rdm_terms)
             # Compute nonlinear energy term
@@ -162,9 +180,6 @@ class DoubleElectronAttachmentEOM(EOMState):
         # Compute ERPA correlation energy (eq. 19)
         return (
             linear
-            - 0.5
-            * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[
-                0
-            ]
+            - 0.5 * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[0]
         )
         # return linear

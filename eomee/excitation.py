@@ -1,3 +1,21 @@
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Excitation EOM state class."""
+
+
 import numpy as np
 
 from scipy.integrate import quad as integrate
@@ -12,7 +30,7 @@ __all__ = [
 
 
 class ExcitationEOM(EOMState):
-    """
+    r"""
     Excitation EOM state for operator Q = \sum_{ij} { c_{ij} a^{\dagger}_i  a_j}.
     .. math::
         \left< \Psi^{(N)}_0 \middle| [a^{\dagger}_k  a_l, [\hat{H}, \hat{Q}]] \middle| \Psi^{(N)}_0 \right>
@@ -22,7 +40,7 @@ class ExcitationEOM(EOMState):
 
     @property
     def neigs(self):
-        """
+        r"""
         Return the size of the eigensystem.
 
         Returns
@@ -35,7 +53,7 @@ class ExcitationEOM(EOMState):
         return self._n ** 2
 
     def _compute_lhs(self):
-        """
+        r"""
         Compute A = h_{li} \gamma_{kj} + h_{jk} \gamma_{il}
                   - \sum_q { h_{jq} \delta_{il} \gamma_{kq}}
                   - \sum_q { h_{qi} \delta_{jk} \gamma_{ql}}
@@ -75,7 +93,7 @@ class ExcitationEOM(EOMState):
         return b.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
-        """
+        r"""
         Compute M = \gamma_{kj} \delta_{li} - \Gamma_{kijl}.
 
         """
@@ -93,7 +111,7 @@ class ExcitationEOM(EOMState):
 
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
-        """
+        r"""
         Compute the ERPA correlation energy for the operator.
 
         """
@@ -124,6 +142,7 @@ class ExcitationEOM(EOMState):
         # @np.vectorize
         # Nonlinear term (eq. 19 integrand)
         def nonlinear(alpha):
+            r""" """
             # Compute H^alpha
             h = alpha * dh
             h += h_0
@@ -145,8 +164,5 @@ class ExcitationEOM(EOMState):
         # Compute ERPA correlation energy (eq. 19)
         return (
             linear
-            + 0.5
-            * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[
-                0
-            ]
+            + 0.5 * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[0]
         )

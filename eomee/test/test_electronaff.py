@@ -1,7 +1,23 @@
-"""Test eomee.electronaff."""
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Test eomee.electronaff."""
 
 
 import eomee
+
 from eomee.tools import (
     find_datafiles,
     spinize,
@@ -11,6 +27,7 @@ from eomee.tools import (
 )
 
 import numpy as np
+
 from scipy.linalg import eig, svd
 
 
@@ -246,9 +263,7 @@ def test_electronaff_be_sto3g():
 
     # Reference value from
     # HORTON RHF
-    horton_mos = np.asarray(
-        [-4.48399211, -0.25403769, 0.22108596, 0.22108596, 0.22108596]
-    )
+    horton_mos = np.asarray([-4.48399211, -0.25403769, 0.22108596, 0.22108596, 0.22108596])
     ea = 0.22108596
     assert abs(sorted(aval1)[-1] - ea) < 1e-8
     assert abs(sorted(aval2)[-1] - ea) < 1e-8
