@@ -1,10 +1,27 @@
-"""Test eomee.doubleionization."""
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Test eomee.doubleionization."""
 
 
 import eomee
+
 from eomee.tools import find_datafiles
 
 import numpy as np
+
 from eomee.tools import (
     find_datafiles,
     spinize,
@@ -17,8 +34,8 @@ from scipy.linalg import eig, svd
 
 
 def test_doubleionization_one_body_term_H2():
-    """Check the one-body terms of the double ionization potential
-    equation of motion are correct.
+    r"""
+    Check the one-body terms of the double ionization potential equation of motion are correct.
 
     """
     nbasis = 2
@@ -38,7 +55,8 @@ def test_doubleionization_one_body_term_H2():
 
 
 def test_doubleionization_two_body_term_H2():
-    """Check the two-body teerms of the double ionization potential
+    r"""
+    Check the two-body teerms of the double ionization potential
     equation of motion are correct.
 
     """
@@ -184,7 +202,8 @@ def test_doubleionization_two_body_term_H2():
 
 
 def test_doubleionization_H2_sto6g():
-    """Test DoubleElectronRemovalEOM for H2 (STO-6G)
+    r"""
+    Test DoubleElectronRemovalEOM for H2 (STO-6G)
     against Hartree-Fock canonical orbitals energy
     difference.
 
@@ -206,7 +225,8 @@ def test_doubleionization_H2_sto6g():
 
 
 def test_doubleionization_He_ccpvdz():
-    """Test DoubleElectronRemovalEOM for He (cc-pVDZ)
+    r"""
+    Test DoubleElectronRemovalEOM for He (cc-pVDZ)
     against Hartree-Fock canonical orbitals energy
     difference.
 
@@ -228,7 +248,8 @@ def test_doubleionization_He_ccpvdz():
 
 
 def test_doubleionization_HeHcation_sto3g():
-    """Test DoubleElectronRemovalEOM for HeH^{+} (STO-3G)
+    r"""
+    Test DoubleElectronRemovalEOM for HeH^{+} (STO-3G)
     against Hartree-Fock canonical orbitals energy
     difference.
 
@@ -250,7 +271,10 @@ def test_doubleionization_HeHcation_sto3g():
 
 
 def test_doubleionization_erpa_HeHcation_sto3g():
-    """Test DoubleElectronRemovalEOM ERPA for HeH^{+} (STO-3G)"""
+    r"""
+    Test DoubleElectronRemovalEOM ERPA for HeH^{+} (STO-3G).
+
+    """
     nbasis = 2
     one_mo = np.load(find_datafiles("heh+_sto3g_oneint.npy"))
     one_mo = spinize(one_mo)
@@ -285,13 +309,14 @@ def test_doubleionization_erpa_HeHcation_sto3g():
         n // 2 : (n // 2 + 1),
     ] = bbbb
 
-    ecorr = eomee.DoubleElectronRemovalEOM.erpa(
-        one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
-    )
+    ecorr = eomee.DoubleElectronRemovalEOM.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
 
 
 def test_doubleionization_erpa_Ne_321g():
-    """Test DoubleElectronRemovalEOM ERPA for Ne 321g"""
+    r"""
+    Test DoubleElectronRemovalEOM ERPA for Ne 321g.
+
+    """
     nbasis = 9
     one_mo = np.load(find_datafiles("ne_321g_oneint.npy"))
     one_mo = spinize(one_mo)
@@ -326,6 +351,4 @@ def test_doubleionization_erpa_Ne_321g():
         n // 2 : (n // 2 + 5),
     ] = bbbb
 
-    ecorr = eomee.DoubleElectronRemovalEOM.erpa(
-        one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm
-    )
+    ecorr = eomee.DoubleElectronRemovalEOM.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)

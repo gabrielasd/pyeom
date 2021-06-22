@@ -1,8 +1,21 @@
-"""
-Functions for electron integrals transformation from spatial to spin representation
-and Hartree-Fock reduced density calculation.
-"""
-# Author: Michael Risher
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Electron integral transformations from spatial to spin representation and Hartree-Fock RDMs."""
+
+
 from os import path
 
 import numpy as np
@@ -22,6 +35,7 @@ DIRPATH = path.join(path.dirname(__file__), "test/", "data/")
 
 
 def find_datafiles(file_name):
+    r""" """
     datapath = path.join(path.abspath(DIRPATH), file_name)
     return path.abspath(datapath)
 
@@ -185,6 +199,9 @@ def hartreefock_rdms(nbasis, na, nb):
 
 
 def pickpositiveeig(w, cv, tol=0.01):
-    "adapted from PySCF TDSCF module"
+    r"""
+    Adapted from PySCF TDSCF module.
+
+    """
     idx = np.where(w > tol ** 2)[0]
     return w[idx], cv[idx], idx

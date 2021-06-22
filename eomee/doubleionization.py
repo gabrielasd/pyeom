@@ -1,16 +1,36 @@
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Double electron removal EOM state class."""
+
+
 import numpy as np
 
-# from scipy.integrate import fixed_quad
 from scipy.integrate import quad as integrate
 
 from eomee.base import EOMState
 from eomee.tools import antisymmetrize
 
-__all__ = ["DoubleElectronRemovalEOM"]
+
+__all__ = [
+    "DoubleElectronRemovalEOM",
+]
 
 
 class DoubleElectronRemovalEOM(EOMState):
-    """
+    r"""
     Double Ionization EOM state for operator Q = \sum_{ij} { c_{ij} a_i a_j}.
     .. math::
         \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l \left[ \hat{H}, \hat{Q} \right] \middle| \Psi^{(N)}_0 \right>
@@ -20,10 +40,11 @@ class DoubleElectronRemovalEOM(EOMState):
 
     @property
     def neigs(self):
+        r""" """
         return self._n ** 2
 
     def _compute_lhs(self):
-        """
+        r"""
         Compute A = 2 ( h_{il} \delta_{jk} - h_{il} \gamma_{kj} + h_{ik} \gamma_{lj} - h_{ik} \delta_{jl} )
                   + 2 ( \sum_q { h_{jq} \gamma_{lq} \delta_{ik} - h_{jq} \gamma_{kq} \delta_{il} } )
                   + \left< ji||kl \right> + \sum_r { \left< ji||lr \right> \gamma_{kr} - \left< ji||kr \right> \gamma_{lr} }
@@ -65,7 +86,7 @@ class DoubleElectronRemovalEOM(EOMState):
         return a.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
-        """
+        r"""
         Compute M = \Gamma_{klji}
         """
 
@@ -75,7 +96,7 @@ class DoubleElectronRemovalEOM(EOMState):
 
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
-        """
+        r"""
         Compute the ERPA correlation energy for the operator.
 
         """
@@ -93,6 +114,7 @@ class DoubleElectronRemovalEOM(EOMState):
         # Nonlinear term (eq. 20 integrand)
         @np.vectorize
         def nonlinear(alpha):
+            r""" """
             # Compute H^alpha
             h = alpha * dh
             h += h_0
@@ -101,11 +123,7 @@ class DoubleElectronRemovalEOM(EOMState):
             # Antysymmetrize v_pqrs
             v = antisymmetrize(v)
             # Solve EOM equations
-            c = (
-                cls(h, v, dm1, dm2)
-                .solve_dense(*args, **kwargs)[1]
-                .reshape(n ** 2, n, n)
-            )
+            c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)[1].reshape(n ** 2, n, n)
             # Compute transition RDMs (eq. 32)
             # \gamma_m;pq = c_m;rs * \Gamma_pqrs
             rdms = np.einsum("mrs,pqrs->mpq", c, dm2)
@@ -120,8 +138,5 @@ class DoubleElectronRemovalEOM(EOMState):
         # return linear + 0.5 * fixed_quad(nonlinear, 0, 1, n=nint)[0]
         return (
             linear
-            - 0.5
-            * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[
-                0
-            ]
+            - 0.5 * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[0]
         )

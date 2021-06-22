@@ -13,4 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
-r"""Equations-of-motion testing package."""
+BUILDDIR = build
+SOURCEDIR = source
+SPHINXBUILD ?= PYTHONPATH=.. sphinx-build
+SPHINXOPTS ?=
+
+.PHONY: help
+help:
+	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+.PHONY: Makefile
+%: Makefile
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

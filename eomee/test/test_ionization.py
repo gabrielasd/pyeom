@@ -1,4 +1,19 @@
-"""Test eomee.ionization."""
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Test eomee.ionization."""
 
 
 # import eomee
@@ -7,6 +22,7 @@ from eomee import (
     IonizationDoubleCommutator,
     IonizationAntiCommutator,
 )
+
 from eomee.tools import (
     find_datafiles,
     spinize,
@@ -16,7 +32,9 @@ from eomee.tools import (
 )
 
 import numpy as np
+
 from scipy.linalg import eig, svd
+
 import pytest
 
 
@@ -86,9 +104,7 @@ def test_ionizationeom_one_body_term_h2():
         ("b_sto3g", 5, (3, 2), 4, 0.20051823, 1e-8, IonizationAntiCommutator),
     ],
 )
-def test_ionizationeomstate_h2_sto6g(
-    filename, nbasis, nocc, evidx, expected, tol, eom_type
-):
+def test_ionizationeomstate_h2_sto6g(filename, nbasis, nocc, evidx, expected, tol, eom_type):
     """Test IonizationEOMState for H2 (STO-6G)
     against Hartree-Fock canonical orbital energy and
     experimental results.

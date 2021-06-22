@@ -1,17 +1,35 @@
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Electron affinity EOM state class."""
+
+
 import numpy as np
 
 from eomee.base import EOMState
 
 
 __all__ = [
-    'ElectronAffinitiesEOM1',
-    'ElectronAffinitiesEOM2',
-    'ElectronAffinitiesEOM3',
+    "ElectronAffinitiesEOM1",
+    "ElectronAffinitiesEOM2",
+    "ElectronAffinitiesEOM3",
 ]
 
 
 class ElectronAffinitiesEOM1(EOMState):
-    """
+    r"""
     Electron Affinities EOM states for operator Q = \sum_n { c_n a^{\dagger}_n }.
 
     .. math::
@@ -22,7 +40,7 @@ class ElectronAffinitiesEOM1(EOMState):
 
     @property
     def neigs(self):
-        """
+        r"""
         Return the size of the eigensystem.
 
         Returns
@@ -35,7 +53,7 @@ class ElectronAffinitiesEOM1(EOMState):
         return self._n
 
     def _compute_lhs(self):
-        """
+        r"""
         Compute A = h_mn - \sum_p { h_{pn} \gamma_{pm} }
                   - 2 \sum_{pqs} { v_pqsn \Gamma_pqsm }
                   + 4 \sum_{qs} { v_mqns \gamma_qs}.
@@ -52,7 +70,7 @@ class ElectronAffinitiesEOM1(EOMState):
         return a
 
     def _compute_rhs(self):
-        """
+        r"""
         Compute M = \sum_n { \delta_nm - \gamma_{nm} }.
 
         """
@@ -74,7 +92,7 @@ class ElectronAffinitiesEOM2(EOMState):
 
     @property
     def neigs(self):
-        """
+        r"""
         Return the size of the eigensystem.
 
         Returns
@@ -87,17 +105,17 @@ class ElectronAffinitiesEOM2(EOMState):
         return self._n
 
     def _compute_lhs(self):
-        """
+        r"""
         Compute A = h_mn + \sum_{qr} { v_mqnr \gamma_qr}.
 
         """
         # A_mn = h_mn + <v_mqnr> \gamma_qr
         a = np.copy(self._h)
-        a += np.einsum('mqnr,qr->mn', self._v, self._dm1)
+        a += np.einsum("mqnr,qr->mn", self._v, self._dm1)
         return a
 
     def _compute_rhs(self):
-        """
+        r"""
         Compute M = \sum_n { \delta_nm }.
 
         """
@@ -118,7 +136,7 @@ class ElectronAffinitiesEOM3(EOMState):
 
     @property
     def neigs(self):
-        """
+        r"""
         Return the size of the eigensystem.
 
         Returns
@@ -131,7 +149,7 @@ class ElectronAffinitiesEOM3(EOMState):
         return self._n
 
     def _compute_lhs(self):
-        """
+        r"""
         Compute A = h_mn - 2\sum_p { h_{pn} \gamma_{pm} }
                   + \sum_{pqr} { v_pqrn \Gamma_pqmr }
                   + \sum_{qs} { v_mqns \gamma_qs}.
@@ -139,16 +157,24 @@ class ElectronAffinitiesEOM3(EOMState):
         """
         # A_mn = h_mn + <v_mqnr> \gamma_qr
         a = np.copy(self._h)
-        a += np.einsum('mqnr,qr->mn', self._v, self._dm1)
+        a += np.einsum("mqnr,qr->mn", self._v, self._dm1)
         # A_mn -= 2 h_pn \gamma_pm
-        a -= 2 * np.einsum('pm,pn->mn', self._dm1, self._h, )
+        a -= 2 * np.einsum(
+            "pm,pn->mn",
+            self._dm1,
+            self._h,
+        )
         # A_mn += <v_pqrn> \Gamma_pqmr
         #      -= <v_pqnr> \Gamma_pqmr
-        a -= 2 * np.einsum('pqmr,pqnr->mn', self._dm2, self._v, )
+        a -= 2 * np.einsum(
+            "pqmr,pqnr->mn",
+            self._dm2,
+            self._v,
+        )
         return a
 
     def _compute_rhs(self):
-        """
+        r"""
         Compute M = \sum_n { \delta_nm - 2 \gamma_{nm} }
 
         """
