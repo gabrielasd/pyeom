@@ -1,0 +1,8 @@
+nelec: (2,2)
+oneint_file:  eomes/test/data/be_sto3g_oneint.npy
+twoint_file:  eomes/test/data/be_sto3g_twoint.npy
+dm1_file:  eomes/test/data/be_sto3g_onedm_spino.npy
+dm2_file:  eomes/test/data/be_sto3g_twodm_spino.npy
+orthog: symmetric
+eom: ip
+

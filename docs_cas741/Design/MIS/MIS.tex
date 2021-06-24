@@ -1,0 +1,1604 @@
+\documentclass[12pt, titlepage]{article}
+
+\usepackage{amsmath, mathtools}
+
+\usepackage[round]{natbib}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{colortbl}
+\usepackage{xr}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{xfrac}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage[section]{placeins}
+\usepackage{caption}
+\usepackage{fullpage}
+
+\hypersetup{
+bookmarks=true,     % show bookmarks bar?
+colorlinks=true,       % false: boxed links; true: colored links
+linkcolor=red,          % color of internal links (change box color with linkbordercolor)
+citecolor=blue,      % color of links to bibliography
+filecolor=magenta,  % color of file links
+urlcolor=cyan          % color of external links
+}
+
+\usepackage{array}
+
+%\externaldocument{../../SRS/SRS}
+%\externaldocument{../MG/MG}
+
+\input{../../Comments}
+\input{../../Common}
+
+\begin{document}
+
+\title{Module Interface Specification for EOMEE}
+
+\author{Gabriela S\'anchez D\'iaz}
+
+\date{\today}
+
+\maketitle
+
+\pagenumbering{roman}
+
+\section{Revision History}
+
+\begin{tabularx}{\textwidth}{p{3cm}p{2cm}X}
+\toprule {\bf Date} & {\bf Version} & {\bf Notes}\\
+\midrule
+20-11-2020 & 1.0 & MIS first draft\\
+%Date 2 & 1.1 & Notes\\
+\bottomrule
+\end{tabularx}
+
+~\newpage
+
+\section{Symbols, Abbreviations and Acronyms}
+
+See SRS Documentation at 
+\href{https://github.com/gabrielasd/eomee/tree/cas741/docs/SRS/}{SRS}.\\
+%\wss{Also add any additional symbols, abbreviations or acronyms}\\
+Additionaly, the following abbreaviations were used:
+\noindent \begin{longtable*}{l p{5cm}} \toprule
+	\textbf{abbreviation} & \textbf{description}\\
+	\midrule 
+	\textit{N} & Number of electrons\\ 
+	orthog & Matrix orthogonalization method\\
+	tol & Tolerance\\
+	nspino & Number of spin orbital basis\\
+	lhs & Left-hand-side\\
+	rhs & Right-hand-side\\
+	neigs & Number of eigenvalues\\
+\end{longtable*}
+
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+The following document details the Module Interface Specifications of EOMEE, a 
+set of tools to implement and solve the Equation-of-Motion methods for excited 
+states.
+%\wss{Fill in your project name and description}
+
+Complementary documents include the System Requirement Specifications
+and Module Guide.  The full documentation and implementation can be
+found at \url{https://github.com/gabrielasd/eomee/tree/cas741}.  
+
+\section{Notation}
+
+%\wss{You should describe your notation.  You can use what is below as
+%  a starting point.}
+
+The structure of the MIS for modules comes from \citet{HoffmanAndStrooper1995},
+with the addition that template modules have been adapted from
+\cite{GhezziEtAl2003}.  The mathematical notation comes from Chapter 3 of
+\citet{HoffmanAndStrooper1995}.  For instance, the symbol := is used for a
+multiple assignment statement and conditional rules follow the form $(c_1
+\Rightarrow r_1 | c_2 \Rightarrow r_2 | ... | c_n \Rightarrow r_n )$.
+
+The following table summarizes the primitive data types used by EOMEE. 
+
+\begin{center}
+\renewcommand{\arraystretch}{1.2}
+\noindent 
+\begin{tabular}{l l p{7.5cm}} 
+\toprule 
+\textbf{Data Type} & \textbf{Notation} & \textbf{Description}\\ 
+\midrule
+character & char & a single symbol or digit\\
+integer & $\mathbb{Z}$ & a number without a fractional component in (-$\infty$, $\infty$) \\
+natural number & $\mathbb{N}$ & a number without a fractional component in [1, $\infty$) \\
+real & $\mathbb{R}$ & any number in (-$\infty$, $\infty$)\\
+\bottomrule
+\end{tabular} 
+\end{center}
+
+\noindent
+The specification of EOMEE \ uses some derived data types: sequences, strings, 
+and tuples. Sequences are lists filled with elements of the same data type. 
+Strings are sequences of characters. Tuples contain a list of values, 
+potentially of different types. In addition, EOMEE \ uses functions, which
+are defined by the data types of their inputs and outputs. Local functions are
+described by giving their type signature followed by their specification.\\
+The following simplifications will be made in the mathematical notation for the 
+sake of understandability:
+\begin{itemize}
+	\item seq($l_1$,$l_2$,...,$l_n$:T), will be used instead of 
+	sequence 
+	[$l_1$,$l_2$,...,$l_n$] of type T. For example seq($n,m:\mathbb{R}$), where 
+	$n,m > 0$, would map to sequence [$n$, $m$] of type $\mathbb{R}$. This 
+	type will generally be used to indicate NumPy.ndarray data types.
+	\item Variables that are of type sequence will be denoted in bold font, 
+	i.e, the parameter $\textbf{R}$ denotes a sequence. 
+	\item Subscripts will be used for indexing sequences, for instance, $x_i$ 
+	will represent the $i$th element of $\textbf{x}$, the same as $x[i]$ from 
+	\citet{HoffmanAndStrooper1995}.
+	\item str will be used instead of string.
+	\item bool will be used instead of boolean.
+	\item EOMT will be used to define an element belonging to the EOM methods 
+	set \{EOMIP, EOMEA, EOMExc, EOMDIP, EOMDEA\}, 
+\end{itemize}
+Also, the absence of value will be defined by Python's data type NoneType, 
+denoted as None.
+
+
+\section{Module Decomposition}
+
+The following table is taken directly from the Module Guide document for this project.
+
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{p{0.3\textwidth} p{0.3\textwidth} p{0.3\textwidth}}
+		\toprule
+		\textbf{Level 1} & \textbf{Level 2} & \textbf{Level 3}\\
+		\midrule
+		
+		{Hardware-Hiding Module} & ~ & ~\\
+		\midrule
+		
+		\multirow{7}{0.3\textwidth}{Behaviour-Hiding Module} & Control 
+		& ~\\
+		& Input & \\
+		& Integrals& \\
+		& RDMs& \\
+		& EOM Interface& IP EOM; EA EOM; DIP EOM; DEA EOM; Excitation EOM\\
+		& Output & \\
+		%& ?\\
+		\midrule
+		
+		\multirow{1}{0.3\textwidth}{Software Decision Module} & {Solver}&\\
+		%& Solver &\\
+		%& ?\\
+		\bottomrule
+		
+	\end{tabular}
+	\caption{Module Hierarchy}
+	\label{TblMH}
+\end{table}
+
+%\section{MIS of \wss{Module Name}} \label{Module} \wss{Use labels for
+%  cross-referencing}
+\newpage
+\section{MIS of Control Module} \label{mDriver}
+
+%\wss{You can reference SRS labels, such as R\ref{R_Inputs}.}
+%
+%\wss{It is also possible to use \LaTeX for hypperlinks to external documents.}
+
+\subsection{Module}
+
+%\wss{Short name for the module}
+main
+
+\subsection{Uses}
+input (\ref{mInput}), Integrals (\ref{mIntegrals}), WfnRDMs (\ref{mRDMs}), 
+EOMIP (\ref{mEOMIP}), EOMEA (\ref{mEOMEA}), EOMExc (\ref{mEOMExc}), EOMDIP 
+(\ref{mEOMDIP}), EOMDEA (\ref{mEOMDEA}),  solver (\ref{mGEP}), output 
+(\ref{mOutput})
+
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+None
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
+\hline
+\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+\hline
+%main & $\mathbb{Z} \lor (n1, 
+%n2:\mathbb{Z})$, str, str, str, str, bool& - & - \\
+main & str& - & - \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+%\wss{Not all modules will have state variables.  State variables give the 
+%module
+%  a memory.}
+None
+
+\subsubsection{Environment Variables}
+
+%\wss{This section is not necessary for all modules.  Its purpose is to capture
+%  when the module has external interaction with the environment, such as for a
+%  device driver, screen interface, keyboard, file, etc.}
+%infiles: 5 strings corresponding to the number of particles (npart), a 
+%selection of the EOM method and the files containing the one- and two-electron 
+%integrlas ($h_{pq}$ and $v_{pqrs}$) and one- and two-RDMs ($\gamma_{pq}$ and 
+%$\Gamma_{pqrs}$).
+None
+
+\subsubsection{Assumptions}
+
+%\wss{Try to minimize assumptions and anticipate programmer errors via
+%  exceptions, but for practical purposes assumptions are sometimes 
+%appropriate.}
+%The input files contain $h_{pq}$, $v_{pqrs}$, $\gamma_{pq}$ and 
+%$\Gamma_{pqrs}$ 
+%stored as sequences of sequences (NumPy arrays) and are loaded in that 
+%specific 
+%order.\\
+None
+
+\subsubsection{Access Routine Semantics}
+
+\noindent main():
+\begin{itemize}
+\item transition: The following steps are performed:\\
+- Get a file containing the input parameters from the user (inputFile).\\
+
+- Parse the file's content and verify all required input parameters are 
+present:\\
+parse\_inputfile(inputFile)\\
+check\_inputs(ParsedParams)
+
+- Load and verify the electron integrals (\textbf{h},\textbf{v}) and 
+RDMs ($\boldsymbol{\gamma}$, $\boldsymbol{\Gamma}$):\\
+Integrals(\textbf{h}, \textbf{v})\\
+WfnRDMs($\boldsymbol{\gamma}$, $\boldsymbol{\Gamma}$)
+
+- Define an EOM type equation from the parameters \textbf{h},\textbf{v}, 
+$\boldsymbol{\gamma}$ and $\bold{\Gamma}$.\\
+EOMT(\textbf{h}, \textbf{v}, $\boldsymbol{\gamma}$, $\bold{\Gamma}$)
+
+- Solve the EOM eigenvalue problem and evaluate the TDMs\\
+$\Delta E$, \textbf{C} := solve.dense(EOMT.lhs, EOMT.rhs, ortog, tol)
+
+- Evaluate the TDMs:\\
+\textbf{T} := EOMT.tdm(\textbf{C})
+
+- Output the results of the computations:\\
+output(filename1, $\Delta E$, \textbf{C}, \textbf{T})\\
+%output(filename2, tdms)
+%\item output: \wss{if appropriate} 
+\item exception: None
+\end{itemize}
+
+%\wss{A module without environment variables or state variables is unlikely to
+%  have a state transition.  In this case a state transition can only occur if
+%  the module is changing the state of another module.}
+%
+%\wss{Modules rarely have both a transition and an output.  In most cases you
+%  will have one or the other.}
+
+\subsubsection{Local Functions}
+
+%\wss{As appropriate} \wss{These functions are for the purpose of specification.
+%  They are not necessarily something that is going to be implemented
+%  explicitly.  Even if they are implemented, they are not exported; they only
+%  have local scope.}
+None
+\newpage
+
+\section{MIS of Input Module} \label{mInput}
+
+\subsection{Module}
+
+input
+
+\subsection{Uses}
+None
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2.7cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		parse\_inputfile& str& ParsedParams & FileNotFoundError \\
+		check\_inputs& ParsedParams& - & FileNotFoundError, ValueError \\
+		N& & $(n1, n2:\mathbb{N})$ & \\
+%		\textit{nso}& & $\mathbb{Z}$ & \\
+		one\_int\_file& & str & \\
+		two\_int\_file& & str & \\
+		dm1\_file& & str & \\
+		dm2\_file& & str & \\
+		eom& & str & \\
+		orthog& & str & \\
+		tol& & $\mathbb{R}$ & \\
+%		load\_integrals& str, str& seq($m,m:\mathbb{R}$), 
+%		seq($m,m,m,m:\mathbb{R}$) & -\\
+%		load\_rdms& str, str& seq($m,m:\mathbb{R}$), seq($m,m,m,m:\mathbb{R}$) 
+%		& -\\
+%		FileNotFoundError\\
+%		verify\_integrals& one\_int, two\_int& - & TypeError, ValueError \\
+%		load\_wfnparams& $\mathbb{Z} \lor (n1, n2:\mathbb{Z})$, $\mathbb{Z}$, 
+%		str, str& WfnT & FileNotFoundError\\		
+% 		verify\_rdms& dm1, dm2, npart& -& TypeError, ValueError\\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+%\wss{Not all modules will have state variables.  State variables give the 
+%module
+%	a memory.}
+N: $\mathbb{N} \lor (n1, n2:\mathbb{N})$\\
+%\textit{nso}: $\mathbb{Z}$\\
+one\_int\_file: str\\
+two\_int\_file: str\\
+dm1\_file: str\\
+dm2\_file: str\\
+eom: str $\in \{``ip", ``dip", ``ea", ``dea", ``exc"\}$ which selects 
+the 
+EOMT\\
+orthog: str $\in \{``symmetric", ``asymmetric"\}$\\
+tol: $\mathbb{R} > 0$\\
+
+\subsubsection{Environment Variables}
+
+%\wss{This section is not necessary for all modules.  Its purpose is to capture
+%	when the module has external interaction with the environment, such as for a
+%	device driver, screen interface, keyboard, file, etc.}
+inputFile: string representing a file or file path.\\
+%one\_int\_file: binary file in NumPy .npy format, contains an array.\\
+%two\_int\_file: binary file in NumPy .npy format, contains an array.
+
+\subsubsection{Assumptions}
+
+%\wss{Try to minimize assumptions and anticipate programmer errors via
+%	exceptions, but for practical purposes assumptions are sometimes 
+%	appropriate.}
+The first function called will be parse\_infile, followed by check\_inputs.
+\subsubsection{Access Routine Semantics}
+%\wss{A module without environment variables or state variables is unlikely to
+%	have a state transition.  In this case a state transition can only occur if
+%	the module is changing the state of another module.}
+%
+%\wss{Modules rarely have both a transition and an output.  In most cases you
+%	will have one or the other.}
+
+\noindent parse\_infile(filename):
+\begin{itemize}
+	\item transition: The input file \textit{filename} is read sequentially 
+	and the state variables get assigned
+	\item output: \textit{out} := ParsedParams
+	\item exception: FileNotFoundError 
+\end{itemize}
+
+\noindent check\_inputs(ParsedParams):
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: None 
+	\item exception: \textit{exc} :=  
+\end{itemize}
+\noindent \begin{longtable*}[l]{l l}
+	$\neg$(N $\in (n1, n2:\mathbb{N})$) & $\Rightarrow$ TypeError 
+	$\vert$\\
+	``one\_int\_file" not in working directory & $\Rightarrow$ 
+	FileNotFoundError$\vert$\\
+	``two\_int\_file" not in working directory & $\Rightarrow$ 
+	FileNotFoundError$\vert$\\
+	``dm1\_file" not in working directory & $\Rightarrow$ 
+	FileNotFoundError$\vert$\\
+	``dm2\_file" not in working directory & $\Rightarrow$ 
+	FileNotFoundError$\vert$\\
+	$\neg$(eom$\in \{"ip", "dip", "ea", "dea", "exc"\}$)  & 
+	$\Rightarrow$ ValueError$\vert$\\
+	$\neg$(orthog $\in \{``symmetric", ``asymmetric"\}$) & 
+	$\Rightarrow$ ValueError$\vert$\\
+	$\neg$(tol $\in \mathbb{R}$) & $\Rightarrow$ TypeError$\vert$\\
+	$\neg$(tol $> 0$) & $\Rightarrow$ ValueError$\vert$\\
+\end{longtable*}
+
+\noindent ParsedParams.N:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := N
+	\item exception: None 
+\end{itemize}
+
+\noindent ParsedParams.tol:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := tol 
+	\item exception: None 
+\end{itemize}
+
+\noindent ParsedParams.orthog:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := orthog
+	\item exception: None 
+\end{itemize}
+
+\noindent ParsedParams.eom:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := eom 
+	\item exception: None 
+\end{itemize}
+
+\noindent ParsedParams.one\_int\_file:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := one\_int\_file
+	\item exception: None 
+\end{itemize}
+
+\noindent ParsedParams.two\_int\_file:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := two\_int\_file
+	\item exception: None 
+\end{itemize}
+
+\noindent ParsedParams.dm1\_file:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := dm1\_file 
+	\item exception: None 
+\end{itemize}
+
+\noindent ParsedParams.dm2\_file:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := dm2\_file 
+	\item exception: None 
+\end{itemize}
+
+%\noindent load\_integrals(\textit{one\_int\_file}, \textit{two\_int\_file}):
+%\begin{itemize}
+%%	\item transition: 
+%%	The state of the module Integrals is modified following the procedure 
+%%bellow:\\
+%%	Read the arrays inside the binary files \textit{one\_int\_file} and 
+%%\textit{two\_int\_file}\\
+%%	Pass the loaded arrays (\textit{one\_int} and \textit{two\_int}) to the 
+%%Integrals method constructor.
+%	\item output: \textit{out} := \textit{one\_int}, \textit{two\_int}
+%	\item exception: None 
+%\end{itemize}
+%
+%\noindent load\_rdms(\textit{dm1\_file}, \textit{dm2\_file}):
+%\begin{itemize}
+%%	\item transition: 
+%	\item output: \textit{out} := \textit{dm1\_int}, \textit{dm1\_int}
+%	\item exception: None 
+%\end{itemize}
+
+\subsubsection{Local Functions}
+
+%\wss{As appropriate} \wss{These functions are for the purpose of specification.
+%	They are not necessarily something that is going to be implemented
+%	explicitly.  Even if they are implemented, they are not exported; they only
+%	have local scope.}
+None
+
+\newpage
+
+\section{MIS of Integrals Module} \label{mIntegrals}
+
+\subsection{Template Module}
+
+Integrals
+
+\subsection{Uses}
+input (\ref{mInput})
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2.7cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		new Integrlas& str, str& Integrlas& -\\
+ 		\textbf{h}& -& seq($m,m:\mathbb{R}$)& -\\
+ 		\textbf{v}& -& seq($m,m,m,m:\mathbb{R}$)& -\\
+		nspino& -& $\mathbb{N}$& -\\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+%\wss{Not all modules will have state variables.  State variables give the 
+%module
+%	a memory.}
+\textbf{h}: seq($m,m:\mathbb{R}$)\\
+\textbf{v}: seq($m,m,m,m:\mathbb{R}$)\\
+nspino: $\mathbb{N}$
+
+\subsubsection{Environment Variables}
+
+%\wss{This section is not necessary for all modules.  Its purpose is to capture
+%	when the module has external interaction with the environment, such as for a
+%	device driver, screen interface, keyboard, file, etc.}
+intfile1: binary file in NumPy .npy format.\\
+intfile2: binary file in NumPy .npy format.
+
+\subsubsection{Assumptions}
+
+%\wss{Try to minimize assumptions and anticipate programmer errors via
+%	exceptions, but for practical purposes assumptions are sometimes 
+%	appropriate.}
+The constructor of Integrals will be called before any state variable is 
+invoked.
+
+\subsubsection{Access Routine Semantics}
+
+\noindent new Integrals(one\_int\_file, two\_int\_file):
+\begin{itemize}
+	\item transition: Call load\_integrals(one\_int\_file, 
+	two\_int\_file)
+	\item output: \textit{out} := self 
+	\item exception: None 
+\end{itemize}
+
+\noindent Integrals.h:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := \textbf{h} 
+	\item exception: None 
+\end{itemize}
+
+\noindent Integrals.v:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := \textbf{v} 
+	\item exception: None 
+\end{itemize}
+
+\noindent Integrals.nspino:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := nspino 
+	\item exception: None 
+\end{itemize}
+
+%\wss{A module without environment variables or state variables is unlikely to
+%	have a state transition.  In this case a state transition can only occur if
+%	the module is changing the state of another module.}
+%
+%\wss{Modules rarely have both a transition and an output.  In most cases you
+%	will have one or the other.}
+
+\subsubsection{Local Functions}
+%verify\_integrals& one\_int, two\_int& - & TypeError, ValueError \\
+
+%\wss{As appropriate} \wss{These functions are for the purpose of specification.
+%	They are not necessarily something that is going to be implemented
+%	explicitly.  Even if they are implemented, they are not exported; they only
+%	have local scope.}
+\noindent load\_integrals(one\_int\_file, two\_int\_file):
+\begin{itemize}
+	\item transition: \\
+	Read the binary files one\_int\_file and 
+	two\_int\_file \\
+	verify\_integrals()\\
+	If no exception is raised, assign the state variables \textbf{h} and 
+	\textbf{v}	
+%	\item output: None
+	\item exception: exc := FileNotFoundError
+\end{itemize}
+
+\noindent verify\_integrals():
+\begin{itemize}
+%	\item transition: None
+	\item output: \textit{out} := None
+	\item exception: exc := 
+\end{itemize}
+\noindent \begin{longtable*}[l]{l l}
+	$\neg$(\textbf{h}$\in$ sequence of $\mathbb{R}$) & $\Rightarrow$ TypeError 
+	$\vert$\\
+	$\neg$(\textbf{v}$\in$ sequence of $\mathbb{R}$) & $\Rightarrow$ 
+	TypeError $\vert$\\
+	\textbf{h} is not a bidimensional arrray  & $\Rightarrow$ 
+	ValueError $\vert$\\
+	\textbf{v} is not a 4 dimensional array& $\Rightarrow$ ValueError$\vert$\\
+	$\neg$($|\bold{h}[0]| = |\bold{v}[0]|$) & $\Rightarrow$ 
+	ValueError $\vert$\\
+	$\neg$($h_{ij} = h_{ji}$) & $\Rightarrow$ 
+	ValueError $\vert$\\
+	$\neg$(($v_{ijkl} = v_{jilk}$) $\land$ ($v_{ijkl} = v_{klij}$)) & 
+	$\Rightarrow$ 
+	ValueError $\vert$\\
+	$\neg$(($v_{ijkl} = -v_{jikl}$) $\land$ ($v_{ijkl} = -v_{ijlk}$)) & 
+	$\Rightarrow$ 
+	ValueError $\vert$\\
+\end{longtable*}
+
+\newpage
+
+\section{MIS of RDMs Module} \label{mRDMs}
+
+\subsection{Template Module}
+
+WfnRDMs
+
+\subsection{Uses}
+input (\ref{mInput})
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{3cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		new WfnRDMs& $\mathbb{Z} \lor (n1, n2:\mathbb{Z})$, str, 
+		str& WfnRDMs& -\\
+		$\boldsymbol{\gamma}$& -& seq($m,m:\mathbb{R}$)& -\\
+		$\boldsymbol{\Gamma}$& -& seq($m,m,m,m:\mathbb{R}$)& -\\
+		N & -& $(n1, n2:\mathbb{N})$& -\\
+		nspino & -& $\mathbb{N}$& -\\
+%		\textit{hf\_rdms}& -& bool& -\\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+%\wss{Not all modules will have state variables.  State variables give the 
+%module
+%	a memory.}
+nspino: $(n1, n2:\mathbb{N})$\\
+nspino: $\mathbb{N}$\\
+%\textit{nso}: $\mathbb{Z}$\\
+$\boldsymbol{\gamma}$: seq($m,m:\mathbb{R}$), where 0 $\le \gamma_{ij} \le$ 1\\
+$\boldsymbol{\Gamma}$: seq($m,m,m,m:\mathbb{R}$), where 0 $\le \Gamma_{ijkl} 
+\le$ 1\\
+%\textit{hf\_rdms}: bool
+
+\subsubsection{Environment Variables}
+
+%\wss{This section is not necessary for all modules.  Its purpose is to capture
+%	when the module has external interaction with the environment, such as for a
+%	device driver, screen interface, keyboard, file, etc.}
+file1: binary file in NumPy .npy format.\\
+file2: binary file in NumPy .npy format.
+
+\subsubsection{Assumptions}
+
+%\wss{Try to minimize assumptions and anticipate programmer errors via
+%	exceptions, but for practical purposes assumptions are sometimes 
+%	appropriate.}
+The constructor of WfnRDMs will be called before invoking any state variable.
+
+\subsubsection{Access Routine Semantics}
+
+\noindent new WfnRDMs(n1, dm1\_file, dm2\_file):
+\begin{itemize}
+	\item transition: \\
+	N:= n1\\
+	Call assign\_rdms(dm2\_file, dm2\_file)
+	\item output: \textit{out} := self 
+	\item exception: None 
+\end{itemize}
+
+\noindent WfnRDMs.dm1:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $\boldsymbol{\gamma}$ 
+	\item exception: None 
+\end{itemize}
+
+\noindent WfnRDMs.dm2:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $\boldsymbol{\Gamma}$ 
+	\item exception: None 
+\end{itemize}
+
+\noindent WfnRDMs.N:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := N 
+	\item exception: None 
+\end{itemize}
+
+\noindent WfnRDMs.nspino:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := nspino
+	\item exception: None 
+\end{itemize}
+
+
+\subsubsection{Local Functions}
+%verify\_integrals& one\_int, two\_int& - & TypeError, ValueError \\
+
+%\wss{As appropriate} \wss{These functions are for the purpose of specification.
+%	They are not necessarily something that is going to be implemented
+%	explicitly.  Even if they are implemented, they are not exported; they only
+%	have local scope.}
+\noindent assign\_rdms(dm1\_file,dm2\_file):
+\begin{itemize}
+	\item transition: Read the binary files dm1\_file and 
+	dm2\_file.\\
+	verify\_rdms()\\
+	If no exception is raised, assign the state variables $\boldsymbol{\gamma}$ 
+	and $\boldsymbol{\Gamma}$	
+	%	\item output: None
+	\item exception: exc := FileNotFoundError
+\end{itemize}
+
+\noindent verify\_rdms():
+\begin{itemize}
+	%	\item transition: None
+	\item output: \textit{out} := None
+	\item exception: exc := 
+\end{itemize}
+\noindent \begin{longtable*}[l]{l l}
+	$\neg(\boldsymbol{\gamma}\in$ sequence of $\mathbb{R})$ & $\Rightarrow$ 
+	TypeError $\vert$\\
+	$\neg(\boldsymbol{\Gamma}\in$ sequence of $\mathbb{R})$ & $\Rightarrow$ 
+	TypeError$ \vert$\\
+	$\boldsymbol{\gamma}$ is not a bidimensional arrray  & $\Rightarrow$ 
+	ValueError $\vert$\\
+	$\boldsymbol{\Gamma}$ is not a 4 dimensional array& $\Rightarrow$ 
+	ValueError $\vert$\\
+	$\neg$($\gamma_{ij} = \gamma_{ji}$) & $\Rightarrow$ 
+	ValueError $\vert$\\
+	$\neg$($\Gamma_{ijkl} = \Gamma_{jilk}$)$\lor \neg(\Gamma_{ijkl} = 
+	\Gamma_{klij})$ & 
+	$\Rightarrow$ 
+	ValueError $\vert$\\
+	$\neg$($\Gamma_{ijkl} = -\Gamma_{jikl}$)$\lor \neg(\Gamma_{ijkl} = 
+	-\Gamma_{ijlk})$ & 
+	$\Rightarrow$ 
+	ValueError $\vert$\\
+	Tr$(\boldsymbol{\gamma}) \neq N$ & $\Rightarrow$ 
+	ValueError $\vert$\\
+	Tr$(\boldsymbol{\Gamma}) \neq N(N-1)$ & $\Rightarrow$ 
+	ValueError $\vert$\\
+\end{longtable*}
+
+\newpage
+
+\section{MIS of EOM Base Module} \label{mEOM}
+
+\subsection{Interface Module}
+
+EOMBase
+
+\subsection{Uses}
+None
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+None
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2.3cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		%		new EOMBase & one\_int: 2D NumPy.ndarray, two\_int: 4D 
+		%NumPy.ndarray, 
+		%		dm1: 2D NumPy.ndarray, dm2: 4D NumPy.ndarray& EOMBase & 
+		%		NotImplementedError \\		
+		neigs & -& $\mathbb{N}$& NotImplementedError\\
+		compute\_tdm& seq(k,k:$\mathbb{R}$)& seq(k,m,m:$\mathbb{R}$)& 
+		NotImplementedError\\
+		lhs & -& seq$(k,k:\mathbb{R})$& -\\
+		rhs& -& seq$(k,k:\mathbb{R})$& -\\
+		nspino& -& $\mathbb{N}$& -\\
+		\textbf{h}& -& seq$(m,m:\mathbb{R})$& -\\
+		\textbf{v}& -& seq$(m,m,m,m:\mathbb{R})$& -\\
+		$\boldsymbol{\gamma}$& -& seq$(m,m:\mathbb{R})$& -\\
+		$\boldsymbol{\Gamma}$& -& seq$(m,m,m,m:\mathbb{R})$& -\\
+		% 		\_compute\_lhs& -& lhs: $f(one\_int, two\_int, dm1, dm2)$& 
+		% 		NotImplementedError\\
+		%		\_compute\_rhs& -& rhs: $f(dm1, dm2)$& NotImplementedError\\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+nspino: $\mathbb{N}$\\
+\textbf{h}: seq$(m,m:\mathbb{R})$\\
+\textbf{v}: seq$(m,m,m,m:\mathbb{R})$\\
+$\boldsymbol{\gamma}$: seq$(m,m:\mathbb{R})$\\
+$\boldsymbol{\Gamma}$: seq$(m,m,m,m:\mathbb{R})$\\
+lhs: \_compute\_lhs()\\
+%seq$(k,k:\mathbb{R})$\\
+rhs: \_compute\_rhs()
+%seq$(k,k:\mathbb{R})$
+
+%\subsubsection{Environment Variables}
+%
+%%\wss{This section is not necessary for all modules.  Its purpose is to capture
+%%	when the module has external interaction with the environment, such as for a
+%%	device driver, screen interface, keyboard, file, etc.}
+%None
+%
+\subsubsection{Assumptions}
+
+%\wss{Try to minimize assumptions and anticipate programmer errors via
+%	exceptions, but for practical purposes assumptions are sometimes 
+%	appropriate.}
+The EOMBase module can't be instantiated, it is inherited by EOMIP, EOMEA, 
+EOMExc, EOMDIP and EOMDEA.
+%
+\subsubsection{Access Routine Semantics}
+%
+%%\wss{A module without environment variables or state variables is unlikely to
+%%	have a state transition.  In this case a state transition can only occur if
+%%	the module is changing the state of another module.}
+%%
+%%\wss{Modules rarely have both a transition and an output.  In most cases you
+%%	will have one or the other.}
+%
+\noindent EOMBase.nspino:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := nspino
+	\item exception: None
+\end{itemize}
+
+\noindent EOMBase.h:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := \textbf{h}
+	\item exception: None
+\end{itemize}
+
+\noindent EOMBase.v:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := \textbf{v}
+	\item exception: None
+\end{itemize}
+
+\noindent EOMBase.dm1:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $\boldsymbol{\gamma}$
+	\item exception: None
+\end{itemize}
+
+\noindent EOMBase.dm2:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $\boldsymbol{\Gamma}$
+	\item exception: None
+\end{itemize}
+
+\noindent EOMBase.lhs:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := lhs $\in$ seq$(m,m:\mathbb{R})$
+	\item exception: ValueError
+\end{itemize}
+
+\noindent EOMBase.rhs:
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := rhs $\in$ seq$(m,m:\mathbb{R})$
+	\item exception: ValueError
+\end{itemize}
+
+\subsubsection{Local Functions}
+
+%\wss{As appropriate} \wss{These functions are for the purpose of 
+%specification.
+%	They are not necessarily something that is going to be implemented
+%	explicitly.  Even if they are implemented, they are not exported; they only
+%	have local scope.}
+\noindent \_compute\_lhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+%	\item output: out: None 
+	\item exception: NotImplementedError 
+\end{itemize}
+
+\noindent\_compute\_rhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+%	\item output: out: None 
+	\item exception: NotImplementedError 
+\end{itemize}
+
+\subsubsection{Considerations}
+EOMBase is an abstract class (ABC) defining an interface for the 
+different EOM methods (Subsections (\ref{mEOMIP}), (\ref{mEOMEA}), 
+(\ref{mEOMExc}), (\ref{mEOMDIP}) and (\ref{mEOMDEA})). Each state variable has a 
+corresponding access program. Only the methods \textit{neigs}, compute\_tdm, 
+\_compute\_lhs and \_compute\_rhs are abstract.
+
+\newpage
+
+\section{MIS of EOM IP Module} \label{mEOMIP}
+
+\subsection{Template Module}
+
+EOMIP inherits EOMBase
+
+\subsection{Uses}
+EOMBase (\ref{mEOM}), Integrals (\ref{mIntegrals}), WfnRDMs (\ref{mRDMs})
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+None
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2.3cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		new EOMIP & seq$(m,m:\mathbb{R})$, seq$(m,m,m,m:\mathbb{R})$, 
+		seq$(m,m:\mathbb{R})$, seq$(m,m,m,m:\mathbb{R})$& EOMIP & - \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+nspino: $\mathbb{N}$\\
+\textbf{h}: seq$(m,m:\mathbb{R})$\\
+\textbf{v}: seq$(m,m,m,m:\mathbb{R})$\\
+$\boldsymbol{\gamma}$: seq$(m,m:\mathbb{R})$\\
+$\boldsymbol{\Gamma}$: seq$(m,m,m,m:\mathbb{R})$\\
+lhs: \_compute\_lhs()\\
+%seq$(m,m:\mathbb{R})$\\
+rhs: \_compute\_rhs()
+%seq$(m,m:\mathbb{R})$
+
+\subsubsection{Environment Variables}
+
+%\wss{This section is not necessary for all modules.  Its purpose is to capture
+%	when the module has external interaction with the environment, such as for a
+%	device driver, screen interface, keyboard, file, etc.}
+None
+
+\subsubsection{Assumptions}
+
+%\wss{Try to minimize assumptions and anticipate programmer errors via
+%	exceptions, but for practical purposes assumptions are sometimes 
+%	appropriate.}
+The EOMIP constructor is called before any other access program in the class.
+
+\subsubsection{Access Routine Semantics}
+
+\noindent new EOMIP(h,v,dm1,dm2):
+\begin{itemize}
+	\item transition: \textbf{h}, \textbf{v}, $\boldsymbol{\gamma}$, 
+	$\boldsymbol{\Gamma}$ := h,v,dm1,dm2,\\ \textit{lhs}:= \_compute\_lhs()\\ 
+	\textit{rhs}:= \_compute\_rhs()\\
+	\textit{nspino} := $|\boldsymbol{h}[0]|$\\
+	\item output: \textit{out} := self 
+	\item exception: None
+\end{itemize}
+
+\noindent neigs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $|\boldsymbol{h}[0]|$
+	\item exception: None
+\end{itemize}
+
+\noindent compute\_tdm(\textbf{C}):
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $\sum_{n}\gamma_{mn} c_n, \{n:\mathbb{Z}|0 
+	\le n < nspino\}$
+	\item exception: None
+\end{itemize}
+
+%\wss{A module without environment variables or state variables is unlikely to
+%	have a state transition.  In this case a state transition can only occur if
+%	the module is changing the state of another module.}
+%
+%\wss{Modules rarely have both a transition and an output.  In most cases you
+%	will have one or the other.}
+
+\subsubsection{Local Functions}
+
+%\wss{As appropriate} \wss{These functions are for the purpose of specification.
+%	They are not necessarily something that is going to be implemented
+%	explicitly.  Even if they are implemented, they are not exported; they only
+%	have local scope.}
+\noindent \_compute\_lhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} :=\\
+	$-\boldmath{h}\boldsymbol{\gamma}$ $+ 0.5\sum_{qrs}$v$_{qnrs} \Gamma_{mqrs}$
+	\item exception: None 
+\end{itemize}
+
+\noindent\_compute\_rhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $\boldsymbol{\gamma}$
+	\item exception: None 
+\end{itemize}
+
+\newpage
+
+\section{MIS of EOM EA Module} \label{mEOMEA}
+
+\subsection{Template Module}
+
+EOMEA inherits EOMBase
+
+\subsection{Uses}
+EOMBase (\ref{mEOM}), Integrals (\ref{mIntegrals}), WfnRDMs (\ref{mRDMs})
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+None
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2.3cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		new EOMEA & seq$(m,m:\mathbb{R})$, seq$(m,m,m,m:\mathbb{R})$, 
+		seq$(m,m:\mathbb{R})$, seq$(m,m,m,m:\mathbb{R})$& EOMEA & - \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+nspino: $\mathbb{N}$\\
+\textbf{h}: seq$(m,m:\mathbb{R})$\\
+\textbf{v}: seq$(m,m,m,m:\mathbb{R})$\\
+$\boldsymbol{\gamma}$: seq$(m,m:\mathbb{R})$\\
+$\boldsymbol{\Gamma}$: seq$(m,m,m,m:\mathbb{R})$\\
+\textit{lhs}: \_compute\_lhs()\\
+%seq$(m,m:\mathbb{R})$\\
+\textit{rhs}: \_compute\_rhs()
+%seq$(m,m:\mathbb{R})$
+
+\subsubsection{Environment Variables}
+
+%\wss{This section is not necessary for all modules.  Its purpose is to capture
+%	when the module has external interaction with the environment, such as for a
+%	device driver, screen interface, keyboard, file, etc.}
+None
+
+\subsubsection{Assumptions}
+
+%\wss{Try to minimize assumptions and anticipate programmer errors via
+%	exceptions, but for practical purposes assumptions are sometimes 
+%	appropriate.}
+The EOMEA constructor is called before any other access program in that class.
+
+\subsubsection{Access Routine Semantics}
+
+\noindent new EOMEA(h,v,dm1,dm2):
+\begin{itemize}
+	\item transition: \textbf{h}, \textbf{v}, $\boldsymbol{\gamma}$, 
+	$\boldsymbol{\Gamma}$ := h,v,dm1,dm2,\\ \textit{lhs}:= \_compute\_lhs(),\\ 
+	\textit{rhs}:= \_compute\_rhs()\\
+	\textit{nspino} := $|\boldsymbol{h}[0]|$\\
+	\item output: \textit{out} := self 
+	\item exception: None
+\end{itemize}
+
+\noindent neigs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $|\boldsymbol{h}[0]|$
+	\item exception: None
+\end{itemize}
+
+\noindent compute\_tdm(\textbf{C}):
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $\sum_{n}(\delta_{mn} - \gamma_{mn}) c_n, 
+	\{n:\mathbb{Z}|0 \le n < nspino\}$
+	\item exception: None
+\end{itemize}
+
+%\wss{A module without environment variables or state variables is unlikely to
+%	have a state transition.  In this case a state transition can only occur if
+%	the module is changing the state of another module.}
+%
+%\wss{Modules rarely have both a transition and an output.  In most cases you
+%	will have one or the other.}
+
+\subsubsection{Local Functions}
+
+%\wss{As appropriate} \wss{These functions are for the purpose of specification.
+%	They are not necessarily something that is going to be implemented
+%	explicitly.  Even if they are implemented, they are not exported; they only
+%	have local scope.}
+\noindent \_compute\_lhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} :=\\
+	\textbf{h} - \textbf{h}$\boldsymbol{\gamma}
+	+\sum_{ps}$v$_{mpns} \gamma_{ps} 
+	+ 0.5\sum_{pqs}$v$_{pqns}\Gamma_{pqsm}$
+	\item exception: None 
+\end{itemize}
+
+\noindent\_compute\_rhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $\boldmath{I} - \boldsymbol{\gamma}$, where 
+	\textbf{I} represents the identity matrix
+	\item exception: None 
+\end{itemize}
+
+\newpage
+
+\section{MIS of EOM Excitation Module} \label{mEOMExc}
+
+\subsection{Template Module}
+
+EOMExc inherits EOMBase
+
+\subsection{Uses}
+EOMBase (\ref{mEOM}), Integrals (\ref{mIntegrals}), WfnRDMs (\ref{mRDMs})
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+None
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2.3cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		new EOMExc & seq$(m,m:\mathbb{R})$, seq$(m,m,m,m:\mathbb{R})$, 
+		seq$(m,m:\mathbb{R})$, seq$(m,m,m,m:\mathbb{R})$& EOMExc & - \\
+%		\textit{nspino}& -& $\mathbb{Z}$& -\\
+%		\textit{neigs} & -& $\mathbb{Z}$& -\\
+%		\textbf{h}& -& seq$(m,m:\mathbb{R})$& -\\
+%		\textbf{v}& -& seq$(m,m,m,m:\mathbb{R})$& -\\
+%		$\boldsymbol{\gamma}$& -& seq$(m,m:\mathbb{R})$& -\\
+%		$\boldsymbol{\Gamma}$& -& seq$(m,m,m,m:\mathbb{R})$& -\\
+%		\textit{lhs} & -& seq$(m^2,m^2:\mathbb{R})$& -\\
+%		\textit{rhs} & -& seq$(m^2,m^2:\mathbb{R})$& -\\
+%		compute\_tdm& seq($m^2,m^2:\mathbb{R}$)& seq($m^2,m,m:\mathbb{R}$)& 
+%		-\\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+nspino: $\mathbb{N}$\\
+\textbf{h}: seq$(m,m:\mathbb{R})$\\
+\textbf{v}: seq$(m,m,m,m:\mathbb{R})$\\
+$\boldsymbol{\gamma}$: seq$(m,m:\mathbb{R})$\\
+$\boldsymbol{\Gamma}$: seq$(m,m,m,m:\mathbb{R})$\\
+\textit{lhs}: \_compute\_lhs()\\
+\textit{rhs}: \_compute\_rhs()
+
+\subsubsection{Environment Variables}
+
+%\wss{This section is not necessary for all modules.  Its purpose is to capture
+%	when the module has external interaction with the environment, such as for a
+%	device driver, screen interface, keyboard, file, etc.}
+None
+
+\subsubsection{Assumptions}
+
+%\wss{Try to minimize assumptions and anticipate programmer errors via
+%	exceptions, but for practical purposes assumptions are sometimes 
+%	appropriate.}
+The EOMExc constructor is called before any other access program in that class.
+
+\subsubsection{Access Routine Semantics}
+
+\noindent new EOMExc(h,v,dm1,dm2):
+\begin{itemize}
+	\item transition: \textbf{h}, \textbf{v}, $\boldsymbol{\gamma}$, 
+	$\boldsymbol{\Gamma}$ := h,v,dm1,dm2,\\ \textit{lhs}:= \_compute\_lhs(),\\ 
+	\textit{rhs}:= \_compute\_rhs()\\
+	\textit{nspino} := $|\boldsymbol{h}[0]|$\\
+	\textit{neigs} := $|\boldsymbol{h}[0]|$
+	\item output: \textit{out} := self 
+	\item exception: None
+\end{itemize}
+
+neigs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $|\boldsymbol{h}[0]|^2 \in \mathbb{Z}$
+	\item exception: None
+\end{itemize}
+
+\noindent compute\_tdm(\textbf{C}):
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $\sum_{ij}(\delta_{li}\gamma_{kj} - 
+	\Gamma_{kijl}) c_{ij}, \{(i,j)|(i\in [0..\text{nspino}-1]) \land (j\in 
+	[0..\text{nspino}-1])\}$
+	\item exception: None
+\end{itemize}
+
+\subsubsection{Local Functions}
+
+%\wss{As appropriate} \wss{These functions are for the purpose of specification.
+%	They are not necessarily something that is going to be implemented
+%	explicitly.  Even if they are implemented, they are not exported; they only
+%	have local scope.}
+\noindent \_compute\_lhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := \\
+	$h_{li}\gamma_{kj} + h_{jk}\gamma_{il} - \sum_{q} 
+	(h_{jq}\delta_{li}\gamma_{kq} + h_{qi}\delta_{jk}\gamma_{ql})\\
+	+ \sum_{qs}($v$_{lqis}\Gamma_{kqjs} + $v$_{jqks}\Gamma_{iqls})\\
+	+ 0.5\sum_{rs}($v$_{jlrs}\Gamma_{kirs} + 
+	\sum_{q}$v$_{qjrs}\delta_{li}\Gamma_{kqrs})\\
+	+ 0.5 \sum_{pq}($v$_{pqik}\Gamma_{pqlj} + 
+	\sum_{s}$v$_{pqsi}\delta_{jk}\Gamma_{pqls})$
+	\item exception: None 
+\end{itemize}
+
+\noindent\_compute\_rhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $\delta_{li}\gamma_{kj} - 
+	\boldsymbol{\Gamma}$
+	\item exception: None 
+\end{itemize}
+
+\newpage
+
+\section{MIS of EOM DIP Module} \label{mEOMDIP}
+The MIS of EOM DIP is equivalent to the one for EOM Excitation (Section 
+\ref{mEOMExc}), therefore only the semantics of the methods that change will be 
+declared.
+
+\subsection{Template Module}
+
+EOMDIP inherits EOMBase
+
+\subsection{Uses}
+EOMBase (\ref{mEOM}), Integrals (\ref{mIntegrals}), WfnRDMs (\ref{mRDMs})
+
+\subsection{Access Routine Semantics}
+\noindent compute\_tdm(\textbf{C}):
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $\sum_{ij}\Gamma_{klji} c_{ij}, \{(i,j)|(i\in 
+	[0..\text{nspino}-1]) \land (j\in 
+	[0..\text{nspino}-1])\}$
+	\item exception: None
+\end{itemize}
+
+\subsubsection{Local Functions}
+%\wss{As appropriate} \wss{These functions are for the purpose of specification.
+%	They are not necessarily something that is going to be implemented
+%	explicitly.  Even if they are implemented, they are not exported; they only
+%	have local scope.}
+\noindent \_compute\_lhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := \\
+	$2(h_{jk}\delta_{il} -h_{jl} \delta_{ik} 
+	+ h_{ik} \gamma_{lj} - h_{il}\gamma_{kj})\\
+	+ 2 \sum_{q} h_{jq}( \delta_{ik} \gamma_{lq} - \delta_{il} \gamma_{kq})
+	+ \mathbf{v} \\+ 2 \sum_{q}  $v$_{qjkl} \gamma_{qi}
+	+ \sum_{r} ($v$_{jilr} \gamma_{kr} - 
+	$v$_{jikr} \gamma_{lr})\\
+	+ 2 \sum_{qr} ($v$_{iqrk}  \delta_{lj} + $v$_{iqlr} 
+	\delta_{kj})\gamma_{qr}\\
+	+ 2 \sum_{qr} ($v$_{jqrk}\Gamma_{qlri} + 
+	$v$_{jqlr}\Gamma_{qkri})\\
+	+ \sum_{qrs} $v$_{qjrs}(\delta_{ki}\Gamma_{qlrs} - 
+	\delta_{li}\Gamma_{qkrs})$
+	\item exception: None 
+\end{itemize}
+
+\noindent\_compute\_rhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $2\delta_{jk} \gamma_{li} +2\delta_{il} 
+	\gamma_{kj}	- 2\delta_{jk} \delta_{il}$
+	\item exception: None 
+\end{itemize}
+
+\newpage
+
+\section{MIS of EOM DEA Module} \label{mEOMDEA}
+The MIS of EOM DEA is equivalent to the one for EOM Excitation (Section 
+\ref{mEOMExc}), therefore only the mothods that change are declared.
+
+\subsection{Template Module}
+
+EOMDEA inherits EOMBase
+
+\subsection{Uses}
+EOMBase (\ref{mEOM}), Integrals (\ref{mIntegrals}), WfnRDMs (\ref{mRDMs})
+
+\subsection{Access Routine Semantics}
+\noindent compute\_tdm(\textbf{C}):
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := \\
+	$\sum_{ij}(2\delta_{li}\delta_{kj} + 2\delta_{lj}\gamma_{ik} + 2 
+	2\delta_{ki}\gamma_{jl} + \Gamma_{ijlk})c_{ij}, \{(i,j)|(i\in 
+	[0..\text{nspino}-1]) \land (j\in 
+	[0..\text{nspino}-1])\}$
+	\item exception: None
+\end{itemize}
+
+\subsubsection{Local Functions}
+%\wss{As appropriate} \wss{These functions are for the purpose of specification.
+%	They are not necessarily something that is going to be implemented
+%	explicitly.  Even if they are implemented, they are not exported; they only
+%	have local scope.}
+\noindent \_compute\_lhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := \\
+	$2(h_{li} \delta_{kj} - h_{ki}\delta_{lj} + h_{ki} \gamma_{jl} - h_{li} 
+	\gamma_{jk})\\
+	+ 2 \sum_{p} (h_{pi} \delta_{lj}\gamma_{pk} + h_{pj} 
+	\delta_{ki}\gamma_{pl})\\
+	+$\textbf{v}$+ 2 \sum_{r}$v$_{lkjr} \gamma_{ir} \\
+	+ \sum_{q} ($v$_{qlij} \gamma_{qk} - 
+	$v$_{qkij} \gamma_{ql})\\
+	+ 2 \sum_{qr} ($v$_{qljr}  \delta_{ki} - $v$_{qkjr} 
+	\delta_{li})\gamma_{qr}\\
+	+ 2 \sum_{qr} ($v$_{qlir}\Gamma_{qjrk} - 
+	$v$_{qkir}\Gamma_{qjrl})\\
+	+ \sum_{pqr} $v$_{pqjr}(\delta_{li}\Gamma_{pqrk} - 
+	\delta_{ki}\Gamma_{pqrl})$
+	\item exception: None 
+\end{itemize}
+
+\noindent\_compute\_rhs():
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item output: \textit{out} := $2\delta_{li}\delta_{kj} - 
+	2\delta_{li}\gamma_{jk}- 2\delta_{kj}\gamma_{il}$
+	\item exception: None 
+\end{itemize}
+
+\newpage
+
+\section{MIS of Output module} \label{mOutput} 
+
+\subsection{Module}
+
+output
+
+\subsection{Uses}
+input (\ref{mInput})
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		dump & fname: str, ParsedParams, $\boldsymbol{\Delta 
+		E}$:seq(k:$\mathbb{R}$), 
+		$\boldsymbol{C}$=seq(k,n:$\mathbb{R}$), 
+		$\boldsymbol{\gamma_{n;0k}}$=seq(k,n,n:$\mathbb{R}$)& - & - \\
+% 			   & $c_{n;k}$=NumPy.ndarray& & \\
+%   	  		   & $\gamma_{n;0k}$=NumPy.ndarray& & \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+None
+
+\subsubsection{Environment Variables}
+outputFile: A text file
+
+\subsubsection{Assumptions}
+
+%\wss{Try to minimize assumptions and anticipate programmer errors via
+%	exceptions, but for practical purposes assumptions are sometimes 
+%	appropriate.}
+
+\subsubsection{Access Routine Semantics}
+
+\noindent dump(fname,ParsedParams,$\boldsymbol{\Delta 
+E}$,$\boldsymbol{C}$,$\boldsymbol{\gamma_{n;0k}}$):
+\begin{itemize}
+	\item transition: Write to fname the input parameters from ParsedParams and 
+	the results of the calculations: $\boldsymbol{\Delta 
+		E}$, $\boldsymbol{C}$ and $\boldsymbol{\gamma_{n;0k}}$
+%	\item output: None 
+	\item exception: None
+\end{itemize}
+
+%\wss{A module without environment variables or state variables is unlikely to
+%	have a state transition.  In this case a state transition can only occur if
+%	the module is changing the state of another module.}
+%
+%\wss{Modules rarely have both a transition and an output.  In most cases you
+%	will have one or the other.}
+
+\subsubsection{Local Functions}
+
+%\wss{As appropriate} \wss{These functions are for the purpose of specification.
+%	They are not necessarily something that is going to be implemented
+%	explicitly.  Even if they are implemented, they are not exported; they only
+%	have local scope.}
+\noindent get\_roots($\boldsymbol{\Delta E}$, ParsedParams.eom, 
+roots):
+\begin{itemize}
+	%	\item transition: \wss{if appropriate} 
+	\item transition: Select from $\boldsymbol{\Delta E}$ the number of nonzero 
+	values indicated by roots and write them to fname.
+	%	\item output: None 
+	\item exception: \textit{exc} :=  
+\end{itemize}
+\noindent \begin{longtable*}[l]{l l}
+$\neg$(ParsedParams.eom $\in \{"ip", "dip", "ea", "dea", "exc"\}$)  & 
+$\Rightarrow$ ValueError
+\end{longtable*} 
+
+\newpage
+
+\section{MIS of Solver Module} \label{mGEP}
+
+\subsection{Module}
+
+solve
+
+\subsection{Uses}
+input (\ref{mInput})
+
+\subsection{Syntax}
+
+\subsubsection{Exported Constants}
+
+\subsubsection{Exported Access Programs}
+
+\begin{center}
+	\begin{tabular}{p{2cm} p{4cm} p{4cm} p{2cm}}
+		\hline
+		\textbf{Name} & \textbf{In} & \textbf{Out} & \textbf{Exceptions} \\
+		\hline
+		dense & $\textbf{A}$: seq(k,k:$\mathbb{R}$), $\textbf{B}$: 
+		seq(k,k:$\mathbb{R}$), 
+		tol: $\mathbb{R} >0$, 
+		orthog: str $in \{``symm", ``asymm"\}$& 
+		$\boldsymbol{\Delta E}$:seq(k:$\mathbb{R}$), 
+		$\boldsymbol{c}$=seq(k,k:$\mathbb{R}$) & 
+		DivideByZero \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\subsection{Semantics}
+
+\subsubsection{State Variables}
+
+%\wss{Not all modules will have state variables.  State variables give the 
+%module
+%	a memory.}
+
+\subsubsection{Environment Variables}
+
+%\wss{This section is not necessary for all modules.  Its purpose is to capture
+%	when the module has external interaction with the environment, such as for a
+%	device driver, screen interface, keyboard, file, etc.}
+
+\subsubsection{Assumptions}
+
+%\wss{Try to minimize assumptions and anticipate programmer errors via
+%	exceptions, but for practical purposes assumptions are sometimes 
+%	appropriate.}
+
+\subsubsection{Access Routine Semantics}
+
+\noindent dense($\textbf{A}$,$\textbf{B}$,tol,orthog):
+\begin{itemize}
+%	\item transition: solve a generalized eigenvalue problem.
+	\item output: \textit{out} := $\boldsymbol{\Delta E}$, $\boldsymbol{c}$ 
+	that satifies $\boldsymbol{A}c_i=\Delta E_i \boldsymbol{B} c_i, \{i|0\le i 
+	\le k\} $
+	\item exception: DivideByZero 
+\end{itemize}
+
+%\wss{A module without environment variables or state variables is unlikely to
+%	have a state transition.  In this case a state transition can only occur if
+%	the module is changing the state of another module.}
+%
+%\wss{Modules rarely have both a transition and an output.  In most cases you
+%	will have one or the other.}
+
+\subsubsection{Local Functions}
+
+%\wss{As appropriate} \wss{These functions are for the purpose of specification.
+%	They are not necessarily something that is going to be implemented
+%	explicitly.  Even if they are implemented, they are not exported; they only
+%	have local scope.}
+None
+
+\newpage
+
+\bibliographystyle {plainnat}
+\bibliography {../../refs/References}
+
+\newpage
+
+\section{Appendix} \label{Appendix}
+
+%\wss{Extra information if required}
+
+\end{document}

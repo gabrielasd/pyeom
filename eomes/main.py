@@ -5,7 +5,11 @@ import sys
 from eomes.load import parse_inputfile, check_inputs
 from eomes.integrals import ElectronIntegrals
 from eomes.density import WfnRDMs
-from eomes.eom import EOMIP, EOMEA, EOMExc, EOMDIP, EOMDEA
+from eomes.ionization import EOMIP
+from eomes.electronaff import EOMEA
+from eomes.excitation import EOMExc
+from eomes.doubleionization import EOMDIP
+from eomes.doubleelectronaff import EOMDEA
 from eomes.solver import dense
 from eomes.output import dump
 
