@@ -2,7 +2,7 @@
 
 import numpy as np
 from eomes import ElectronIntegrals
-from .tools import find_datafiles
+from eomes.tools import find_datafiles
 
 import pytest
 

@@ -1,8 +1,21 @@
-"""
-Functions for electron integrals transformation from spatial to spin representation
-and Hartree-Fock reduced density calculation.
-"""
-# Author: Michael Risher
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Electron integral transformations from spatial to spin representation and Hartree-Fock RDMs."""
+
+
 from os import path
 
 import numpy as np
@@ -15,14 +28,15 @@ __all__ = [
     "from_unrestricted",
     "hartreefock_rdms",
     "find_datafiles",
+    "pickpositiveeig",
 ]
 
-DIRPATH = path.join(path.dirname(__file__), "data/")
+DIRPATH = path.join(path.dirname(__file__), "test/", "data/")
 
 
 def find_datafiles(file_name):
+    r""" """
     datapath = path.join(path.abspath(DIRPATH), file_name)
-    print(f"THIS PATH {path.abspath(datapath)}")
     return path.abspath(datapath)
 
 
@@ -182,3 +196,12 @@ def hartreefock_rdms(nbasis, na, nb):
     dm2 = np.kron(dm1, dm1).reshape(k, k, k, k)
     dm2 -= dm2.transpose(0, 1, 3, 2)
     return dm1, dm2
+
+
+def pickpositiveeig(w, cv, tol=0.01):
+    r"""
+    Adapted from PySCF TDSCF module.
+
+    """
+    idx = np.where(w > tol ** 2)[0]
+    return w[idx], cv[idx], idx

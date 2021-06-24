@@ -1,14 +1,33 @@
-"""Double Electron attachment Equations-of-motion."""
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Double electron affinity EOM state class."""
 
 
 import numpy as np
 
-from .base import EOMBase
+from scipy.integrate import quad as integrate
+
+from .base import EOMState
+from .tools import antisymmetrize
+
 
 __all__ = ["EOMDEA"]
 
 
-class EOMDEA(EOMBase):
+class EOMDEA(EOMState):
     r"""
     Double electron  attachment EOM state for operator
 
@@ -19,34 +38,24 @@ class EOMDEA(EOMBase):
         \middle| \Psi^{(N)}_0 \right>\\
         &= \Delta_k \left< \Psi^{(N)}_0 \middle| a_k a_l
         \hat{Q} \middle| \Psi^{(N)}_0 \right>
-
     """
 
     @property
     def neigs(self):
-        """[summary]
-
-        Returns:
-            [type]: [description]
-        """
+        r""" """
         return self._n ** 2
 
     def _compute_lhs(self):
         r"""
-        Compute
-
-        A = 2 (h_{li} \delta_{kj} - h_{ki} \delta_{lj})
-            + 2 (h_{ki} \gamma_{jl} - h_{li} \gamma_{jk})
-            + 2 \sum_{p} (h_{pi} \gamma_{pk} \delta_{lj} + h_{pj} \gamma_{pl} \delta_{ki})
-            + \left< lk||ij \right>
-            + \sum_{q} (\left< ql||ij \right> \gamma_{qk} - \left< qk||ij \right> \gamma_{ql})
-            + 2 \sum_{r} \left< lk||jr \right> \gamma_{ir}
-            + 2 \sum_{qr} \gamma_{qr}(\left< ql||jr \right> \delta_{ki}
-            - \left< qk||jr \right> \delta_{li})
-            + 2 \sum_{qr} (\left< ql||ir \right> \Gamma_{qjrk}
-            - \left< qk||ir \right> \Gamma_{qjrl})
-            + \sum_{pqr} \left< pq||jr \right> (\Gamma_{pqrk} \delta_{li}
-            - \Gamma_{pqrl} \delta_{ki})
+        Compute A = 2 (h_{li} \delta_{kj} - h_{ki} \delta_{lj})
+                  + 2 (h_{ki} \gamma_{jl} - h_{li} \gamma_{jk})
+                  + 2 \sum_{p} (h_{pi} \gamma_{pk} \delta_{lj} + h_{pj} \gamma_{pl} \delta_{ki})
+                  + \left< lk||ij \right>
+                  + \sum_{q} (\left< ql||ij \right> \gamma_{qk} - \left< qk||ij \right> \gamma_{ql})
+                  + 2 \sum_{r} \left< lk||jr \right> \gamma_{ir}
+                  + 2 \sum_{qr} \gamma_{qr}(\left< ql||jr \right> \delta_{ki} - \left< qk||jr \right> \delta_{li})
+                  + 2 \sum_{qr} (\left< ql||ir \right> \Gamma_{qjrk} - \left< qk||ir \right> \Gamma_{qjrl})
+                  + \sum_{pqr} \left< pq||jr \right> (\Gamma_{pqrk} \delta_{li} - \Gamma_{pqrl} \delta_{ki})
         """
 
         I = np.eye(self._n, dtype=self._h.dtype)
@@ -85,12 +94,10 @@ class EOMDEA(EOMBase):
 
     def _compute_rhs(self):
         r"""
-        Compute
-
-        M = \Gamma_{ijlk}
-            + \delta_{li} \delta_{kj} - \delta_{ki} \delta_{lj}
-            + \delta_{ki} \gamma_{jl} - \delta_{kj} \gamma_{li}
-            + \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
+        Compute M = \Gamma_{ijlk}
+                  + \delta_{li} \delta_{kj} - \delta_{ki} \delta_{lj}
+                  + \delta_{ki} \gamma_{jl} - \delta_{kj} \gamma_{li}
+                  + \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
         """
         I = np.eye(self._n, dtype=self._h.dtype)
         # M_klji = \delta_li \delta_kj - \delta_ki \delta_lj
@@ -106,19 +113,81 @@ class EOMDEA(EOMBase):
         m += self._dm2
         return m.reshape(self._n ** 2, self._n ** 2)
 
-    def compute_tdm(self, coeffs):
+    @classmethod
+    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
         r"""
-        Compute
-
-        .. math::
-            \gamma_{kl} = \sum_{ij}{c_{ij} \left< \Psi^{(N)}_0 \middle|
-            a_k a_l a^{\dagger}_i a^{\dagger}_j \middle|
-            \Psi^{(N)}_0 \right>}
+        Compute the ERPA correlation energy for the operator.
 
         """
-        coeffs = coeffs.reshape(self._n ** 2, self._n, self._n)
-        return np.einsum(
-            "nij,pqij->npq",
-            coeffs,
-            self._rhs.reshape(self._n, self._n, self._n, self._n),
+        # Size of dimensions
+        n = h_0.shape[0]
+        # H_1 - H_0
+        dh = h_1 - h_0
+        # V_1 - V_0
+        dv = v_1 - v_0
+        # \delta_pr * \gamma_qs
+        eye_dm1 = np.einsum("pr,qs->pqrs", np.eye(n), dm1, optimize=True)
+        # \delta_pr * \gamma_qs
+        dm1_eye = np.einsum("pr,qs->pqrs", dm1, np.eye(n), optimize=True)
+
+        # Compute inmutable terms in (eq. 35)
+        # There is a sign error in the equation. It
+        # should be:
+        # = \delta_pi * \delta_qj - \delta_pj * \delta_qi
+        # - \delta_pi * \gamma_qj - \delta_qj * \gamma_pi
+        # + \delta_pj * \gamma_qi + \delta_qi * \gamma_pj
+        # However, considering that Michael's notation and the one I
+        # used on the pp-EOM differ by a sign (<|p q j+ i+ |> = -<|p q i+ j+ |>)
+        # bellow's expression matches the signs in (eq. 35)
+        # Subindices order will be "pqsr" to match the "klji" notation I used
+        rdm_terms = (
+            np.einsum("iq,jp->pqji", np.eye(n), np.eye(n), optimize=True)
+            - np.einsum("ip,jq->pqij", np.eye(n), np.eye(n), optimize=True)
+            + eye_dm1
+            - np.transpose(eye_dm1, axes=(0, 1, 3, 2))
+            + dm1_eye
+            - np.transpose(dm1_eye, axes=(0, 1, 3, 2))
+            + dm2
         )
+
+        # Nonlinear term (eq. 19 integrand)
+        def nonlinear(alpha):
+            r""" """
+            # Compute H^alpha
+            h = alpha * dh
+            h += h_0
+            v = alpha * dv
+            v += v_0
+            # Antysymmetrize v_pqrs
+            v = antisymmetrize(v)
+            # Solve EOM equations
+            c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)[1].reshape(n ** 2, n, n)
+            # Compute transition RDMs (eq. 35)
+            rdms = np.einsum("mrs,pqsr->mpq", c, rdm_terms)
+            # Compute nonlinear energy term
+            tv = np.zeros_like(dm2)
+            for rdm in rdms:
+                tv += np.einsum("sr,pq->pqrs", rdm, rdm, optimize=True)
+            return np.einsum("pqrs,pqrs", dv, tv, optimize=True)
+
+        # Compute linear term (eq. 19)
+        # dh * \gamma + 0.5 * dv * (\delta_pr * \gamma_qs + \delta_qs * \gamma_pr - \delta_ps * \gamma_qr
+        #                           - \delta_qr * \gamma_ps - \delta_pr * \delta_qs + \delta_ps * \delta_qr)
+        linear = (
+            eye_dm1
+            - np.transpose(eye_dm1, axes=(0, 1, 3, 2))
+            + dm1_eye
+            - np.transpose(dm1_eye, axes=(0, 1, 3, 2))
+            - np.einsum("pr,qs->pqrs", np.eye(n), np.eye(n), optimize=True)
+            + np.einsum("ps,qr->pqrs", np.eye(n), np.eye(n), optimize=True)
+        )
+        linear = np.einsum("pq,pq", dh, dm1, optimize=True) + 0.5 * np.einsum(
+            "pqrs,pqrs", dv, linear, optimize=True
+        )
+
+        # Compute ERPA correlation energy (eq. 19)
+        return (
+            linear
+            - 0.5 * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[0]
+        )
+        # return linear

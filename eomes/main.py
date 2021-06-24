@@ -10,7 +10,6 @@ from eomes.electronaff import EOMEA
 from eomes.excitation import EOMExc
 from eomes.doubleionization import EOMDIP
 from eomes.doubleelectronaff import EOMDEA
-from eomes.solver import dense
 from eomes.output import dump
 
 
@@ -49,14 +48,14 @@ def main():
 
     eomstate = eommethod(ham.h, ham.v, wfn.dm1, wfn.dm2)
     print("Start EOM calcularion")
-    exce, coeffs = dense(eomstate.lhs, eomstate.rhs, params.tol, params.orthog)
+    exce, coeffs = eomstate.solve_dense(tol=params.tol, orthog=params.orthog)
     print("Done")
 
-    if params.get_tdm:
-        tdms = eomstate.compute_tdm(coeffs)
-        dump(inputfile, params, exce, coeffs, tdms=tdms)
-    else:
-        dump(inputfile, params, exce, coeffs)
+    # if params.get_tdm:
+    #     tdms = eomstate.compute_tdm(coeffs)
+    #     dump(inputfile, params, exce, coeffs, tdms=tdms)
+    # else:
+    dump(inputfile, params, exce, coeffs)
 
 
 if __name__ == "__main__":

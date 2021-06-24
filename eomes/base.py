@@ -1,12 +1,27 @@
-"""
-Equations-of-motion state base class.
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
-"""
+r"""Equations-of-motion state base class."""
 
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 import numpy as np
+
+from scipy.linalg import eig, svd
+from scipy.sparse.linalg import eigs
 
 
 __all__ = [
@@ -14,8 +29,8 @@ __all__ = [
 ]
 
 
-class EOMBase(metaclass=ABCMeta):
-    """
+class EOMState(metaclass=ABCMeta):
+    r"""
     Equations-of-motion state abstract base class.
 
     Overwrite neigs, _compute_lhs, _compute_rhs.
@@ -23,7 +38,7 @@ class EOMBase(metaclass=ABCMeta):
     """
 
     def __init__(self, h, v, dm1, dm2):
-        """
+        r"""
         Initialize an EOMState instance.
 
         Parameters
@@ -40,22 +55,16 @@ class EOMBase(metaclass=ABCMeta):
         """
         # Basic system attributes
         if not (isinstance(h, np.ndarray) and h.ndim == 2):
-            raise ValueError(
-                "One-particle integrals should be a 2-dimensional " "numpy array"
-            )
+            raise ValueError("One-particle integrals should be a 2-dimensional numpy array")
         if not (isinstance(v, np.ndarray) and v.ndim == 4):
-            raise ValueError(
-                "Two-particle integrals should be a 4-dimensional " "numpy array"
-            )
+            raise ValueError("Two-particle integrals should be a 4-dimensional numpy array")
         if not (isinstance(dm1, np.ndarray) and dm1.ndim == 2):
             raise ValueError(
-                "One-particle reduced density matrix should be a "
-                "2-dimensional numpy array"
+                "One-particle reduced density matrix should be a 2-dimensional numpy array"
             )
         if not (isinstance(dm2, np.ndarray) and dm2.ndim == 4):
             raise ValueError(
-                "Two-particle reduced density matrix should be a "
-                "2-dimensional numpy array"
+                "Two-particle reduced density matrix should be a 2-dimensional numpy array"
             )
         if not h.shape[0] == dm2.shape[0]:
             raise ValueError(
@@ -74,7 +83,7 @@ class EOMBase(metaclass=ABCMeta):
 
     @property
     def n(self):
-        """
+        r"""
         Return the number of orbital basis functions.
 
         Returns
@@ -87,7 +96,7 @@ class EOMBase(metaclass=ABCMeta):
 
     @abstractproperty
     def neigs(self):
-        """
+        r"""
         Return the size of the eigensystem.
 
         Returns
@@ -100,7 +109,7 @@ class EOMBase(metaclass=ABCMeta):
 
     @property
     def h(self):
-        """
+        r"""
         Return the 1-particle integral array.
 
         Returns
@@ -113,7 +122,7 @@ class EOMBase(metaclass=ABCMeta):
 
     @property
     def v(self):
-        """
+        r"""
         Return the 2-particle integral array.
 
         Returns
@@ -126,7 +135,7 @@ class EOMBase(metaclass=ABCMeta):
 
     @property
     def dm1(self):
-        """
+        r"""
         Return the 1-particle reduced density matrix.
 
         Returns
@@ -139,7 +148,7 @@ class EOMBase(metaclass=ABCMeta):
 
     @property
     def dm2(self):
-        """
+        r"""
         Return the 2-particle reduced density matrix.
 
         Returns
@@ -152,7 +161,7 @@ class EOMBase(metaclass=ABCMeta):
 
     @property
     def lhs(self):
-        """
+        r"""
         Return the left-hand-side operator matrix.
 
         Returns
@@ -165,7 +174,7 @@ class EOMBase(metaclass=ABCMeta):
 
     @property
     def rhs(self):
-        """
+        r"""
         Return the right-hand-side operator matrix.
 
         Returns
@@ -176,9 +185,113 @@ class EOMBase(metaclass=ABCMeta):
         """
         return self._rhs
 
+    def solve_dense(self, tol=1.0e-7, orthog="symmetric", *args, **kwargs):
+        r"""
+        Solve the EOM eigenvalue system.
+
+        Parameters
+        ----------
+        tol : float, optional
+            Tolerance for small singular values. Default: 1.0e-10
+        orthog : str, optional
+            Matrix orthogonalization method. Default is symmetric orthogonalization
+            in which the inverse square root of the right hand side matrix is taken.
+
+        Returns
+        -------
+        w : np.ndarray((m,))
+            Eigenvalue array (m eigenvalues).
+        v : np.ndarray((m, n))
+            Eigenvector matrix (m eigenvectors).
+
+        """
+        if not isinstance(tol, float):
+            raise TypeError("Argument tol must be a float")
+
+        # Invert RHS matrix
+        # RHS matrix SVD
+        U, s, V = svd(self._rhs)
+        if orthog == "symmetric":
+            # Apply inverse square root to eigvals of RHS
+            s = s ** (-0.5)
+            # Check singular value threshold
+            s[s >= 1 / tol] = 0.0
+            # Transform back to RHS^(-0.5)
+            S_inv = np.diag(s)
+            rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
+
+            # Apply RHS^-0.5 * LHS * RHS^-0.5
+            A = np.dot(rhs_inv, np.dot(self._lhs, rhs_inv))
+            # Run scipy `linalg.eig` eigenvalue solver
+            w, v = eig(A, *args, **kwargs)
+            # Transform back to original eigenvector matrix
+            v = np.dot(rhs_inv, v)
+            # Return w (eigenvalues)
+            #    and v (eigenvector column matrix -- so transpose it!)
+            return np.real(w), np.real(v.T)
+        elif orthog == "asymmetric":
+            # Check singular value threshold
+            s = s ** (-1)
+            s[s >= 1 / tol] = 0.0
+            # S^(-1)
+            S_inv = np.diag(s)
+            # rhs^(-1)
+            rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
+
+            # Apply RHS^-1 * LHS
+            A = np.dot(rhs_inv, self._lhs)
+            # Run scipy `linalg.eig` eigenvalue solver
+            w, v = eig(A, *args, **kwargs)
+            # Return w (eigenvalues)
+            #    and v (eigenvector column matrix -- so transpose it!)
+            return np.real(w), np.real(v.T)
+        else:
+            raise ValueError(
+                "Invalid orthogonalization parameter. Valid options are symmetric or asymmetric."
+            )
+
+    def solve_sparse(self, eigvals=6, tol=1.0e-10, *args, **kwargs):
+        r"""
+        Solve the EOM eigenvalue system.
+
+        Parameters
+        ----------
+        eigvals : int, optional
+            Number of eigenpairs to find. Must be smaller than N-1.
+        tol : float, optional
+            Tolerance for small singular values. Default: 1.0e-10
+
+        Returns
+        -------
+        w : np.ndarray((m,))
+            Eigenvalue array (m eigenvalues).
+        v : np.ndarray((m, n))
+            Eigenvector matrix (m eigenvectors).
+
+        """
+        if not isinstance(tol, float):
+            raise TypeError("Argument tol must be a float")
+        # Invert RHS matrix
+        # RHS matrix SVD
+        U, s, V = svd(self._rhs)
+        # Check singular value threshold
+        s = s ** (-1)
+        s[s >= 1 / tol] = 0.0
+        # S^(-1)
+        S_inv = np.diag(s)
+        # rhs^(-1)
+        rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
+        # Apply RHS^-1 * LHS
+        A = np.dot(rhs_inv, self._lhs)
+        # Run scipy `linalg.eigs` eigenvalue solver
+        w, v = eigs(A, k=eigvals, which="SR", *args, **kwargs)
+        # Return w (eigenvalues)
+        #    and v (eigenvector column matrix -- so transpose it!)
+        return np.real(w), np.real(v.T)
+
     @abstractmethod
     def _compute_lhs(self):
-        """
+        r"""
         Compute the left-hand-side operator matrix.
 
         """
@@ -186,16 +299,16 @@ class EOMBase(metaclass=ABCMeta):
 
     @abstractmethod
     def _compute_rhs(self):
-        """
+        r"""
         Compute the right-hand-side operator matrix.
 
         """
         raise NotImplementedError("Subclasses must overwrite this method")
 
-    @abstractmethod
-    def compute_tdm(self):
-        """
-        Compute the reduced transition density matrix.
+    # @abstractmethod
+    # def compute_tdm(self):
+    #     """
+    #     Compute the reduced transition density matrix.
 
-        """
-        raise NotImplementedError("Subclasses must overwrite this method")
+    #     """
+    #     raise NotImplementedError("Subclasses must overwrite this method")

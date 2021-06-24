@@ -3,7 +3,7 @@
 import tempfile
 import numpy as np
 from eomes import WfnRDMs
-from .tools import find_datafiles
+from eomes.tools import find_datafiles
 
 import pytest
 

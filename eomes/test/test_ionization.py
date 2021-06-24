@@ -1,18 +1,41 @@
-"""Test eomes.ionization."""
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Test eomee.ionization."""
 
 
-import numpy as np
-from scipy.linalg import eig, svd
-import pytest
-from eomes import EOMIP
-from eomes import solver
-from .tools import (
+# import eomee
+from eomes import (
+    EOMIP,
+    EOMIPDoubleCommutator,
+    EOMIPAntiCommutator,
+)
+
+from eomes.tools import (
     find_datafiles,
     spinize,
     symmetrize,
     antisymmetrize,
     hartreefock_rdms,
 )
+
+import numpy as np
+
+from scipy.linalg import eig
+
+import pytest
 
 
 def incorrect_inputs():
@@ -92,9 +115,19 @@ def test_eomip_one_body_term():
     ip = np.sort(ip)
     # EOM solution
     eom = EOMIP(one_mo, two_mo, one_dm, two_dm)
-    aval1, avec = solver.dense(eom.lhs, eom.rhs)
+    aval1, _ = eom.solve_dense()
     aval1 = np.sort(aval1)
     assert abs(aval1[-1] - ip[-1]) < 1e-8
+
+    eom = EOMIPDoubleCommutator(one_mo, two_mo, one_dm, two_dm)
+    aval2, _ = eom.solve_dense()
+    aval2 = np.sort(aval2)
+    assert abs(aval2[-1] - ip[-1]) < 1e-8
+
+    eom = EOMIPAntiCommutator(one_mo, two_mo, one_dm, two_dm)
+    aval3, _ = eom.solve_dense()
+    aval3 = np.sort(aval3)
+    assert abs(aval3[-1] - ip[-1]) < 1e-8
 
 
 @pytest.mark.parametrize(
@@ -102,14 +135,20 @@ def test_eomip_one_body_term():
     [
         ("heh+_sto3g", 2, (1, 1), 0, 1.52378328, 1e-6, EOMIP),
         ("he_ccpvdz", 5, (1, 1), 0, 0.91414765, 1e-6, EOMIP),
+        ("he_ccpvdz", 5, (1, 1), 0, 0.91414765, 1e-6, EOMIPDoubleCommutator),
+        ("he_ccpvdz", 5, (1, 1), 0, 0.91414765, 1e-6, EOMIPAntiCommutator),
         ("ne_321g", 9, (5, 5), 4, 0.79034293, 1e-5, EOMIP),
+        ("ne_321g", 9, (5, 5), 4, 0.79034293, 1e-5, EOMIPDoubleCommutator),
+        ("ne_321g", 9, (5, 5), 3, 0.79034293, 1e-5, EOMIPAntiCommutator),
         ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, EOMIP),
+        ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, EOMIPDoubleCommutator),
+        ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, EOMIPAntiCommutator),
         ("b_sto3g", 5, (3, 2), 4, 0.20051823, 1e-8, EOMIP),
+        ("b_sto3g", 5, (3, 2), 4, 0.20051823, 1e-8, EOMIPDoubleCommutator),
+        ("b_sto3g", 5, (3, 2), 4, 0.20051823, 1e-8, EOMIPAntiCommutator),
     ],
 )
-def test_ionizationeomstate_h2_sto6g(
-    filename, nbasis, nocc, evidx, expected, tol, eom_type
-):
+def test_ionizationeomstate_h2_sto6g(filename, nbasis, nocc, evidx, expected, tol, eom_type):
     """Test IonizationEOMState for H2 (STO-6G)
     against Hartree-Fock canonical orbital energy and
     experimental results.
@@ -127,32 +166,8 @@ def test_ionizationeomstate_h2_sto6g(
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
     eom = eom_type(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = solver.dense(eom.lhs, eom.rhs)
+    aval, avec = eom.solve_dense()
     # Reference value from HORTON RHF
     # horton_emo = [-0.58205888, 0.66587228]
+    print(aval)
     assert abs(aval[evidx] - expected) < tol
-
-
-def test_compute_tdm():
-    nbasis = 5
-    one_mo = np.load(find_datafiles("be_sto3g_oneint.npy"))
-    one_mo = spinize(one_mo)
-    two_mo = np.load(find_datafiles("be_sto3g_twoint.npy"))
-    two_mo = symmetrize(spinize(two_mo))
-    two_mo = antisymmetrize(two_mo)
-    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
-    eom = EOMIP(one_mo, two_mo, one_dm, two_dm)
-
-    # Solve the EOM and compute the TDMs
-    aval, avec = solver.dense(eom.lhs, eom.rhs)
-    tdms = eom.compute_tdm(avec)
-
-    # Tentative verification of the TDM for some ionized state.
-    non0_idxs = np.flatnonzero(aval)
-    idx = non0_idxs[0]
-    tdm_psi_idx = tdms[idx]
-
-    dm_oo = np.einsum("i,k->ik", tdm_psi_idx, tdm_psi_idx.conj())
-    assert np.allclose(dm_oo, dm_oo.T)
-    _, s, _ = svd(dm_oo)
-    assert np.allclose(sum(s[:]), 1.0)

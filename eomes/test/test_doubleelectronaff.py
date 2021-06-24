@@ -1,9 +1,24 @@
-"""Test eomes.doubleelectronaff."""
+# This file is part of EOMEE.
+#
+# EOMEE is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# EOMEE is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+
+r"""Test eomee.doubleelectronaff."""
 
 
 from eomes import EOMDEA
-from eomes import solver
-from .tools import (
+
+from eomes.tools import (
     find_datafiles,
     spinize,
     symmetrize,
@@ -49,7 +64,7 @@ def test_eomdea_one_body_term():
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
     eom = EOMDEA(one_mo, two_mo, one_dm, two_dm)
-    avalea, avec = solver.dense(eom.lhs, eom.rhs)
+    avalea, avec = eom.solve_dense()
     avalea = np.sort(avalea)
 
     # Hartree-Fock eigenvalues ignoring two-electron terms
@@ -157,7 +172,7 @@ def test_eomdea_beIV_sto6g():
     assert nspin == one_mo.shape[0]
 
     eomea = EOMDEA(one_mo, two_mo, one_dm, two_dm)
-    avalea, avecea = solver.dense(eomea.lhs, eomea.rhs)
+    avalea, avecea = eomea.solve_dense()
     avalea = np.sort(avalea)
 
     # Double-electron attachment EOM on vacuum satate
@@ -209,7 +224,7 @@ def test_eomdea_beII_sto6g():
     one_dm, two_dm = hartreefock_rdms(nspatial, 1, 1)
 
     eom = EOMDEA(one_mo, two_mo, one_dm, two_dm)
-    avalea, avecea = solver.dense(eom.lhs, eom.rhs)
+    avalea, avecea = eom.solve_dense()
     avalea = np.sort(avalea)
 
     # Be(+2) RHF/sto-6g energy and
@@ -221,29 +236,3 @@ def test_eomdea_beII_sto6g():
     # Tr(RHS) = 59.9999
     assert np.trace(eom.rhs) == (nhole * (nhole - 1))
     assert abs(approxbeEccd - CCD) < 1e-3
-
-
-def test_compute_tdm():
-    nbasis = 5
-    one_mo = np.load(find_datafiles("be_sto3g_oneint.npy"))
-    one_mo = spinize(one_mo)
-    two_mo = np.load(find_datafiles("be_sto3g_twoint.npy"))
-    two_mo = symmetrize(spinize(two_mo))
-    two_mo = antisymmetrize(two_mo)
-    one_dm, two_dm = hartreefock_rdms(nbasis, 2, 2)
-    eom = EOMDEA(one_mo, two_mo, one_dm, two_dm)
-
-    # Solve the EOM and compute the TDMs
-    aval, avec = solver.dense(eom.lhs, eom.rhs)
-    tdms = eom.compute_tdm(avec)
-
-    # Tentative verification of the TDM for some excited state.
-    non0_idxs = np.flatnonzero(aval)
-    idx = non0_idxs[0]
-    tdm_psi_idx = tdms[idx]
-    assert not np.allclose(tdm_psi_idx, tdm_psi_idx.T)
-
-    dm_oo = np.einsum("ia,ka->ik", tdm_psi_idx, tdm_psi_idx.conj())
-    assert np.allclose(dm_oo, dm_oo.T)
-    _, s, _ = svd(dm_oo)
-    assert np.allclose(sum(s[:]), 2.0)
