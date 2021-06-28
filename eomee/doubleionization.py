@@ -31,8 +31,10 @@ __all__ = [
 
 class EOMDIP(EOMState):
     r"""
-    Double Ionization EOM state for operator Q = \sum_{ij} { c_{ij} a_i a_j}.
+    Double Ionization EOM state for operator :math:`Q = \sum_{ij} { c_{ij} a_i a_j}`.
+
     .. math::
+
         \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l \left[ \hat{H}, \hat{Q} \right] \middle| \Psi^{(N)}_0 \right>
         &= \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
 
@@ -45,13 +47,18 @@ class EOMDIP(EOMState):
 
     def _compute_lhs(self):
         r"""
-        Compute A = 2 ( h_{il} \delta_{jk} - h_{il} \gamma_{kj} + h_{ik} \gamma_{lj} - h_{ik} \delta_{jl} )
-                  + 2 ( \sum_q { h_{jq} \gamma_{lq} \delta_{ik} - h_{jq} \gamma_{kq} \delta_{il} } )
-                  + \left< ji||kl \right> + \sum_r { \left< ji||lr \right> \gamma_{kr} - \left< ji||kr \right> \gamma_{lr} }
-                  + 2 \sum_q \left< qj||kl \right> \gamma_{qi}
-                  + 2 ( \sum_{qr} { \left< iq||rk \right> \gamma_{qr} \delta_{lj} + \left< iq||lr \right> \gamma_{qr} \delta_{kj} })
-                  + 2 ( \sum_{qr} { \left< jq||rk \right> \Gamma_{qlri} + \left< jq||lr \right> \Gamma_{qkri} })
-                  + \sum_{qrs} { \left< qj||rs \right> \Gamma_{qlrs} \delta_{ki} + \left< jq||rs \right> \Gamma_{qkrs} \delta_{li} }
+        Compute
+
+        .. math::
+
+            A = 2 ( h_{il} \delta_{jk} - h_{il} \gamma_{kj} + h_{ik} \gamma_{lj} - h_{ik} \delta_{jl} )
+            + 2 ( \sum_q { h_{jq} \gamma_{lq} \delta_{ik} - h_{jq} \gamma_{kq} \delta_{il} } )
+            + \left< ji||kl \right> + \sum_r { \left< ji||lr \right> \gamma_{kr} - \left< ji||kr \right> \gamma_{lr} }
+            + 2 \sum_q \left< qj||kl \right> \gamma_{qi}
+            + 2 ( \sum_{qr} { \left< iq||rk \right> \gamma_{qr} \delta_{lj} + \left< iq||lr \right> \gamma_{qr} \delta_{kj} })
+            + 2 ( \sum_{qr} { \left< jq||rk \right> \Gamma_{qlri} + \left< jq||lr \right> \Gamma_{qkri} })
+            + \sum_{qrs} { \left< qj||rs \right> \Gamma_{qlrs} \delta_{ki} + \left< jq||rs \right> \Gamma_{qkrs} \delta_{li} }
+
         """
 
         I = np.eye(self._n, dtype=self._h.dtype)
@@ -87,7 +94,7 @@ class EOMDIP(EOMState):
 
     def _compute_rhs(self):
         r"""
-        Compute M = \Gamma_{klji}
+        Compute :math:`M = \Gamma_{klji}`
         """
 
         # M_klji = \Gamma_klji

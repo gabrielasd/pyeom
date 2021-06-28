@@ -22,21 +22,21 @@ EOM Classes
 
 .. autoclass:: eomee.EOMState
    :members:
-.. autoclass:: eomee.ElectronAffinitiesEOM1
+.. autoclass:: eomee.EOMEA
    :members:
-.. autoclass:: eomee.ElectronAffinitiesEOM2
+.. autoclass:: eomee.EOMEADoubleCommutator
    :members:
-.. autoclass:: eomee.ElectronAffinitiesEOM3
+.. autoclass:: eomee.EOMEAAntiCommutator
    :members:
-.. autoclass:: eomee.DoubleElectronAttachmentEOM
+.. autoclass:: eomee.EOMDEA
    :members:
-.. autoclass:: eomee.ExcitationEOM
+.. autoclass:: eomee.EOMExc
    :members:
-.. autoclass:: eomee.IonizationAntiCommutator
+.. autoclass:: eomee.EOMIP
    :members:
-.. autoclass:: eomee.IonizationDoubleCommutator
+.. autoclass:: eomee.EOMIPDoubleCommutator
    :members:
-.. autoclass:: eomee.IonizationEOMState
+.. autoclass:: eomee.EOMIPAntiCommutator
    :members:
-.. autoclass:: eomee.DoubleElectronRemovalEOM
+.. autoclass:: eomee.EOMDIP
    :members:

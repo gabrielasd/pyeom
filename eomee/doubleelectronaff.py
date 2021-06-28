@@ -47,15 +47,19 @@ class EOMDEA(EOMState):
 
     def _compute_lhs(self):
         r"""
-        Compute A = 2 (h_{li} \delta_{kj} - h_{ki} \delta_{lj})
-                  + 2 (h_{ki} \gamma_{jl} - h_{li} \gamma_{jk})
-                  + 2 \sum_{p} (h_{pi} \gamma_{pk} \delta_{lj} + h_{pj} \gamma_{pl} \delta_{ki})
-                  + \left< lk||ij \right>
-                  + \sum_{q} (\left< ql||ij \right> \gamma_{qk} - \left< qk||ij \right> \gamma_{ql})
-                  + 2 \sum_{r} \left< lk||jr \right> \gamma_{ir}
-                  + 2 \sum_{qr} \gamma_{qr}(\left< ql||jr \right> \delta_{ki} - \left< qk||jr \right> \delta_{li})
-                  + 2 \sum_{qr} (\left< ql||ir \right> \Gamma_{qjrk} - \left< qk||ir \right> \Gamma_{qjrl})
-                  + \sum_{pqr} \left< pq||jr \right> (\Gamma_{pqrk} \delta_{li} - \Gamma_{pqrl} \delta_{ki})
+        Compute
+
+        .. math::
+            A = 2 (h_{li} \delta_{kj} - h_{ki} \delta_{lj})
+            + 2 (h_{ki} \gamma_{jl} - h_{li} \gamma_{jk})
+            + 2 \sum_{p} (h_{pi} \gamma_{pk} \delta_{lj} + h_{pj} \gamma_{pl} \delta_{ki})
+            + \left< lk||ij \right>
+            + \sum_{q} (\left< ql||ij \right> \gamma_{qk} - \left< qk||ij \right> \gamma_{ql})
+            + 2 \sum_{r} \left< lk||jr \right> \gamma_{ir}
+            + 2 \sum_{qr} \gamma_{qr}(\left< ql||jr \right> \delta_{ki} - \left< qk||jr \right> \delta_{li})
+            + 2 \sum_{qr} (\left< ql||ir \right> \Gamma_{qjrk} - \left< qk||ir \right> \Gamma_{qjrl})
+            + \sum_{pqr} \left< pq||jr \right> (\Gamma_{pqrk} \delta_{li} - \Gamma_{pqrl} \delta_{ki})
+
         """
 
         I = np.eye(self._n, dtype=self._h.dtype)
@@ -94,10 +98,15 @@ class EOMDEA(EOMState):
 
     def _compute_rhs(self):
         r"""
-        Compute M = \Gamma_{ijlk}
-                  + \delta_{li} \delta_{kj} - \delta_{ki} \delta_{lj}
-                  + \delta_{ki} \gamma_{jl} - \delta_{kj} \gamma_{li}
-                  + \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
+        Compute
+
+        .. math::
+
+            M = \Gamma_{ijlk}
+            + \delta_{li} \delta_{kj} - \delta_{ki} \delta_{lj}
+            + \delta_{ki} \gamma_{jl} - \delta_{kj} \gamma_{li}
+            + \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
+
         """
         I = np.eye(self._n, dtype=self._h.dtype)
         # M_klji = \delta_li \delta_kj - \delta_ki \delta_lj
