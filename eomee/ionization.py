@@ -30,7 +30,7 @@ __all__ = [
 
 class EOMIP(EOMState):
     r"""
-    Ionization EOM state for operator :math:`Q = \sum_n { c_n a_n }`.
+    Ionization EOM state for operator :math:`\hat{Q}_k = \sum_n { c_n a_n }`.
 
     .. math::
 
@@ -59,8 +59,7 @@ class EOMIP(EOMState):
 
         .. math::
 
-            A = \sum_q { -h_{nq} \gamma_{mq} }
-            - 0.5 \sum_{qrs} { \left< nq||rs \right> \Gamma_{mqrs} }.
+            A_{mn} = \sum_q { -h_{nq} \gamma_{mq} } - 0.5 \sum_{qrs} { \left< nq||rs \right> \Gamma_{mqrs} }.
 
         """
         # A_mn = -h_nq \gamma_mq - 0.5 <v_nqrs> \Gamma_mqrs
@@ -72,7 +71,7 @@ class EOMIP(EOMState):
 
     def _compute_rhs(self):
         r"""
-        Compute :math:`M = \sum_n { \gamma_{mn} }`.
+        Compute :math:`M_{mn} = \gamma_{mn}`.
 
         """
         # M_mn = \gamma_mn
@@ -81,7 +80,7 @@ class EOMIP(EOMState):
 
 class EOMIPDoubleCommutator(EOMState):
     r"""
-    Ionization EOM state for operator :math:`Q = \sum_n { c_n a_n }`.
+    Ionization EOM state for operator :math:`\hat{Q}_k = \sum_n { c_n a_n }`.
 
     .. math::
 
@@ -110,8 +109,7 @@ class EOMIPDoubleCommutator(EOMState):
 
         .. math::
 
-            A = h_{nm} -2 \sum_q { h_{nq} \gamma_{mq} }
-            + \sum_{qs} { \left< nq||ms \right> \gamma_{qs} }
+            A_{mn} = h_{nm} -2 \sum_q { h_{nq} \gamma_{mq} } + \sum_{qs} { \left< nq||ms \right> \gamma_{qs} }
             + \sum_{qrs} { \left< nq||rs \right> \Gamma_{mqsr} }.
 
         """
@@ -125,7 +123,7 @@ class EOMIPDoubleCommutator(EOMState):
 
     def _compute_rhs(self):
         r"""
-        Compute :math:`M = 2 \gamma_{mn} - \delta_{nm}`.
+        Compute :math:`M_{mn} = 2 \gamma_{mn} - \delta_{nm}`.
 
         """
         # M_mn = 2 * \gamma_mn - \delta_mn
@@ -136,12 +134,12 @@ class EOMIPDoubleCommutator(EOMState):
 
 class EOMIPAntiCommutator(EOMState):
     r"""
-    Ionization EOM state for operator :math:`Q = \sum_n { c_n a_n }`.
+    Ionization EOM state for operator :math:`\hat{Q}_k = \sum_n { c_n a_n }`.
 
     .. math::
 
         \left< \Psi^{(N)}_0 \middle| \Big\{ a^{\dagger}_m, \left[ \hat{H}, \hat{Q} \right] \Big\} \middle| \Psi^{(N)}_0 \right>
-        &= \Delta_k \left< \Psi^{(N)}_0 \middle| \Big\{[a^{\dagger}_m, \hat{Q} \Big\} \middle| \Psi^{(N)}_0 \right>
+        &= \Delta_k \left< \Psi^{(N)}_0 \middle| \Big\{a^{\dagger}_m, \hat{Q} \Big\} \middle| \Psi^{(N)}_0 \right>
 
     """
 
@@ -161,7 +159,7 @@ class EOMIPAntiCommutator(EOMState):
 
     def _compute_lhs(self):
         r"""
-        Compute :math:`A = -h_{nm} + \sum_{qr} { \left< qn||mr \right> \gamma_{qr} }`.
+        Compute :math:`A_{mn} = -h_{nm} + \sum_{qr} { \left< qn||mr \right> \gamma_{qr} }`.
 
         """
         # A_mn = -h_mn
@@ -172,7 +170,7 @@ class EOMIPAntiCommutator(EOMState):
 
     def _compute_rhs(self):
         r"""
-        Compute :math:`M = \delta_{nm}`.
+        Compute :math:`M_{mn} = \delta_{mn}`.
 
         """
         # M_mn = \delta_mn

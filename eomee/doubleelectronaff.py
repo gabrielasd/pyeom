@@ -31,13 +31,12 @@ class EOMDEA(EOMState):
     r"""
     Double electron  attachment EOM state for operator
 
-    :math:`Q = \sum_{ij} { c_{ij} a^{\dagger}_i a^{\dagger}_j}`.
+    :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a^{\dagger}_i a^{\dagger}_j}`.
 
     .. math::
-        \left< \Psi^{(N)}_0 \middle| a_k a_l \left[ \hat{H}, \hat{Q} \right]
-        \middle| \Psi^{(N)}_0 \right>\\
-        &= \Delta_k \left< \Psi^{(N)}_0 \middle| a_k a_l
-        \hat{Q} \middle| \Psi^{(N)}_0 \right>
+
+        \left< \Psi^{(N)}_0 \middle| \left[a_k a_l, \left[ \hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
+        &= \Delta_k \left< \Psi^{(N)}_0 \middle| a_k a_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
     """
 
     @property
@@ -50,15 +49,13 @@ class EOMDEA(EOMState):
         Compute
 
         .. math::
-            A = 2 (h_{li} \delta_{kj} - h_{ki} \delta_{lj})
-            + 2 (h_{ki} \gamma_{jl} - h_{li} \gamma_{jk})
-            + 2 \sum_{p} (h_{pi} \gamma_{pk} \delta_{lj} + h_{pj} \gamma_{pl} \delta_{ki})
-            + \left< lk||ij \right>
+            A_{klji} = 2 (h_{li} \delta_{kj} - h_{ki} \delta_{lj}) + 2 (h_{ki} \gamma_{jl} - h_{li} \gamma_{jk})
+            + 2 \sum_{p} (h_{pi} \gamma_{pk} \delta_{lj} + h_{pj} \gamma_{pl} \delta_{ki}) + \left< lk||ij \right>
             + \sum_{q} (\left< ql||ij \right> \gamma_{qk} - \left< qk||ij \right> \gamma_{ql})
-            + 2 \sum_{r} \left< lk||jr \right> \gamma_{ir}
             + 2 \sum_{qr} \gamma_{qr}(\left< ql||jr \right> \delta_{ki} - \left< qk||jr \right> \delta_{li})
             + 2 \sum_{qr} (\left< ql||ir \right> \Gamma_{qjrk} - \left< qk||ir \right> \Gamma_{qjrl})
             + \sum_{pqr} \left< pq||jr \right> (\Gamma_{pqrk} \delta_{li} - \Gamma_{pqrl} \delta_{ki})
+            + 2 \sum_{r} \left< lk||jr \right> \gamma_{ir}s
 
         """
 
@@ -102,10 +99,8 @@ class EOMDEA(EOMState):
 
         .. math::
 
-            M = \Gamma_{ijlk}
-            + \delta_{li} \delta_{kj} - \delta_{ki} \delta_{lj}
-            + \delta_{ki} \gamma_{jl} - \delta_{kj} \gamma_{li}
-            + \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
+            M_{klji} = \Gamma_{ijlk} + \delta_{li} \delta_{kj} - \delta_{ki} \delta_{lj} + \delta_{ki} \gamma_{jl}
+            - \delta_{kj} \gamma_{li} + \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
 
         """
         I = np.eye(self._n, dtype=self._h.dtype)

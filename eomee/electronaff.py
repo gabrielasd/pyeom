@@ -30,12 +30,12 @@ __all__ = [
 
 class EOMEA(EOMState):
     r"""
-    Electron Affinities EOM states for operator :math:`Q = \sum_n { c_n a^{\dagger}_n }`.
+    Electron Affinities EOM states for operator :math:`\hat{Q}_k = \sum_n { c_n a^{\dagger}_n }`.
 
     .. math::
 
-        \sum_{n} \left< \Psi^{(N)}_{0} \middle| a_{m} \left[ \hat{H},a^{\dagger}_n \right] \middle| \Psi^{(N)}_{0} \right> c_{n;k}
-        &= \Delta_{k} \sum_{n} \left< \Psi^{(N)}_{0} \middle| a_{m}a^{\dagger}_n \middle| \Psi^{(N)}_{0} \right> c_{n;k}
+        \left< \Psi^{(N)}_{0} \middle| a_{m} \left[ \hat{H},\hat{Q} \right] \middle| \Psi^{(N)}_{0} \right>
+        &= \Delta_{k} \left< \Psi^{(N)}_{0} \middle| a_{m}\hat{Q} \middle| \Psi^{(N)}_{0} \right>
 
     """
 
@@ -59,9 +59,8 @@ class EOMEA(EOMState):
 
         .. math::
 
-            A = h_mn - \sum_p { h_{pn} \gamma_{pm} }
-            - 2 \sum_{pqs} { v_pqsn \Gamma_pqsm }
-            + 4 \sum_{qs} { v_mqns \gamma_qs}.
+            A_{mn} = h_{mn} - \sum_p { h_{pn} \gamma_{pm} } - 0.5 \sum_{pqs} { \left< pq||sn \right> \Gamma_{pqsm} }
+            + \sum_{qs} { \left< mq||ns \right> \gamma_{qs} }
 
         """
         # A_mn = h_mn - h_pn \gamma_pm - 0.5 v_pqsn \Gamma_pqsm
@@ -76,7 +75,7 @@ class EOMEA(EOMState):
 
     def _compute_rhs(self):
         r"""
-        Compute :math:`M = \sum_n { \delta_nm - \gamma_{nm} }`.
+        Compute :math:`M = \sum_n { \delta_{mn} - \gamma_{nm} }`.
 
         """
         # M_mn = \delta_mn - \gamma_mn
@@ -87,12 +86,12 @@ class EOMEA(EOMState):
 
 class EOMEAAntiCommutator(EOMState):
     r"""
-    Electron Affinities EOM states for operator :math:`Q = \sum_n { c_n a^{\dagger}_n }`.
+    Electron Affinities EOM states for operator :math:`\hat{Q}_k = \sum_n { c_n a^{\dagger}_n }`.
 
     .. math::
 
-        \sum_{n} \left< \Psi^{(N)}_{0} \middle| \Big\{ a_{m}, \left[ \hat{H},a^{\dagger}_n \right]\Big\} \middle| \Psi^{(N)}_{0} \right> c_{n;k}
-        &= \Delta_{k} \sum_{n} \left< \Psi^{(N)}_{0} \middle| \Big\{a_{m},a^{\dagger}_n \Big\} \middle| \Psi^{(N)}_{0} \right> c_{n;k}
+        \left< \Psi^{(N)}_{0} \middle| \Big\{ a_{m}, \left[ \hat{H},\hat{Q} \right]\Big\} \middle| \Psi^{(N)}_{0} \right>
+        &= \Delta_{k} \left< \Psi^{(N)}_{0} \middle| \Big\{a_{m},\hat{Q} \Big\} \middle| \Psi^{(N)}_{0} \right>
 
     """
 
@@ -112,7 +111,7 @@ class EOMEAAntiCommutator(EOMState):
 
     def _compute_lhs(self):
         r"""
-        Compute :math:`A = h_mn + \sum_{qr} { v_mqnr \gamma_qr}`.
+        Compute :math:`A_{mn} = h_{mn} + \sum_{qr} { \left< mq||nr \right> \gamma_{qr} }`.
 
         """
         # A_mn = h_mn + <v_mqnr> \gamma_qr
@@ -122,7 +121,7 @@ class EOMEAAntiCommutator(EOMState):
 
     def _compute_rhs(self):
         r"""
-        Compute :math:`M = \sum_n { \delta_nm }`.
+        Compute :math:`M_{mn} = \delta_{mn}`.
 
         """
         # M_mn = \delta_mn
@@ -132,12 +131,12 @@ class EOMEAAntiCommutator(EOMState):
 
 class EOMEADoubleCommutator(EOMState):
     r"""
-    Electron Affinities EOM states for operator :math:`Q = \sum_n { c_n a^{\dagger}_n }`.
+    Electron Affinities EOM states for operator :math:`\hat{Q}_k = \sum_n { c_n a^{\dagger}_n }`.
 
     .. math::
 
-        \sum_{n} \left< \Psi^{(N)}_{0} \middle| \left[ a_{m}, \left[ \hat{H},a^{\dagger}_n \right]\right] \middle| \Psi^{(N)}_{0} \right> c_{n;k}
-        &= \Delta_{k} \sum_{n} \left< \Psi^{(N)}_{0} \middle| \left[a_{m},a^{\dagger}_n \right] \middle| \Psi^{(N)}_{0} \right> c_{n;k}
+        \left< \Psi^{(N)}_{0} \middle| \left[ a_{m}, \left[ \hat{H},\hat{Q} \right]\right] \middle| \Psi^{(N)}_{0} \right>
+        &= \Delta_{k} \left< \Psi^{(N)}_{0} \middle| \left[a_{m},\hat{Q} \right] \middle| \Psi^{(N)}_{0} \right>
 
     """
 
@@ -161,9 +160,8 @@ class EOMEADoubleCommutator(EOMState):
 
         .. math::
 
-            A = h_mn - 2\sum_p { h_{pn} \gamma_{pm} }
-            + \sum_{pqr} { v_pqrn \Gamma_pqmr }
-            + \sum_{qs} { v_mqns \gamma_qs}.
+            A_{mn} = h_{mn} - 2 \sum_p { h_{pn} \gamma_{pm} } + \sum_{pqr} { \left< pq||rn \right> \Gamma_{pqmr} }
+            + \sum_{qs} { \left< mq||ns \right> \gamma_{qs} }.
 
         """
         # A_mn = h_mn + <v_mqnr> \gamma_qr
@@ -186,7 +184,7 @@ class EOMEADoubleCommutator(EOMState):
 
     def _compute_rhs(self):
         r"""
-        Compute :math:`M = \sum_n { \delta_nm - 2 \gamma_{nm} }`
+        Compute :math:`M_{mn} = \delta_{nm} - 2 \gamma_{nm}`
 
         """
         # M_mn = \delta_mn - 2 \gamma_mn

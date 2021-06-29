@@ -31,11 +31,11 @@ __all__ = [
 
 class EOMDIP(EOMState):
     r"""
-    Double Ionization EOM state for operator :math:`Q = \sum_{ij} { c_{ij} a_i a_j}`.
+    Double Ionization EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a_i a_j}`.
 
     .. math::
 
-        \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l \left[ \hat{H}, \hat{Q} \right] \middle| \Psi^{(N)}_0 \right>
+        \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a^{\dagger}_l, \left[ \hat{H}, \hat{Q} \right] \right] \middle| \Psi^{(N)}_0 \right>
         &= \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
 
     """
@@ -51,7 +51,7 @@ class EOMDIP(EOMState):
 
         .. math::
 
-            A = 2 ( h_{il} \delta_{jk} - h_{il} \gamma_{kj} + h_{ik} \gamma_{lj} - h_{ik} \delta_{jl} )
+            A_{klji} = 2 ( h_{il} \delta_{jk} - h_{il} \gamma_{kj} + h_{ik} \gamma_{lj} - h_{ik} \delta_{jl} )
             + 2 ( \sum_q { h_{jq} \gamma_{lq} \delta_{ik} - h_{jq} \gamma_{kq} \delta_{il} } )
             + \left< ji||kl \right> + \sum_r { \left< ji||lr \right> \gamma_{kr} - \left< ji||kr \right> \gamma_{lr} }
             + 2 \sum_q \left< qj||kl \right> \gamma_{qi}
@@ -94,7 +94,7 @@ class EOMDIP(EOMState):
 
     def _compute_rhs(self):
         r"""
-        Compute :math:`M = \Gamma_{klji}`
+        Compute :math:`M_{klji} = \Gamma_{klji}`
         """
 
         # M_klji = \Gamma_klji

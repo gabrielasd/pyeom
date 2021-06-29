@@ -31,11 +31,11 @@ __all__ = [
 
 class EOMExc(EOMState):
     r"""
-    Excitation EOM state for operator :math:`Q = \sum_{ij} { c_{ij} a^{\dagger}_i  a_j}`.
+    Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a^{\dagger}_i  a_j}`.
 
     .. math::
-        \left< \Psi^{(N)}_0 \middle| [a^{\dagger}_k  a_l, [\hat{H}, \hat{Q}]] \middle| \Psi^{(N)}_0 \right>
-        &= \omega_{\lambda} \left< \Psi^{(N)}_0 \middle| [a^{\dagger}_k a_l \hat{Q}] \Psi^{(N)}_0 \right>
+        \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l, \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
+        &= \Delta_{k} \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a_l, \hat{Q} \right] \Psi^{(N)}_0 \right>
 
     """
 
@@ -59,13 +59,11 @@ class EOMExc(EOMState):
 
         .. math::
 
-            A = h_{li} \gamma_{kj} + h_{jk} \gamma_{il}
-            - \sum_q { h_{jq} \delta_{il} \gamma_{kq}}
-            - \sum_q { h_{qi} \delta_{jk} \gamma_{ql}}
-            + \sum_{qs} { \left< lq||si \right> \Gamma_{kqsj} }
+            A_{klji} = h_{li} \gamma_{kj} + h_{jk} \gamma_{il} - \sum_q { h_{jq} \delta_{il} \gamma_{kq}}
+            - \sum_q { h_{qi} \delta_{jk} \gamma_{ql}} + \sum_{qs} { \left< lq||si \right> \Gamma_{kqsj} }
             + \sum_{qs} { \left< jq||sk \right>  \Gamma_{iqsl} }
             - 0.5 \sum_{qrs} { \delta_{il} \left< jq||rs \right> \Gamma_{kqrs} }
-            - 0.5 \sum_{pqs} { \delta_{jk} \left< pq||si \right> \Gamma_{pqsl}}
+            - 0.5 \sum_{pqs} { \delta_{jk} \left< pq||si \right> \Gamma_{pqsl} }
             + 0.5 \sum_{pq} { \left< pq||ik\right>  \Gamma_{pqlj} }
             + 0.5 \sum_{rs} { \left< jl||rs \right> \Gamma_{kirs} }
 
@@ -99,7 +97,7 @@ class EOMExc(EOMState):
 
     def _compute_rhs(self):
         r"""
-        Compute :math:`M = \gamma_{kj} \delta_{li} - \Gamma_{kijl}`.
+        Compute :math:`M_{klji} = \gamma_{kj} \delta_{li} - \delta_{kj} \gamma_{li}`.
 
         """
         I = np.eye(self._n, dtype=self._h.dtype)
