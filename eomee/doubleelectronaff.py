@@ -29,14 +29,12 @@ __all__ = ["EOMDEA"]
 
 class EOMDEA(EOMState):
     r"""
-    Double electron  attachment EOM state for operator
-
-    :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a^{\dagger}_i a^{\dagger}_j}`.
+    Double electron  attachment EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a^{\dagger}_i a^{\dagger}_j}`.
 
     .. math::
 
         \left< \Psi^{(N)}_0 \middle| \left[a_k a_l, \left[ \hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
-        &= \Delta_k \left< \Psi^{(N)}_0 \middle| a_k a_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        = \Delta_k \left< \Psi^{(N)}_0 \middle| a_k a_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
     """
 
     @property

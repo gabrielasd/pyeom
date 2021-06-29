@@ -35,7 +35,7 @@ class EOMEA(EOMState):
     .. math::
 
         \left< \Psi^{(N)}_{0} \middle| a_{m} \left[ \hat{H},\hat{Q} \right] \middle| \Psi^{(N)}_{0} \right>
-        &= \Delta_{k} \left< \Psi^{(N)}_{0} \middle| a_{m}\hat{Q} \middle| \Psi^{(N)}_{0} \right>
+        = \Delta_{k} \left< \Psi^{(N)}_{0} \middle| a_{m}\hat{Q} \middle| \Psi^{(N)}_{0} \right>
 
     """
 
@@ -91,7 +91,7 @@ class EOMEAAntiCommutator(EOMState):
     .. math::
 
         \left< \Psi^{(N)}_{0} \middle| \Big\{ a_{m}, \left[ \hat{H},\hat{Q} \right]\Big\} \middle| \Psi^{(N)}_{0} \right>
-        &= \Delta_{k} \left< \Psi^{(N)}_{0} \middle| \Big\{a_{m},\hat{Q} \Big\} \middle| \Psi^{(N)}_{0} \right>
+        = \Delta_{k} \left< \Psi^{(N)}_{0} \middle| \Big\{a_{m},\hat{Q} \Big\} \middle| \Psi^{(N)}_{0} \right>
 
     """
 
@@ -136,7 +136,7 @@ class EOMEADoubleCommutator(EOMState):
     .. math::
 
         \left< \Psi^{(N)}_{0} \middle| \left[ a_{m}, \left[ \hat{H},\hat{Q} \right]\right] \middle| \Psi^{(N)}_{0} \right>
-        &= \Delta_{k} \left< \Psi^{(N)}_{0} \middle| \left[a_{m},\hat{Q} \right] \middle| \Psi^{(N)}_{0} \right>
+        = \Delta_{k} \left< \Psi^{(N)}_{0} \middle| \left[a_{m},\hat{Q} \right] \middle| \Psi^{(N)}_{0} \right>
 
     """
 

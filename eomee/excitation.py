@@ -35,7 +35,7 @@ class EOMExc(EOMState):
 
     .. math::
         \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l, \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
-        &= \Delta_{k} \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a_l, \hat{Q} \right] \Psi^{(N)}_0 \right>
+        = \Delta_{k} \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a_l, \hat{Q} \right] \Psi^{(N)}_0 \right>
 
     """
 

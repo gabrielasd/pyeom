@@ -36,7 +36,7 @@ class EOMDIP(EOMState):
     .. math::
 
         \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a^{\dagger}_l, \left[ \hat{H}, \hat{Q} \right] \right] \middle| \Psi^{(N)}_0 \right>
-        &= \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        = \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
 
     """
 

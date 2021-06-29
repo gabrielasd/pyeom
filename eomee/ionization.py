@@ -35,7 +35,7 @@ class EOMIP(EOMState):
     .. math::
 
         \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m \left[ \hat{H}, \hat{Q} \right] \middle| \Psi^{(N)}_0 \right>
-        &= \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        = \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m \hat{Q} \middle| \Psi^{(N)}_0 \right>
 
     """
 
@@ -85,7 +85,7 @@ class EOMIPDoubleCommutator(EOMState):
     .. math::
 
         \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_m, \left[ \hat{H}, \hat{Q} \right] \right] \middle| \Psi^{(N)}_0 \right>
-        &= \Delta_k \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_m, \hat{Q} \right] \middle| \Psi^{(N)}_0 \right>
+        = \Delta_k \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_m, \hat{Q} \right] \middle| \Psi^{(N)}_0 \right>
 
     """
 
@@ -139,7 +139,7 @@ class EOMIPAntiCommutator(EOMState):
     .. math::
 
         \left< \Psi^{(N)}_0 \middle| \Big\{ a^{\dagger}_m, \left[ \hat{H}, \hat{Q} \right] \Big\} \middle| \Psi^{(N)}_0 \right>
-        &= \Delta_k \left< \Psi^{(N)}_0 \middle| \Big\{a^{\dagger}_m, \hat{Q} \Big\} \middle| \Psi^{(N)}_0 \right>
+        = \Delta_k \left< \Psi^{(N)}_0 \middle| \Big\{a^{\dagger}_m, \hat{Q} \Big\} \middle| \Psi^{(N)}_0 \right>
 
     """
 
