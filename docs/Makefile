@@ -15,7 +15,7 @@
 
 BUILDDIR = build
 SOURCEDIR = source
-SPHINXBUILD ?= PYTHONPATH=.. sphinx-build
+SPHINXBUILD ?= sphinx-build
 SPHINXOPTS ?=
 
 .PHONY: help
