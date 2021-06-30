@@ -20,6 +20,8 @@ EOM Sphinx configuration script.
 
 import sphinx_rtd_theme
 
+import eomee
+
 
 project = "EOMEE"
 
@@ -30,7 +32,7 @@ copyright = "2021, Ayers Lab"
 author = "Ayers Lab"
 
 
-release = '0.0.1'
+release = eomee.__version__
 
 
 extensions = [

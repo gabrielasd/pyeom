@@ -16,3 +16,9 @@
 
 Extended Random Phase Approximation
 ###################################
+
+Method
+======
+
+The Extended Random Phase Approximation (ERPA) method allows us to compute the correlation energy
+of a system from a zeroth-order Hamiltonian and reduced density matrices (RDMs).

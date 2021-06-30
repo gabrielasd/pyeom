@@ -17,6 +17,7 @@ r"""Equations-of-Motion and Extended RPA package."""
 
 
 __all__ = [
+    "__version__",
     "EOMState",
     "EOMIP",
     "EOMIPDoubleCommutator",
@@ -49,3 +50,7 @@ from .load import parse_inputfile, check_inputs
 from .integrals import ElectronIntegrals
 from .density import WfnRDMs
 from .output import dump
+
+
+__version__: str = "0.0.1"
+r"""EOMEE version string."""

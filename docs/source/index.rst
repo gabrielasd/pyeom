@@ -14,6 +14,8 @@
     : You should have received a copy of the GNU General Public License
     : along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
+|Python 3|
+
 EOMEE Documentation
 ###################
 
@@ -30,7 +32,7 @@ EOMEE is distributed under the GNU General Public License version 3 (GPLv3).
 See http://www.gnu.org/licenses/ for more information.
 
 Table of Contents
-=================
+~~~~~~~~~~~~~~~~~
 
 .. toctree::
    :maxdepth: 2
@@ -39,3 +41,6 @@ Table of Contents
    eom
    erpa
    api
+
+.. |Python 3| image:: http://img.shields.io/badge/python-3-blue.svg
+   :target: http://docs.python.org/3/

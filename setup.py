@@ -20,10 +20,13 @@ Run `python setup.py --help` for help.
 
 """
 
+from eomee import __version__ as VERSION
+
+
 NAME = "eomee"
 
 
-VERSION = "0.0.1"
+# VERSION = "0.0.1"
 
 
 LICENSE = "GPLv3"
