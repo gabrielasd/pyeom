@@ -14,18 +14,5 @@
     : You should have received a copy of the GNU General Public License
     : along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
-ERPA
-####
-
-Lorem ipsum
-===========
-
-dolor
-=====
-
-sit
-
-amet
-====
-
-, consecutur
+Extended Random Phase Approximation
+###################################
