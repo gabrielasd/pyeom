@@ -14,28 +14,18 @@
     : You should have received a copy of the GNU General Public License
     : along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
-EOMEE Documentation
-###################
+ERPA
+####
 
-EOMEE is a pure Python library implementing Rowe's Equations-of-Motions (EOM) and the Extended
-Random Phase Approximation (ERPA) *ab-initio* quantum chemistry methods.
+Lorem ipsum
+===========
 
-To use EOMEE, you need only provide the following as input, in the form of NumPy arrays:
+dolor
+=====
 
-* one- and two- particle molecular integrals
-* one- and two- particle reduced density matrices
+sit
 
-EOMEE is distributed under the GNU General Public License version 3 (GPLv3).
+amet
+====
 
-See http://www.gnu.org/licenses/ for more information.
-
-Table of Contents
-=================
-
-.. toctree::
-   :maxdepth: 2
-
-   installation
-   eom
-   erpa
-   api
+, consecutur

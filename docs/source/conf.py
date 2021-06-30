@@ -55,7 +55,7 @@ html_static_path = []
 templates_path = []
 
 
-mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.0.0/es5/latest?tex-mml-chtml.js"
+mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.6/MathJax.js"
 
 
 mathjax_config = {
