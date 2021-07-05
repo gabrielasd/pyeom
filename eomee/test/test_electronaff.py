@@ -16,9 +16,9 @@
 r"""Test eomee.electronaff."""
 
 
-from eomes import EOMEA, EOMEADoubleCommutator, EOMEAAntiCommutator
+from eomee import EOMEA, EOMEADoubleCommutator, EOMEAAntiCommutator
 
-from eomes.tools import (
+from eomee.tools import (
     find_datafiles,
     spinize,
     symmetrize,

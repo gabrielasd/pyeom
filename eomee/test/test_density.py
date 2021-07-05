@@ -1,9 +1,9 @@
-"""Test eomes.density."""
+"""Test eomee.density."""
 
 import tempfile
 import numpy as np
-from eomes import WfnRDMs
-from eomes.tools import find_datafiles
+from eomee import WfnRDMs
+from eomee.tools import find_datafiles
 
 import pytest
 

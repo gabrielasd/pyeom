@@ -16,9 +16,9 @@
 r"""Test eomee.ionization."""
 
 
-from eomes import EOMExc
+from eomee import EOMExc
 
-from eomes.tools import (
+from eomee.tools import (
     find_datafiles,
     spinize,
     symmetrize,

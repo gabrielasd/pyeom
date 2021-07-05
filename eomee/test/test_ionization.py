@@ -17,13 +17,13 @@ r"""Test eomee.ionization."""
 
 
 # import eomee
-from eomes import (
+from eomee import (
     EOMIP,
     EOMIPDoubleCommutator,
     EOMIPAntiCommutator,
 )
 
-from eomes.tools import (
+from eomee.tools import (
     find_datafiles,
     spinize,
     symmetrize,

@@ -19,8 +19,8 @@ import numpy as np
 
 from scipy.linalg import eig, svd
 
-from eomes import EOMDIP
-from eomes.tools import (
+from eomee import EOMDIP
+from eomee.tools import (
     find_datafiles,
     spinize,
     symmetrize,

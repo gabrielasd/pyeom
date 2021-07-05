@@ -16,9 +16,9 @@
 r"""Test eomee.doubleelectronaff."""
 
 
-from eomes import EOMDEA
+from eomee import EOMDEA
 
-from eomes.tools import (
+from eomee.tools import (
     find_datafiles,
     spinize,
     symmetrize,
