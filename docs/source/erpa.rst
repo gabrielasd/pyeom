@@ -17,27 +17,69 @@
 Extended Random Phase Approximation
 ###################################
 
-Method
-======
-
 The Extended Random Phase Approximation (ERPA) method allows us to compute the correlation energy
 of a system from a zeroth-order Hamiltonian and reduced density matrices (RDMs).
 
-We start with the zeroth-order Hamiltonian:
+Method
+======
+
+Lets assume we know the exact wavefunction and energy of some model Hamiltonian :math:`\hat{H}^0`:
+
+.. math::
+
+    \hat{H}^{0} \left| \Phi_\nu \middle> = E^{0}_\nu \middle| \Phi_\nu \right>
+
+which is a good approximation to the corresponding eigenstate :math:`\left| \Psi_\nu \right>` of
+the exact Hamiltonian for the system, :math:`\hat{H}`:
+
+.. math::
+
+    \hat{H} \left| \Psi_\nu \middle> = E_\nu \middle| \Psi_\nu \right>
+
+The goal is to render :math:`\left| \Phi_\nu \right>` and :math:`\hat{H}^0` fully correlated and
+to evaluate the additional correlation energy recovered (here we will mainly be interested in the
+ground-satate, :math:`\nu = 0`).
+
+The basic idea is that we have a Hamiltonian:
 
 .. math::
 
     \hat{H}^{\alpha} = \sum_{pq} h^{\alpha}_{pq} a^{\dagger}_p a_q + \frac{1}{2} \sum_{pqrs}
         v^{\alpha}_{pqrs} a^{\dagger}_p a^{\dagger}_q a_s a_r
 
-an eigenstate of that Hamiltonian (usually :math:`\nu = 0`, the ground state):
+with eigenstate:
 
 .. math::
 
-    \hat{H}^{\alpha} \left| \Psi^\alpha_\nu \middle> = E^{\alpha}_\nu \middle| \Psi^\alpha_\nu
+    \hat{H}^{\alpha} \left| \Psi^\alpha_0 \middle> = E^{\alpha}_0 \middle| \Psi^\alpha_0
         \right>
 
-which is given here as the 1- and 2-electron reduced density matrices (RDMs) for the eigenstate:
+and :math:`\hat{H}^\alpha` and :math:`\left| \Psi^\alpha_0 \right>` can be perturbed
+along some arbitrary parameter :math:`\alpha` from a zeroth order state (:math:`\alpha = 0`) to a
+fully correlated state (:math:`\alpha = 1`):
+
+.. math::
+
+    E^{\alpha=1}_0 - E^{\alpha=0}_0 = \int_{0}^{1} { \frac{ \partial E^{\alpha}_0 }{ \partial \alpha}
+    d\alpha }
+
+Therefore, at :math:`\alpha = 0` we have :math:`\hat{H}^{\alpha=0}=\hat{H}^0`, :math:`\left|
+\Psi^{\alpha=0}_0 \right>=\left| \Phi_0 \right>` and :math:`\hat{H}^{\alpha=1}=\hat{H}`,
+:math:`\left| \Psi^{\alpha=1}_0 \right>=\left| \Psi_0 \right>` at :math:`\alpha = 1`.
+
+From the Hellmann-Feynman theorem we have:
+
+.. math::
+
+    \frac{ \partial E^{\alpha}_0 }{ \partial \alpha} &= \left< \Psi^\alpha_0 \middle| \frac{ \partial
+        \hat{H}^{\alpha} }{ \partial \alpha} \middle| \Psi^\alpha_0 \right> \\ &= \left<
+        \Psi^\alpha_0 \middle| \sum_{pq} \frac{ \partial h^{\alpha}_{pq} }{ \partial \alpha} 
+    a^{\dagger}_p a_q + \frac{1}{2} \sum_{pqrs} \frac{ \partial v^{\alpha}_{pqrs} }{ \partial
+    \alpha} a^{\dagger}_p a^{\dagger}_q a_s a_r \middle| \Psi^\alpha_0 \right> \\ 
+        &= \sum_{pq} \frac{ d h^{\alpha}_{pq} }{ d \alpha} \gamma^{\alpha}_{pq} + \frac{1}{2}
+    \sum_{pqrs} \frac{ d v^{\alpha}_{pqrs} }{ d \alpha} \Gamma^{\alpha}_{pqrs}
+
+where the standard definitions:
 
 .. math::
 
@@ -46,27 +88,7 @@ which is given here as the 1- and 2-electron reduced density matrices (RDMs) for
     \Gamma^{\alpha}_{pqrs} = \left< \Psi^\alpha_0 \middle| a^{\dagger}_p a^{\dagger}_q
         a_s a_r \middle| \Psi^\alpha_0 \right>
 
-The goal is to render the 1- and 2-RDMs fully correlated, and to evaluate the additional correlation
-energy recovered. :math:`\hat{H}^\alpha` and :math:`\left| \Psi^\alpha_0 \right>` can be perturbed
-along some arbitrary parameter :math:`\alpha` from a zeroth order state (:math:`\alpha = 0`) to a
-fully correlated state (:math:`\alpha = 1`):
-
-.. math::
-
-    E^{\alpha=1} - E^{\alpha=0} = \int_{0}^{1} { \frac{ \partial E^{\alpha} }{ \partial \alpha}
-    d\alpha }
-
-From the Hellmann-Feynman theorem:
-
-.. math::
-
-    \frac{ \partial E^{\alpha} }{ \partial \alpha} &= \left< \Psi^\alpha_0 \middle| \frac{ \partial
-        \hat{H}^{\alpha} }{ \partial \alpha} \middle| \Psi^\alpha_0 \right> \\ &= \left<
-        \Psi^\alpha_0 \middle| \sum_{pq} \frac{ \partial h^{\alpha}_{pq} }{ \partial \alpha} 
-    a^{\dagger}_p a_q + \frac{1}{2} \sum_{pqrs} \frac{ \partial v^{\alpha}_{pqrs} }{ \partial
-    \alpha} a^{\dagger}_p a^{\dagger}_q a_s a_r \middle| \Psi^\alpha_0 \right> \\ 
-        &= \sum_{pq} \frac{ d h^{\alpha}_{pq} }{ d \alpha} \gamma^{\alpha}_{pq} + \frac{1}{2}
-    \sum_{pqrs} \frac{ d v^{\alpha}_{pqrs} }{ d \alpha} \Gamma^{\alpha}_{pqrs}
+were used for the 1- and 2-electron reduced density matrices (RDMs) for the eigenstate.
 
 We only know :math:`\gamma^\alpha` and :math:`\Gamma^\alpha` at :math:`\alpha = 0`. If the
 eigenstate is a good model of static correlation, we can assume an adiabatic connection along
