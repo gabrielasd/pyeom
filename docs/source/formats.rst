@@ -14,26 +14,7 @@
     : You should have received a copy of the GNU General Public License
     : along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
-EOM Classes
-===========
+Input Formats
+#############
 
-.. autoclass:: eomee.EOMState
-   :members:
-.. autoclass:: eomee.EOMEA
-   :members:
-.. autoclass:: eomee.EOMEADoubleCommutator
-   :members:
-.. autoclass:: eomee.EOMEAAntiCommutator
-   :members:
-.. autoclass:: eomee.EOMDEA
-   :members:
-.. autoclass:: eomee.EOMExc
-   :members:
-.. autoclass:: eomee.EOMIP
-   :members:
-.. autoclass:: eomee.EOMIPDoubleCommutator
-   :members:
-.. autoclass:: eomee.EOMIPAntiCommutator
-   :members:
-.. autoclass:: eomee.EOMDIP
-   :members:
+To be completed.

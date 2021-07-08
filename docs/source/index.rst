@@ -16,8 +16,8 @@
 
 |Python 3|
 
-EOMEE Documentation
-###################
+About EOMEE
+###########
 
 EOMEE is a pure Python library implementing Rowe's Equations-of-Motions (EOM) and the Extended
 Random Phase Approximation (ERPA) *ab-initio* quantum chemistry methods.
@@ -31,15 +31,33 @@ EOMEE is distributed under the GNU General Public License version 3 (GPLv3).
 
 See http://www.gnu.org/licenses/ for more information.
 
-Table of Contents
-~~~~~~~~~~~~~~~~~
+Features
+########
+
+======================= ==========
+State                   EOM
+======================= ==========
+:math:`\Psi^{(N)}`      :class:`Exc <eomee.EOMExc>`
+:math:`\Psi^{(N - 1)}`  :class:`IP <eomee.EOMIP>` :class:`IPc <eomee.EOMIPDoubleCommutator>` :class:`IPa <eomee.EOMIPAntiCommutator>`
+:math:`\Psi^{(N + 1)}`  :class:`EA <eomee.EOMEA>` :class:`EAc <eomee.EOMEADoubleCommutator>` :class:`EAa <eomee.EOMEAAntiCommutator>`
+:math:`\Psi^{(N - 2)}`  :class:`DIP <eomee.EOMDIP>`
+:math:`\Psi^{(N + 2)}`  :class:`DEA <eomee.EOMDEA>`
+======================= ==========
 
 .. toctree::
    :maxdepth: 2
+   :caption: User Guide
 
    installation
+   formats
+   examples
    eom
    erpa
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API
+
    api
 
 .. |Python 3| image:: http://img.shields.io/badge/python-3-blue.svg
