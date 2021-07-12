@@ -23,6 +23,8 @@ import numpy as np
 from scipy.linalg import eig, svd
 from scipy.sparse.linalg import eigs
 
+from .tools import antisymmetrize
+
 
 __all__ = [
     "EOMBase",
@@ -44,36 +46,26 @@ class EOMState(metaclass=ABCMeta):
         Parameters
         ----------
         h : np.ndarray((n, n))
-            1-particle integral array.
+            1-particle integral array. :math:`n` corresponds to the number of spin-orbitals.
         v : np.ndarray((n, n, n, n))
-            2-particle integral array.
+            2-particle integral array in physicist's notation. :math:`n` corresponds to the number
+            of spin-orbitals.
         dm1 : np.ndarray((n, n))
-            1-particle reduced density matrix.
+            1-particle reduced density matrix. A spin resolved 1-RDM is used.
         dm2 : np.ndarray((n, n, n, n))
-            2-particle reduced density matrix.
+            2-particle reduced density matrix. A spin resolved 2-RDM is used.
 
         """
-        # Basic system attributes
-        if not (isinstance(h, np.ndarray) and h.ndim == 2):
-            raise ValueError("One-particle integrals should be a 2-dimensional numpy array")
-        if not (isinstance(v, np.ndarray) and v.ndim == 4):
-            raise ValueError("Two-particle integrals should be a 4-dimensional numpy array")
-        if not (isinstance(dm1, np.ndarray) and dm1.ndim == 2):
-            raise ValueError(
-                "One-particle reduced density matrix should be a 2-dimensional numpy array"
-            )
-        if not (isinstance(dm2, np.ndarray) and dm2.ndim == 4):
-            raise ValueError(
-                "Two-particle reduced density matrix should be a 2-dimensional numpy array"
-            )
+        self.verify_integrals(h, v)
+        self.verify_rdms(dm1, dm2)
         if not h.shape[0] == dm2.shape[0]:
             raise ValueError(
-                "Electron integrlas and density matrices must have"
-                " equal number of spinorbitlas"
+                "Electron integrlas and density matrices must have" " equal number of spinorbitlas"
             )
+        # Basic system attributes
         self._n = h.shape[0]
         self._h = h
-        self._v = v
+        self._v = antisymmetrize(v)
         self._dm1 = dm1
         self._dm2 = dm2
         # Compute arrays for generalized eigenvalue problem
@@ -184,6 +176,91 @@ class EOMState(metaclass=ABCMeta):
 
         """
         return self._rhs
+
+    def verify_integrals(self, h, v):
+        """Check the type and shape of the 1- and 2-electron integrals.
+
+        Parameters
+        ----------
+        h : np.ndarray((n, n))
+            1-particle integral array.
+        v : np.ndarray((n, n, n, n))
+            2-particle integral array.
+
+        Raises
+        ------
+        TypeError
+            The 1- and 2-electron integrals must be numpy arrays.
+        ValueError
+            The one-electron integrals must be a square matrix.
+            Two-electron integrals must have four equivalent dimensions.
+            The number of spin-orbitals between electron integrals don't match.
+        """
+        if not (isinstance(h, np.ndarray) and isinstance(v, np.ndarray)):
+            raise TypeError("The 1- and 2-electron integrals must be numpy arrays.")
+        if not (h.ndim == 2 and h.shape[0] == h.shape[1]):
+            raise ValueError("The one-electron integrals must be a square matrix.")
+        if not (v.ndim == 4 and v.shape == (v.shape[0],) * 4):
+            raise ValueError("Two-electron integrals must have four equivalent dimensions.")
+        if not h.shape[0] == v.shape[0]:
+            raise ValueError("The number of spin-orbitals between electron integrals don't match.")
+
+    def verify_rdms(self, dm1, dm2):
+        """Check the type, shape and symmetry of the 1- and 2-particle reduced density matrices.
+
+        Parameters
+        ----------
+        dm1 : np.ndarray((n, n))
+            1-particle reduced density matrix.
+        dm2 : np.ndarray((n, n, n, n))
+            2-particle reduced density matrix.
+
+        Raises
+        ------
+        TypeError
+            The 1- and 2-particle reduced density matrices must be numpy arrays.
+        ValueError
+            The 1-particle reduced density matrix must be a square matrix.
+            The 2-particle reduced density matrix must have four equivalent dimensions.
+            The number of spin-orbitals between density matrices don't match.
+            One/Two-particle density matrix does not satisfy the symmetric permutations.
+            2-particle density matrix does not satisfy the asymmetric permutations.
+        """
+        if not (isinstance(dm1, np.ndarray) and isinstance(dm2, np.ndarray)):
+            raise TypeError("The 1- and 2-particle reduced density matrices must be numpy arrays.")
+        if not (dm1.ndim == 2 and dm1.shape[0] == dm1.shape[1]):
+            raise ValueError("The 1-particle reduced density matrix must be a square matrix.")
+        if not (dm2.ndim == 4 and dm2.shape == (dm2.shape[0],) * 4):
+            raise ValueError(
+                "The 2-particle reduced density matrix must have four equivalent dimensions."
+            )
+        if not dm1.shape[0] == dm2.shape[0]:
+            raise ValueError("The number of spinorbitals between density matrices don't match.")
+        # Symmetric permutations:
+        onedm_symm = np.allclose(dm1, dm1.T)
+        twodm_symm = np.all(
+            [
+                np.allclose(dm2, dm2.transpose(2, 3, 0, 1)),
+                np.allclose(dm2, dm2.transpose(1, 0, 3, 2)),
+            ]
+        )
+        symmetries = {"1": onedm_symm, "2": twodm_symm}
+        for number, symm in symmetries.items():
+            if not symm:
+                raise ValueError(
+                    f"{number}-particle density matrix does not satisfy the symmetric permutations."
+                )
+        # Two-reduced density matrix antisymmetric permutations:
+        twodm_asymm = np.all(
+            [
+                np.allclose(dm2, -dm2.transpose(0, 1, 3, 2)),
+                np.allclose(dm2, -dm2.transpose(1, 0, 2, 3)),
+            ]
+        )
+        if not twodm_asymm:
+            raise ValueError(
+                "2-particle density matrix does not satisfy the asymmetric permutations."
+            )
 
     def solve_dense(self, tol=1.0e-7, orthog="symmetric", *args, **kwargs):
         r"""
@@ -304,11 +381,3 @@ class EOMState(metaclass=ABCMeta):
 
         """
         raise NotImplementedError("Subclasses must overwrite this method")
-
-    # @abstractmethod
-    # def compute_tdm(self):
-    #     """
-    #     Compute the reduced transition density matrix.
-
-    #     """
-    #     raise NotImplementedError("Subclasses must overwrite this method")

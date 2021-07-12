@@ -21,7 +21,6 @@ from eomee import EOMDEA
 from eomee.tools import (
     find_datafiles,
     spinize,
-    symmetrize,
     antisymmetrize,
     hartreefock_rdms,
 )
@@ -49,8 +48,7 @@ def test_eomdea_neigs():
 
 def test_eomdea_one_body_term():
     """
-    Check the one-body terms are correct for the double
-    electron affinity equation of motion .
+    Check the one-body terms are correct for the double electron affinity equation of motion.
 
     """
     nbasis = 2
@@ -59,12 +57,11 @@ def test_eomdea_one_body_term():
     # For this test the two-electron integrals are ignored and the
     # Hartree-Fock density matrices are used.
     one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
-    one_mo = spinize(one_mo)
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
-    eom = EOMDEA(one_mo, two_mo, one_dm, two_dm)
-    avalea, avec = eom.solve_dense()
+    eom = EOMDEA(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    avalea, _ = eom.solve_dense()
     avalea = np.sort(avalea)
 
     # Hartree-Fock eigenvalues ignoring two-electron terms
@@ -79,8 +76,7 @@ def test_eomdea_one_body_term():
 
 def test_eomdea_righthandside_2particle_4spin():
     """
-    Check pp-EOM right-hand side for
-    a 2 particles, 4 spin-orbitals system.
+    Check pp-EOM right-hand side for a 2 particles, 4 spin-orbitals system.
 
     """
     # Auxiliar variables
@@ -88,7 +84,7 @@ def test_eomdea_righthandside_2particle_4spin():
     nspatial = 2
     nspin = 2 * nspatial
     nhole = nspin - npart
-    I = np.eye(nspin)
+    # I = np.eye(nspin)
     temp = np.diag([1.0, 0.0])
     # Dummy electron-integrals
     one_mo = np.eye(nspin)
@@ -116,8 +112,7 @@ def test_eomdea_righthandside_2particle_4spin():
 
 def test_eomdea_righthandside_4particle_6spin():
     """
-    Check pp-EOM right-hand side for
-    a 4 particles, 6 spin-orbitals system.
+    Check pp-EOM right-hand side for a 4 particles, 6 spin-orbitals system.
 
     """
     # Auxiliar variables
@@ -125,7 +120,7 @@ def test_eomdea_righthandside_4particle_6spin():
     nspatial = 3
     nspin = 2 * nspatial
     nhole = nspin - npart
-    I = np.eye(nspin)
+    # I = np.eye(nspin)
     temp = np.diag([1.0, 1.0, 0.0])
     # Dummy electron-integrals
     one_mo = np.eye(nspin)
@@ -156,23 +151,20 @@ def test_eomdea_righthandside_4particle_6spin():
 
 def test_eomdea_beIV_sto6g():
     """
-    Test DoubleElectronAttachmentEOM on Be+4 (STO-6G).
-    Model system for double electron attachment on top of
-    the vacuum state.
+    Test DoubleElectronAttachmentEOM on Be+4 (STO-6G). Model system for double electron attachment
+    on top of the vacuum state.
 
     """
-    npart = 0
-    nspatial = 5
-    nspin = 2 * nspatial
-    nhole = nspin - npart
-    one_mo = np.load(find_datafiles("beII_sto6g_oneint_genzd.npy"))
-    two_mo = np.load(find_datafiles("beII_sto6g_twoint_genzd_anti.npy"))
+    one_mo = spinize(np.load(find_datafiles("beII_sto6g_oneint.npy")))
+    two_mo = spinize(np.load(find_datafiles("beII_sto6g_twoint.npy")))
     one_dm = np.zeros((one_mo.shape[0],) * 2, dtype=one_mo.dtype)
     two_dm = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
-    assert nspin == one_mo.shape[0]
+    nspin = one_mo.shape[0]
+    npart = 0
+    nhole = nspin - npart
 
     eomea = EOMDEA(one_mo, two_mo, one_dm, two_dm)
-    avalea, avecea = eomea.solve_dense()
+    avalea, _ = eomea.solve_dense()
     avalea = np.sort(avalea)
 
     # Double-electron attachment EOM on vacuum satate
@@ -181,7 +173,7 @@ def test_eomdea_beIV_sto6g():
     lhs = np.einsum("lm,kn->klnm", one_mo, I)
     lhs += np.einsum("kn,lm->klnm", one_mo, I)
     lhs *= 2
-    lhs += two_mo
+    lhs += antisymmetrize(two_mo)
     lhs = lhs.reshape(nspin ** 2, nspin ** 2)
     # RHS = < | k l m+ n+ | >
     rhs = np.einsum("kn,lm->klnm", I, I)
@@ -195,7 +187,7 @@ def test_eomdea_beIV_sto6g():
     S_inv = np.diag(s)
     rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
     A = np.dot(rhs_inv, lhs)
-    w, v = eig(A)
+    w, _ = eig(A)
     avalvacuum = np.real(w)
     avalvacuum = np.sort(avalvacuum)
 
@@ -212,19 +204,19 @@ def test_eomdea_beIV_sto6g():
 
 def test_eomdea_beII_sto6g():
     """
-    Test DoubleElectronAttachmentEOM on Be+2 (STO-6G).
+    Test EOMDEA on Be+2 (STO-6G).
 
     """
-    nspatial = 5
+    one_mo = np.load(find_datafiles("beII_sto6g_oneint.npy"))
+    two_mo = np.load(find_datafiles("beII_sto6g_twoint.npy"))
+    nspatial = one_mo.shape[0]
     nspin = 2 * nspatial
     npart = 2
     nhole = nspin - npart
-    one_mo = np.load(find_datafiles("beII_sto6g_oneint_genzd.npy"))
-    two_mo = np.load(find_datafiles("beII_sto6g_twoint_genzd_anti.npy"))
     one_dm, two_dm = hartreefock_rdms(nspatial, 1, 1)
 
-    eom = EOMDEA(one_mo, two_mo, one_dm, two_dm)
-    avalea, avecea = eom.solve_dense()
+    eom = EOMDEA(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    avalea, _ = eom.solve_dense()
     avalea = np.sort(avalea)
 
     # Be(+2) RHF/sto-6g energy and

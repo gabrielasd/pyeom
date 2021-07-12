@@ -43,14 +43,17 @@ def incorrect_inputs():
     listparam = listparam.tolist()
     matrix = np.load(find_datafiles("be_sto3g_oneint_spino.npy"))
     tensor = np.load(find_datafiles("be_sto3g_twoint_spino.npy"))
-    hdm2shape = np.zeros((2, 2, 2, 2))
+
+    array2d = np.arange(16, dtype=float).reshape(4, 4)
+    list2d = array2d.tolist()
+    array4d = np.arange(16 * 16, dtype=float).reshape(4, 4, 4, 4)
+    array2d_n3 = np.arange(9, dtype=float).reshape(3, 3)
 
     cases = [
-        (listparam, tensor, matrix, tensor),
-        (matrix, matrix, matrix, tensor),
-        (matrix, tensor, tensor, tensor),
-        (matrix, tensor, matrix, listparam),
-        (matrix, tensor, matrix, hdm2shape),
+        (list2d, array4d, symmetrize(array2d), antisymmetrize(symmetrize(array4d)), TypeError),
+        (array2d, array4d, array4d, antisymmetrize(symmetrize(array4d)), ValueError),
+        (array2d_n3, array4d, symmetrize(array2d), antisymmetrize(symmetrize(array4d)), ValueError),
+        (array2d_n3, np.zeros((3,) * 4), symmetrize(array2d), antisymmetrize(symmetrize(array4d)), ValueError),
     ]
 
     for case in cases:
@@ -58,22 +61,19 @@ def incorrect_inputs():
 
 
 @pytest.mark.parametrize(
-    "one_mo, two_mo, one_dm, two_dm", incorrect_inputs(),
+    "one_mo, two_mo, one_dm, two_dm, errortype", incorrect_inputs(),
 )
-def test_load_invalid_integrals(one_mo, two_mo, one_dm, two_dm):
+def test_load_invalid_integrals(one_mo, two_mo, one_dm, two_dm, errortype):
     """Check that bad inputs are
     detected. The cases considered are:
-    Case 1: Incorrect file extension (only .npy is allowed)
-    Case 2: Incorrect integral data type (only NumPy array is allowed)
-    Case 3: Incorrect integrals dimensions (oneint must be 2D, twoint 4D)
-    Case 4: Incorrect integrals shape (oneint must be a square matrix,
-        twoint a tensor with 4 equivalent dimensions)
-    Case 4: Basis set mismatch between integrals (oneint and twoint must
-        have the same number of spinorbitals)
+    Case 1: Incorrect integral data type (only NumPy array is allowed)
+    Case 2: Incorrect 1-RDM dimensions (must be 2D)
+    Case 3: 1- and 2-electron integrals must have the same number of spin-orbitals.
+    Case 4: Electron integrals and RDMs must have the same number of spin-orbitals.
 
     """
 
-    with pytest.raises(ValueError):
+    with pytest.raises(errortype):
         EOMIP(one_mo, two_mo, one_dm, two_dm)
 
 
@@ -148,26 +148,18 @@ def test_eomip_one_body_term():
         ("b_sto3g", 5, (3, 2), 4, 0.20051823, 1e-8, EOMIPAntiCommutator),
     ],
 )
-def test_ionizationeomstate_h2_sto6g(filename, nbasis, nocc, evidx, expected, tol, eom_type):
-    """Test IonizationEOMState for H2 (STO-6G)
-    against Hartree-Fock canonical orbital energy and
-    experimental results.
-
-    HF MO_i: -0.58205888
-    Experiment: 15.42593 eV
+def test_ionization_eom_methods(filename, nbasis, nocc, evidx, expected, tol, eom_type):
+    """Test ionization methods against Hartree-Fock canonical orbital energy.
 
     """
     na, nb = nocc
     one_mo = np.load(find_datafiles("{0}_oneint.npy".format(filename)))
     one_mo = spinize(one_mo)
     two_mo = np.load(find_datafiles("{0}_twoint.npy".format(filename)))
-    two_mo = symmetrize(spinize(two_mo))
-    two_mo = antisymmetrize(two_mo)
+    two_mo = spinize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
     eom = eom_type(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = eom.solve_dense()
-    # Reference value from HORTON RHF
-    # horton_emo = [-0.58205888, 0.66587228]
-    print(aval)
+    aval, _ = eom.solve_dense()
+
     assert abs(aval[evidx] - expected) < tol

@@ -205,3 +205,14 @@ def pickpositiveeig(w, cv, tol=0.01):
     """
     idx = np.where(w > tol ** 2)[0]
     return w[idx], cv[idx], idx
+
+
+def pickeig(w, tol=0.001):
+    "adapted from PySCF TDSCF module"
+    idx = np.where(w > tol ** 2)[0]
+    # get unique eigvals
+    b = np.sort(w[idx])
+    d = np.append(True, np.diff(b))
+    TOL = 1e-6
+    w = b[d > TOL]
+    return w
