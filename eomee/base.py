@@ -185,7 +185,7 @@ class EOMState(metaclass=ABCMeta):
         """
         return self._rhs
 
-    def solve_dense(self, tol=1.0e-7, orthog="symmetric", *args, **kwargs):
+    def solve_dense(self, tol=1.0e-7, orthog="symmetric", err="warn", *args, **kwargs):
         r"""
         Solve the EOM eigenvalue system.
 
@@ -196,6 +196,9 @@ class EOMState(metaclass=ABCMeta):
         orthog : str, optional
             Matrix orthogonalization method. Default is symmetric orthogonalization
             in which the inverse square root of the right hand side matrix is taken.
+        err : ("warn" | "ignore" | "raise")
+            What to do if a divide-by-zero floating point error is raised.
+            Default behavior is to print a warning to ``stderr``.
 
         Returns
         -------
@@ -213,7 +216,8 @@ class EOMState(metaclass=ABCMeta):
         U, s, V = svd(self._rhs)
         if orthog == "symmetric":
             # Apply inverse square root to eigvals of RHS
-            s = s ** (-0.5)
+            with np.errstate(divide=err):
+                s = s ** (-0.5)
             # Check singular value threshold
             s[s >= 1 / tol] = 0.0
             # Transform back to RHS^(-0.5)
@@ -231,7 +235,8 @@ class EOMState(metaclass=ABCMeta):
             return np.real(w), np.real(v.T)
         elif orthog == "asymmetric":
             # Check singular value threshold
-            s = s ** (-1)
+            with np.errstate(divide=err):
+                s = s ** (-1)
             s[s >= 1 / tol] = 0.0
             # S^(-1)
             S_inv = np.diag(s)
@@ -250,7 +255,7 @@ class EOMState(metaclass=ABCMeta):
                 "Invalid orthogonalization parameter. Valid options are symmetric or asymmetric."
             )
 
-    def solve_sparse(self, eigvals=6, tol=1.0e-10, *args, **kwargs):
+    def solve_sparse(self, eigvals=6, tol=1.0e-10, err="warn", *args, **kwargs):
         r"""
         Solve the EOM eigenvalue system.
 
@@ -260,6 +265,9 @@ class EOMState(metaclass=ABCMeta):
             Number of eigenpairs to find. Must be smaller than N-1.
         tol : float, optional
             Tolerance for small singular values. Default: 1.0e-10
+        err : ("warn" | "ignore" | "raise")
+            What to do if a divide-by-zero floating point error is raised.
+            Default behavior is to print a warning to ``stderr``.
 
         Returns
         -------
@@ -275,7 +283,8 @@ class EOMState(metaclass=ABCMeta):
         # RHS matrix SVD
         U, s, V = svd(self._rhs)
         # Check singular value threshold
-        s = s ** (-1)
+        with np.errstate(divide=err):
+            s = s ** (-1)
         s[s >= 1 / tol] = 0.0
         # S^(-1)
         S_inv = np.diag(s)
