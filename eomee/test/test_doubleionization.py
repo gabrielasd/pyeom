@@ -19,6 +19,8 @@ import numpy as np
 
 from scipy.linalg import eig, svd
 
+import pytest
+
 from eomee import EOMDIP
 from eomee.tools import (
     find_datafiles,
@@ -30,7 +32,7 @@ from eomee.tools import (
 
 
 def test_eomdip_neigs():
-    """
+    """Check number of eigenvalues.
 
     """
     nspino = 4
@@ -60,11 +62,11 @@ def test_eomdip_one_body_term():
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
     # Expected value
-    w, v = eig(one_mo)
+    w, _ = eig(one_mo)
     dip = -2 * np.real(w[0])
     # EOM solution
     eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = eom.solve_dense()
+    aval, _ = eom.solve_dense()
     aval = np.sort(aval)
 
     assert abs(aval[-1] - dip) < 1e-8
@@ -87,7 +89,7 @@ def test_eomdip_two_body_terms():
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
     eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = eom.solve_dense()
+    aval, _ = eom.solve_dense()
     aval = np.sort(aval)
 
     # Recomputing the left- and right-hand-sides for the double electron removal EOM
@@ -211,92 +213,48 @@ def test_eomdip_two_body_terms():
     S_inv = np.diag(s)
     rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
     A = np.dot(rhs_inv, lhs)
-    w, v = eig(A)
+    w, _ = eig(A)
     aval2 = np.real(w)
     aval2 = np.sort(aval2)
 
-    w, v = eig(one_mo)
+    w, _ = eig(one_mo)
     dip = -2 * np.real(w[0])
 
     assert abs(aval2[-1] / 2 - dip) < 1e-8
     assert abs(aval2[-1] / 2 - aval[-1]) < 1e-8
 
 
-def test_eomdip_H2_sto6g():
-    r"""
-    Test DoubleElectronRemovalEOM for H2 (STO-6G)
-    against Hartree-Fock canonical orbitals energy
-    difference.
+@pytest.mark.parametrize(
+    "filename, nparts, ehomo, nbasis, idx",
+    [
+    ("h2_hf_sto6g", (1, 1), -0.58205888, 2, -1),
+    ("heh+_sto3g", (1, 1), -1.52378328, 2, -1),
+    ("he_ccpvdz", (1, 1), -0.91414765, 5, -1),
+    ],
+)
+def test_eomdip(filename, nparts, ehomo, nbasis, idx):
+    """Test EOMDIP against Hartree-Fock canonical orbitals energy difference.
+
+    case 1: H-H bond 0.742 A
 
     """
-    nbasis = 2
-    one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
-    one_mo = spinize(one_mo)
-    two_mo = np.load(find_datafiles("h2_hf_sto6g_twoint.npy"))
-    two_mo = symmetrize(spinize(two_mo))
-    two_mo = antisymmetrize(two_mo)
-    one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
+    one_mo = np.load(find_datafiles("{}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafiles("{}_twoint.npy".format(filename)))
+    assert np.allclose(nbasis, one_mo.shape[0])
+    na, nb = nparts
+    one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
+    # Evaluate hole-hole EOM
+    eom = EOMDIP(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    aval, _ = eom.solve_dense()
+    result = np.sort(aval)
     # Expected value
-    dip = -2 * (-0.58205888) + two_mo[0, 2, 0, 2]
-    # EOM solution
-    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = eom.solve_dense()
-    aval = np.sort(aval)
+    dip = -2 * (ehomo) + antisymmetrize(spinize(two_mo))[0, nbasis, 0, nbasis]
 
-    assert abs(aval[-1] - dip) < 1e-7
+    assert np.allclose(result[idx], dip)
 
 
-def test_eomdip_He_ccpvdz():
-    r"""
-    Test DoubleElectronRemovalEOM for He (cc-pVDZ)
-    against Hartree-Fock canonical orbitals energy
-    difference.
-
-    """
-    nbasis = 5
-    one_mo = np.load(find_datafiles("he_ccpvdz_oneint.npy"))
-    one_mo = spinize(one_mo)
-    two_mo = np.load(find_datafiles("he_ccpvdz_twoint.npy"))
-    two_mo = symmetrize(spinize(two_mo))
-    two_mo = antisymmetrize(two_mo)
-    one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
-
-    # Expected value
-    dip = -2 * (-0.91414765) + two_mo[0, 5, 0, 5]
-    # EOM solution
-    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = eom.solve_dense()
-    aval = np.sort(aval)
-
-    assert abs(aval[-1] - dip) < 1e-6
-
-
-def test_eomdip_HeHcation_sto3g():
-    r"""
-    Test DoubleElectronRemovalEOM for HeH^{+} (STO-3G)
-    against Hartree-Fock canonical orbitals energy
-    difference.
-
-    """
-    nbasis = 2
-    one_mo = np.load(find_datafiles("heh+_sto3g_oneint.npy"))
-    one_mo = spinize(one_mo)
-    two_mo = np.load(find_datafiles("heh+_sto3g_twoint.npy"))
-    two_mo = symmetrize(spinize(two_mo))
-    two_mo = antisymmetrize(two_mo)
-    one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
-
-    # Expected value
-    dip = -2 * (-1.52378328) + two_mo[0, 2, 0, 2]
-    # EOM solution
-    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
-    aval, avec = eom.solve_dense()
-    aval = np.sort(aval)
-
-    assert abs(aval[-1] - dip) < 1e-6
-
-
+@pytest.mark.skip(reason="need to update v integrals format")
 def test_doubleionization_erpa_HeHcation_sto3g():
     r"""
     Test DoubleElectronRemovalEOM ERPA for HeH^{+} (STO-3G).
@@ -339,43 +297,44 @@ def test_doubleionization_erpa_HeHcation_sto3g():
     ecorr = EOMDIP.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
 
 
-# def test_doubleionization_erpa_Ne_321g():
-#     r"""
-#     Test DoubleElectronRemovalEOM ERPA for Ne 321g.
+@pytest.mark.skip(reason="need to update v integrals format")
+def test_doubleionization_erpa_Ne_321g():
+    r"""
+    Test DoubleElectronRemovalEOM ERPA for Ne 321g.
 
-#     """
-#     nbasis = 9
-#     one_mo = np.load(find_datafiles("ne_321g_oneint.npy"))
-#     one_mo = spinize(one_mo)
-#     two_mo = np.load(find_datafiles("ne_321g_twoint.npy"))
-#     two_mo = symmetrize(spinize(two_mo))
-#     two_mo = antisymmetrize(two_mo)
-#     one_dm, two_dm = hartreefock_rdms(nbasis, 5, 5)
+    """
+    nbasis = 9
+    one_mo = np.load(find_datafiles("ne_321g_oneint.npy"))
+    one_mo = spinize(one_mo)
+    two_mo = np.load(find_datafiles("ne_321g_twoint.npy"))
+    two_mo = symmetrize(spinize(two_mo))
+    two_mo = antisymmetrize(two_mo)
+    one_dm, two_dm = hartreefock_rdms(nbasis, 5, 5)
 
-#     n = one_mo.shape[0]
-#     aa = one_mo[:5, :5]
-#     bb = one_mo[n // 2 : (n // 2 + 5), n // 2 : (n // 2 + 5)]
-#     aaaa = two_mo[:5, :5, :5, :5]
-#     abab = two_mo[:5, n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5)]
-#     baba = two_mo[n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5), :5]
-#     bbbb = two_mo[
-#         n // 2 : (n // 2 + 5),
-#         n // 2 : (n // 2 + 5),
-#         n // 2 : (n // 2 + 5),
-#         n // 2 : (n // 2 + 5),
-#     ]
-#     one_mo_0 = np.zeros_like(one_mo)
-#     two_mo_0 = np.zeros_like(two_mo)
-#     one_mo_0[:5, :5] = aa
-#     one_mo_0[n // 2 : (n // 2 + 5), n // 2 : (n // 2 + 5)] = bb
-#     two_mo_0[:5, :5, :5, :5] = aaaa
-#     two_mo_0[:5, n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5)] = abab
-#     two_mo_0[n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5), :5] = baba
-#     two_mo_0[
-#         n // 2 : (n // 2 + 5),
-#         n // 2 : (n // 2 + 5),
-#         n // 2 : (n // 2 + 5),
-#         n // 2 : (n // 2 + 5),
-#     ] = bbbb
+    n = one_mo.shape[0]
+    aa = one_mo[:5, :5]
+    bb = one_mo[n // 2 : (n // 2 + 5), n // 2 : (n // 2 + 5)]
+    aaaa = two_mo[:5, :5, :5, :5]
+    abab = two_mo[:5, n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5)]
+    baba = two_mo[n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5), :5]
+    bbbb = two_mo[
+        n // 2 : (n // 2 + 5),
+        n // 2 : (n // 2 + 5),
+        n // 2 : (n // 2 + 5),
+        n // 2 : (n // 2 + 5),
+    ]
+    one_mo_0 = np.zeros_like(one_mo)
+    two_mo_0 = np.zeros_like(two_mo)
+    one_mo_0[:5, :5] = aa
+    one_mo_0[n // 2 : (n // 2 + 5), n // 2 : (n // 2 + 5)] = bb
+    two_mo_0[:5, :5, :5, :5] = aaaa
+    two_mo_0[:5, n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5)] = abab
+    two_mo_0[n // 2 : (n // 2 + 5), :5, n // 2 : (n // 2 + 5), :5] = baba
+    two_mo_0[
+        n // 2 : (n // 2 + 5),
+        n // 2 : (n // 2 + 5),
+        n // 2 : (n // 2 + 5),
+        n // 2 : (n // 2 + 5),
+    ] = bbbb
 
-#     ecorr = EOMDIP.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
+    ecorr = EOMDIP.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)

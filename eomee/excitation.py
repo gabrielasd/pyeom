@@ -151,8 +151,8 @@ class EOMExc(EOMState):
             h += h_0
             v = alpha * dv
             v += v_0
-            # Antysymmetrize v_pqrs
-            v = antisymmetrize(v)
+            # # Antysymmetrize v_pqrs
+            # v = antisymmetrize(v)
             # Solve EOM equations
             w, c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)
             _, c, _ = pickpositiveeig(w, c)
