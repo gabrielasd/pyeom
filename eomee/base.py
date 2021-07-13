@@ -198,7 +198,7 @@ class EOMState(metaclass=ABCMeta):
             in which the inverse square root of the right hand side matrix is taken.
         err : ("warn" | "ignore" | "raise")
             What to do if a divide-by-zero floating point error is raised.
-            Default behavior is to print a warning to ``stderr``.
+            Default behavior is to ignore divide by zero errors.
 
         Returns
         -------
@@ -267,7 +267,7 @@ class EOMState(metaclass=ABCMeta):
             Tolerance for small singular values. Default: 1.0e-10
         err : ("warn" | "ignore" | "raise")
             What to do if a divide-by-zero floating point error is raised.
-            Default behavior is to print a warning to ``stderr``.
+            Default behavior is to ignore divide by zero errors.
 
         Returns
         -------
