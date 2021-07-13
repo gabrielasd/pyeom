@@ -58,21 +58,16 @@ def check_inputs(params):
 
     # check numbers
     if not isinstance(params.nparts, (int, tuple)):
-        raise TypeError(
-            "Number of electrons must be given as an integer or tuple of integers."
-        )
+        raise TypeError("Number of electrons must be given as an integer or tuple of integers.")
     if not isinstance(params.tol, float):
-        raise TypeError(
-            "The tolerance value for matrix inversion must be given as a float."
-        )
+        raise TypeError("The tolerance value for matrix inversion must be given as a float.")
     if not params.roots is None:
         if not isinstance(params.roots, int):
             raise TypeError("The number of rots must be given as an integer.")
 
     if not isinstance(params.get_tdm, bool):
         raise TypeError(
-            "Flag for transition density matrix computation must "
-            "be given as a boolean."
+            "Flag for transition density matrix computation must " "be given as a boolean."
         )
 
     # Check integrals files
@@ -100,15 +95,12 @@ def check_inputs(params):
     eom_type = ["ip", "ea", "exc", "dip", "dea"]
     if params.eom not in eom_type:
         raise ValueError(
-            "Equation-of-motion method must be one of `ip`, `ea`, `exc`, "
-            "`dip` and `dea`."
+            "Equation-of-motion method must be one of `ip`, `ea`, `exc`, " "`dip` and `dea`."
         )
 
 
 class ParsedParams:
-    """[summary]
-
-    """
+    """[summary]"""
 
     def __init__(self, content):
         # Assign numbers

@@ -47,9 +47,7 @@ def get_roots(excen, method, roots):
     non0_id = np.flatnonzero(excen)
     if len(non0_id) < roots:
         raise ValueError(
-            "There are {0} nonzero energy values but {1} requested".format(
-                len(non0_id), roots
-            )
+            "There are {0} nonzero energy values but {1} requested".format(len(non0_id), roots)
         )
 
     output = ""

@@ -68,8 +68,7 @@ class EOMState(metaclass=ABCMeta):
             )
         if not h.shape[0] == dm2.shape[0]:
             raise ValueError(
-                "Electron integrlas and density matrices must have"
-                " equal number of spinorbitlas"
+                "Electron integrals and density matrices must have equal number of spin-orbitals"
             )
         self._n = h.shape[0]
         self._h = h

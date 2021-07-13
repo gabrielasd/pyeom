@@ -9,9 +9,7 @@ __all__ = [
 
 
 class WfnRDMs:
-    """[summary]
-
-    """
+    """[summary]"""
 
     def __init__(self, nparts, dm1_file=str, dm2_file=str):
         if isinstance(nparts, int):
@@ -79,17 +77,11 @@ class WfnRDMs:
         # if not (isinstance(dm1, np.ndarray) and isinstance(dm2, np.ndarray)):
         #     raise TypeError("Density matrices must be given as a numpy array")
         if not (dm1.ndim == 2 and dm1.shape[0] == dm1.shape[1]):
-            raise ValueError(
-                "One-reduced density matrix must be a two-dimensional square matrix"
-            )
+            raise ValueError("One-reduced density matrix must be a two-dimensional square matrix")
         if not (dm2.ndim == 4 and dm2.shape == (dm2.shape[0],) * 4):
-            raise ValueError(
-                "Two-reduced density matrix must be a square matrix of matrix"
-            )
+            raise ValueError("Two-reduced density matrix must be a square matrix of matrix")
         if not dm1.shape[0] == dm2.shape[0]:
-            raise ValueError(
-                "Number of spinorbitals between density matrices don't match"
-            )
+            raise ValueError("Number of spinorbitals between density matrices don't match")
 
         # Check DMs symmetry
         # Symmetric permutations

@@ -13,8 +13,7 @@ __all__ = [
 
 
 class ElectronIntegrals:
-    """[summary]
-    """
+    """[summary]"""
 
     def __init__(self, oneint_file, twoint_file):
         self.load_integrals(oneint_file, twoint_file)
@@ -64,15 +63,11 @@ class ElectronIntegrals:
         """
 
         if not (h.ndim == 2 and h.shape[0] == h.shape[1]):
-            raise ValueError(
-                "One-electron integrals must be a two-dimensional square matrix"
-            )
+            raise ValueError("One-electron integrals must be a two-dimensional square matrix")
         if not (v.ndim == 4 and v.shape == (v.shape[0],) * 4):
             raise ValueError("Two-electron integrals must be a square matrix of matrix")
         if not h.shape[0] == v.shape[0]:
-            raise ValueError(
-                "Number of spinorbitals between electron integrals don't match"
-            )
+            raise ValueError("Number of spinorbitals between electron integrals don't match")
         # Check integrals symmetry
         # Symmetric permutations
         oneint_symm = np.allclose(h, h.T)
@@ -86,9 +81,7 @@ class ElectronIntegrals:
         for number, symm in symmetries.items():
             if not symm:
                 raise ValueError(
-                    "{}-electron integrals do not satisfy symmetric permutations".format(
-                        number
-                    )
+                    "{}-electron integrals do not satisfy symmetric permutations".format(number)
                 )
         # Two-electron integrals antisymmetric permutations
         twoint_asymm = np.all(
@@ -98,9 +91,7 @@ class ElectronIntegrals:
             ]
         )
         if not twoint_asymm:
-            raise ValueError(
-                "Two-electron integrals do not satisfy the asymmetric permutations"
-            )
+            raise ValueError("Two-electron integrals do not satisfy the asymmetric permutations")
 
     def load_integralfile(self, int_file):
         """[summary]
@@ -110,9 +101,7 @@ class ElectronIntegrals:
         """
         match = re.search(r"\.npy$", int_file)
         if not match:
-            raise ValueError(
-                "The electron integral must be a .npy file:{0} given".format(int_file)
-            )
+            raise ValueError("The electron integral must be a .npy file:{0} given".format(int_file))
         return np.load(int_file)
 
     def load_integrals(self, oneint_file, twoint_file):
