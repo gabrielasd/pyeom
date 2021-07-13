@@ -185,7 +185,7 @@ class EOMState(metaclass=ABCMeta):
         """
         return self._rhs
 
-    def solve_dense(self, tol=1.0e-7, orthog="symmetric", err="warn", *args, **kwargs):
+    def solve_dense(self, tol=1.0e-7, orthog="symmetric", err="ignore", *args, **kwargs):
         r"""
         Solve the EOM eigenvalue system.
 
@@ -255,7 +255,7 @@ class EOMState(metaclass=ABCMeta):
                 "Invalid orthogonalization parameter. Valid options are symmetric or asymmetric."
             )
 
-    def solve_sparse(self, eigvals=6, tol=1.0e-10, err="warn", *args, **kwargs):
+    def solve_sparse(self, eigvals=6, tol=1.0e-10, err="ignore", *args, **kwargs):
         r"""
         Solve the EOM eigenvalue system.
 

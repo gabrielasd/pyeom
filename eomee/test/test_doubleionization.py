@@ -205,7 +205,8 @@ def test_eomdip_two_body_terms():
 
     # Diagonalization
     U, s, V = svd(rhs)
-    s = s ** (-1)
+    with np.errstate(divide="ignore"):
+        s = s ** (-1)
     s[s >= 1 / (1.0e-10)] = 0.0
     S_inv = np.diag(s)
     rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
