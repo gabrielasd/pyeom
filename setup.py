@@ -78,6 +78,11 @@ PACKAGE_DATA = {
 INCLUDE_PACKAGE_DATA = True
 
 
+ENTRY_POINTS = {
+        "console_scripts": ["eom=eomee.scripts.run_eom:main",]
+    }
+
+
 if __name__ == "__main__":
 
     from setuptools import setup
@@ -99,4 +104,5 @@ if __name__ == "__main__":
         packages=PACKAGES,
         package_data=PACKAGE_DATA,
         include_package_data=INCLUDE_PACKAGE_DATA,
+        entry_points=ENTRY_POINTS,
     )
