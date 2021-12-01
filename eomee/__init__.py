@@ -28,6 +28,9 @@ __all__ = [
     "EOMDIP",
     "EOMExc",
     "EOMDEA",
+    "EOMDIPCIS",
+    "EOMDEA_2",
+    "EOMExc0",
 ]
 
 
@@ -38,9 +41,9 @@ from .ionization import EOMIPAntiCommutator
 from .electronaff import EOMEA
 from .electronaff import EOMEADoubleCommutator
 from .electronaff import EOMEAAntiCommutator
-from .doubleionization import EOMDIP
-from .excitation import EOMExc
-from .doubleelectronaff import EOMDEA
+from .doubleionization import EOMDIP, EOMDIPCIS
+from .excitation import EOMExc, EOMExc0
+from .doubleelectronaff import EOMDEA, EOMDEA_2
 
 
 __version__: str = "0.0.1"
