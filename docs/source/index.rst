@@ -49,8 +49,7 @@ State                   EOM
    :caption: User Guide
 
    installation
-   formats
-   examples
+   tutorials
    eom
    erpa
 
