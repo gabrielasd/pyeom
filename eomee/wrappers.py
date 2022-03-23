@@ -228,7 +228,9 @@ class PyCIRDMs(object):
 
     def get_rdms(self):
         """Compute spin-resolved 1- and 2-electron density matrices."""
-        return pyci.compute_rdms(self._wfn, self._cs[0])
+        d1, d2 = pyci.compute_rdms(self._wfn, self._cs[0])
+        # Return rdm1 and rdm2
+        return pyci.spinize_rdms(d1, d2)
 
     def get_outputs(self):
         """Retrieve energy and DMs from CI calculation.
