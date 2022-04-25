@@ -128,7 +128,7 @@ class PyCIRDMs(object):
 
         # Solve CI problem
         op = pyci.sparse_op(self._ham, self._wfn, symmetric=self._symmetric)
-        es, cs = pyci.solve(op, n=self._n, ncv=self._ncv, tol=self._tol)
+        es, cs = op.solve(n=self._n, ncv=self._ncv, tol=self._tol)
         self._es = es
         self._cs = cs
 
