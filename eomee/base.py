@@ -23,6 +23,8 @@ import numpy as np
 from scipy.linalg import eig, svd
 from scipy.sparse.linalg import eigs
 
+from .solver import nonsymmetric, svd_lowdin
+
 from .tools import antisymmetrize
 
 
@@ -262,7 +264,7 @@ class EOMState(metaclass=ABCMeta):
                 "2-particle density matrix does not satisfy the asymmetric permutations."
             )
 
-    def solve_dense(self, tol=1.0e-7, orthog="symmetric", err="ignore", *args, **kwargs):
+    def solve_dense(self, tol=1.0e-10, mode="nonsymm", err="ignore", *args, **kwargs):
         r"""
         Solve the EOM eigenvalue system.
 
@@ -270,9 +272,9 @@ class EOMState(metaclass=ABCMeta):
         ----------
         tol : float, optional
             Tolerance for small singular values. Default: 1.0e-10
-        orthog : str, optional
-            Matrix orthogonalization method. Default is symmetric orthogonalization
-            in which the inverse square root of the right hand side matrix is taken.
+        mode : str, optional
+            Specifies whether a symmetric or nonsymmetric method is used to solve the GEVP.
+            Default is `nonsymm` in which the inverse of the right hand side matrix is taken.
         err : ("warn" | "ignore" | "raise")
             What to do if a divide-by-zero floating point error is raised.
             Default behavior is to ignore divide by zero errors.
@@ -285,52 +287,18 @@ class EOMState(metaclass=ABCMeta):
             Eigenvector matrix (m eigenvectors).
 
         """
+        modes = {'nonsymm': nonsymmetric, 'symm': svd_lowdin}
         if not isinstance(tol, float):
-            raise TypeError("Argument tol must be a float")
-
-        # Invert RHS matrix
-        # RHS matrix SVD
-        U, s, V = svd(self._rhs)
-        if orthog == "symmetric":
-            # Apply inverse square root to eigvals of RHS
-            with np.errstate(divide=err):
-                s = s ** (-0.5)
-            # Check singular value threshold
-            s[s >= 1 / tol] = 0.0
-            # Transform back to RHS^(-0.5)
-            S_inv = np.diag(s)
-            rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
-
-            # Apply RHS^-0.5 * LHS * RHS^-0.5
-            A = np.dot(rhs_inv, np.dot(self._lhs, rhs_inv))
-            # Run scipy `linalg.eig` eigenvalue solver
-            w, v = eig(A, *args, **kwargs)
-            # Transform back to original eigenvector matrix
-            v = np.dot(rhs_inv, v)
-            # Return w (eigenvalues)
-            #    and v (eigenvector column matrix -- so transpose it!)
-            return np.real(w), np.real(v.T)
-        elif orthog == "asymmetric":
-            # Check singular value threshold
-            with np.errstate(divide=err):
-                s = s ** (-1)
-            s[s >= 1 / tol] = 0.0
-            # S^(-1)
-            S_inv = np.diag(s)
-            # rhs^(-1)
-            rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
-
-            # Apply RHS^-1 * LHS
-            A = np.dot(rhs_inv, self._lhs)
-            # Run scipy `linalg.eig` eigenvalue solver
-            w, v = eig(A, *args, **kwargs)
-            # Return w (eigenvalues)
-            #    and v (eigenvector column matrix -- so transpose it!)
-            return np.real(w), np.real(v.T)
-        else:
-            raise ValueError(
-                "Invalid orthogonalization parameter. Valid options are symmetric or asymmetric."
+            raise TypeError("Argument tol must be a float")        
+        try:
+            _solver = modes[mode]
+        except KeyError:
+            print(
+                "Invalid mode parameter. Valid options are nonsymm or symm."
             )
+        
+        w, v = _solver(self._lhs, self._rhs, tol=tol, err=err)
+        return w, v
 
     def solve_sparse(self, eigvals=6, tol=1.0e-10, err="ignore", *args, **kwargs):
         r"""
