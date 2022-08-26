@@ -39,8 +39,8 @@ def nonsymmetric(lhs, rhs, tol=1.0e-10, err="ignore"):
     with np.errstate(divide=err):
         s = s ** (-1)
     s[s >= 1 / tol] = 0.0
-    S_inv = np.diag(s)  # S^(-1)    
-    rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))   # rhs^(-1)    
+    S_inv = np.diag(s)  # S^(-1)
+    rhs_inv = np.dot(U, np.dot(S_inv, V))   # rhs^(-1)
     A = np.dot(rhs_inv, lhs)    # Apply RHS^-1 * LHS
     # Run scipy `linalg.eig` eigenvalue solver
     w, v = eig(A)
@@ -90,7 +90,7 @@ def svd_lowdin(lhs, rhs, tol=1.0e-10, err="ignore"):
     s[s >= 1 / tol] = 0.0
     # Transform back to RHS^(-0.5)
     S_inv = np.diag(s)
-    rhs_inv = np.dot(V.T, np.dot(S_inv, U.T))
+    rhs_inv = np.dot(U, np.dot(S_inv, V))
     # Apply RHS^-0.5 * LHS * RHS^-0.5
     A = np.dot(rhs_inv, np.dot(lhs, rhs_inv))
     # Run scipy `linalg.eig` eigenvalue solver
@@ -122,22 +122,22 @@ def lowdin(lhs, rhs, tol=1.0e-10, err="ignore"):
         Eigenvector matrix (m eigenvectors).
 
     """
-    assert np.allclose(rhs, rhs.T)
-    assert np.allclose(lhs, lhs.T)
+    # assert np.allclose(rhs, rhs.T)
+    # assert np.allclose(lhs, lhs.T)
     w, v = eigh(rhs)
     w[w < 0.] = 0.
     with np.errstate(divide=err):
         inv_sqrt_w = w ** (-0.5)
-    inv_sqrt_w[inv_sqrt_w > 1/tol] = 0.
+    inv_sqrt_w[inv_sqrt_w > 1./tol] = 0.
     ort_m = np.dot(v, np.dot(np.diag(inv_sqrt_w), v.T))
     Hm = np.dot(ort_m.T, np.dot(lhs, ort_m))
-    assert np.allclose(Hm, Hm.T)
+    # assert np.allclose(Hm, Hm.T)
     w, v = eigh(Hm)
     v = np.dot(ort_m, v)
     return np.real(w), np.real(v.T)
 
 
-def lowdin_img(lhs, rhs, tol=1.0e-10):
+def lowdin_complex(lhs, rhs, tol=1.0e-10):
     r"""
     Solve the EOM eigenvalue system with symmetric orthogonalization.
 
@@ -166,15 +166,14 @@ def lowdin_img(lhs, rhs, tol=1.0e-10):
         Eigenvector matrix (m eigenvectors).
 
     """
-    assert np.allclose(rhs, rhs.T)
-    assert np.allclose(lhs, lhs.T)
+    # assert np.allclose(rhs, rhs.T)
+    # assert np.allclose(lhs, lhs.T)
     w, v = eigh(rhs)
-    w[np.abs(w) < tol] = 0.
     sqrt_w = csqrt(w)
-    inv_sqrt_w = pinv(np.diag(sqrt_w))
+    inv_sqrt_w = pinv(np.diag(sqrt_w), rcond=tol)
     ort_m = np.dot(v, np.dot(inv_sqrt_w, v.T))
     Hm = np.dot(ort_m.T, np.dot(lhs, ort_m))
-    assert np.allclose(Hm, Hm.T)
+    # assert np.allclose(Hm, Hm.T)
     w, v= eigh(Hm)
     v = np.dot(ort_m, v)
     return np.real(w), np.real(v.T)
