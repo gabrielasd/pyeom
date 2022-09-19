@@ -216,3 +216,195 @@ def pickeig(w, tol=0.001):
     TOL = 1e-6
     w = b[d > TOL]
     return w
+
+
+def two_positivity_condition(matrix, nbasis, dm1, dm2):
+    r""" P, Q and G (2-positivity) conditions for N-representability.
+
+    Parameters
+    ----------
+    matrix : str
+        Type of matrix to be evaluated. One of `p`, `g` and `q`.
+    nbasis : int
+        Number of spatial basis functions.
+    dm1 : np.ndarray(float(n, n))
+        One-electron reduced density matrix in the spin representation.
+    dm2 : np.ndarray(float(n, n, n, n))
+        Two-electron reduced density matrix in the spin representation
+        (antisymmetrized).
+
+    Returns
+    -------
+    np.ndarray(float(n, n, n, n))
+        P, Q or G-matrix from the 2-positivity conditions.
+    """
+    m = 2 * nbasis
+    I = np.eye(m)
+    if matrix == 'p':
+        # P-condition: P >= 0
+        # P_pqrs = <\Psi|a^\dagger_p a^\dagger_q s r|\Psi>
+        #        = \Gamma_pqrs
+        return dm2   # P_matrix
+    elif matrix == 'q':
+        # Q-condition: Q >= 0
+        # Q_pqrs = <\Psi|a_p a_q s^\dagger r^\dagger|\Psi>
+        #        = \Gamma_pqrs + \delta_qs \delta_pr - \delta_ps \delta_qr
+        #        - \delta_qs \gamma_pr + \delta_ps \gamma_qr + \delta_qr \gamma_ps - \delta_pr \gamma_qs
+        Q_matrix = dm2
+        Q_matrix += (np.einsum('qs,pr->pqrs', I, I) -  np.einsum('ps,qr->pqrs', I, I))
+        Q_matrix -= (np.einsum('qs,pr->pqrs', I, dm1) +  np.einsum('pr,qs->pqrs', I, dm1))
+        Q_matrix += (np.einsum('ps,qr->pqrs', I, dm1) +  np.einsum('qr,ps->pqrs', I, dm1)) 
+        return Q_matrix
+    elif matrix == 'g':
+        # G-condition: G >= 0
+        # G_pqrs = <\Psi|a^\dagger_p a_q s^\dagger r|\Psi>
+        #        = \delta_qs \gamma_pr - \Gamma_psrq
+        return np.einsum('qs,pr->pqrs', I, dm1) - dm2.transpose((0,3,2,1))
+    else:
+        raise ValueError(f'Matrix must be one of `p`, `q` and `g`, {matrix} given.')
+
+
+def matrix_P_to_matrix(matrix, nbasis, dm1, dm2, matrixp=None):
+    r"""Transform P-matrix into G or Q-matrices.
+
+    Parameters
+    ----------
+    matrix : str
+        Type of matrix to be evaluated. Either `g` or `q`.
+    nbasis : int
+        Number of spatial basis functions.
+    dm1 : np.ndarray(float(n, n))
+        One-electron reduced density matrix in the spin representation.
+    dm2 : np.ndarray(float(n, n, n, n))
+        Two-electron reduced density matrix in the spin representation
+        (antisymmetrized).
+    matrixg : ndarray((n, n, n, n)), optional
+        If provided it is taken as the G-matrix, by default None
+
+    Returns
+    -------
+    ndarray((n, n, n, n))
+        The type of matrix requested by `matrix`.
+    """
+    m = 2 * nbasis
+    I = np.eye(m)
+    # P_pqrs = <\Psi|a^\dagger_p a^\dagger_q s r|\Psi>
+    if matrixp is None:
+        P_matrix = two_positivity_condition('p', nbasis, dm1, dm2)
+    else:
+        P_matrix = matrixp
+
+    if matrix == 'g':
+        # P_pqrs = \delta_qs \gamma_pr - <\Psi|a^\dagger_p a_s q^\dagger r|\Psi>
+        # G_psrq = \delta_qs \gamma_pr - P_pqrs = G_pqrs
+        return np.einsum('qs,pr->pqrs', I, dm1) - P_matrix
+    elif matrix == 'q':
+        # P_pqrs = <\Psi|a_p a_q s^\dagger r^\dagger|\Psi> - \delta_qs \delta_pr + \delta_ps \delta_qr
+        #        + \delta_qs \gamma_pr - \delta_ps \gamma_qr - \delta_qr \gamma_ps + \delta_pr \gamma_qs
+        # Q_pqrs = P_pqrs + \delta_qs \delta_pr - \delta_ps \delta_qr
+        #        - \delta_qs \gamma_pr + \delta_ps \gamma_qr + \delta_qr \gamma_ps - \delta_pr \gamma_qs
+        Q_matrix = P_matrix
+        Q_matrix += (np.einsum('qs,pr->pqrs', I, I) -  np.einsum('ps,qr->pqrs', I, I))
+        Q_matrix -= (np.einsum('qs,pr->pqrs', I, dm1) +  np.einsum('pr,qs->pqrs', I, dm1))
+        Q_matrix += (np.einsum('ps,qr->pqrs', I, dm1) +  np.einsum('qr,ps->pqrs', I, dm1)) 
+        return Q_matrix    
+    else:
+        raise ValueError(f'Matrix must be `q` or `g`, {matrix} given.')
+
+
+def matrix_G_to_matrix(matrix, nbasis, dm1, dm2, matrixg=None):
+    r"""Transform G-matrix into P or Q-matrices.
+
+    Parameters
+    ----------
+    matrix : str
+        Type of matrix to be evaluated. Either `p` or `q`.
+    nbasis : int
+        Number of spatial basis functions.
+    dm1 : np.ndarray(float(n, n))
+        One-electron reduced density matrix in the spin representation.
+    dm2 : np.ndarray(float(n, n, n, n))
+        Two-electron reduced density matrix in the spin representation
+        (antisymmetrized).
+    matrixg : ndarray((n, n, n, n)), optional
+        If provided it is taken as the G-matrix, by default None
+
+    Returns
+    -------
+    ndarray((n, n, n, n))
+        The type of matrix requested by `matrix`.
+    """
+    m = 2 * nbasis
+    I = np.eye(m)
+    # G_pqrs = <\Psi|a^\dagger_p a_q s^\dagger r|\Psi>
+    if matrixg is None:
+        G_matrix = two_positivity_condition('g', nbasis, dm1, dm2)
+    else:
+        G_matrix = matrixg
+
+    if matrix == 'p':
+        # G_pqrs = \delta_qs \gamma_pr - <\Psi|a^\dagger_p s^\dagger a_q r|\Psi>
+        # P_psrq = \delta_qs \gamma_pr - G_pqrs = P_pqrs        
+        return np.einsum('qs,pr->pqrs', I, dm1) - G_matrix
+    elif matrix == 'q':
+        # G_pqrs = \delta_qs \gamma_pr - P_psrq
+        # P_psrq = <\Psi|a_p a_s q^\dagger r^\dagger|\Psi> - \delta_qs \delta_pr + \delta_pq \delta_sr
+        #        + \delta_qs \gamma_pr - \delta_pq \gamma_sr - \delta_sr \gamma_pq + \delta_pr \gamma_qs
+        # Q_psrq = (\delta_qs \gamma_pr - G_pqrs) + \delta_qs \delta_pr - \delta_pq \delta_sr
+        #        - \delta_qs \gamma_pr + \delta_pq \gamma_sr + \delta_sr \gamma_pq - \delta_pr \gamma_qs
+        Q_matrix = matrix_G_to_matrix('p', nbasis, dm1, dm2)   # P_pqrs
+        Q_matrix += (np.einsum('qs,pr->pqrs', I, I) -  np.einsum('ps,qr->pqrs', I, I))
+        Q_matrix -= (np.einsum('qs,pr->pqrs', I, dm1) +  np.einsum('pr,qs->pqrs', I, dm1))
+        Q_matrix += (np.einsum('ps,qr->pqrs', I, dm1) +  np.einsum('qr,ps->pqrs', I, dm1)) 
+        return Q_matrix    
+    else:
+        raise ValueError(f'Matrix must be `q` or `p`, {matrix} given.')
+
+
+def matrix_Q_to_matrix(matrix, nbasis, dm1, dm2, matrixq=None):
+    r"""Transform Q-matrix into P or G-matrices.
+
+    Parameters
+    ----------
+    matrix : str
+        Type of matrix to be evaluated. Either `p` or `g`.
+    nbasis : int
+        Number of spatial basis functions.
+    dm1 : np.ndarray(float(n, n))
+        One-electron reduced density matrix in the spin representation.
+    dm2 : np.ndarray(float(n, n, n, n))
+        Two-electron reduced density matrix in the spin representation
+        (antisymmetrized).
+    matrixg : ndarray((n, n, n, n)), optional
+        If provided it is taken as the G-matrix, by default None
+
+    Returns
+    -------
+    ndarray((n, n, n, n))
+        The type of matrix requested by `matrix`.
+    """
+    m = 2 * nbasis
+    I = np.eye(m)
+    # Q_pqrs = <\Psi|a_p a_q s^\dagger r^\dagger|\Psi>
+    if matrixq is None:
+        Q_matrix = two_positivity_condition('q', nbasis, dm1, dm2)
+    else:
+        Q_matrix = matrixq
+
+    if matrix == 'p':
+        # Q_pqrs = <\Psi|a^\dagger_p a^\dagger_q s r|\Psi> + \delta_qs \delta_pr - \delta_ps \delta_qr
+        #        - \delta_qs \gamma_pr + \delta_ps \gamma_qr + \delta_qr \gamma_ps - \delta_pr \gamma_qs
+        # P_pqrs = Q_pqrs - \delta_qs \delta_pr + \delta_ps \delta_qr
+        #        + \delta_qs \gamma_pr - \delta_ps \gamma_qr - \delta_qr \gamma_ps + \delta_pr \gamma_qs
+        P_matrix = Q_matrix
+        P_matrix += (np.einsum('ps,qr->pqrs', I, I) - np.einsum('qs,pr->pqrs', I, I))
+        P_matrix += (np.einsum('qs,pr->pqrs', I, dm1) +  np.einsum('pr,qs->pqrs', I, dm1))
+        P_matrix -= (np.einsum('ps,qr->pqrs', I, dm1) +  np.einsum('qr,ps->pqrs', I, dm1))
+        return P_matrix
+    elif matrix == 'g':
+        # G_pqrs = \delta_qs \gamma_pr - P_psrq
+        # P_pqrs = Q_pqrs - \delta_qs \delta_pr + \delta_ps \delta_qr
+        #        + \delta_qs \gamma_pr - \delta_ps \gamma_qr - \delta_qr \gamma_ps + \delta_pr \gamma_qs
+        return np.einsum('qs,pr->pqrs', I, dm1) - matrix_Q_to_matrix('p', nbasis, dm1, dm2)
+    else:
+        raise ValueError(f'Matrix must be `p` or `g`, {matrix} given.')
