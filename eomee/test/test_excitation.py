@@ -269,8 +269,8 @@ def test_phrpa_adiabaticconection(filename, nparts, ehf):
     # Evaluate ERPA
     one_mo_0 = Fk
     two_mo_0 = np.zeros_like(two_mo)
-    dE = EOMExc.erpa(
-        one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm, orthog="asymmetric"
+    solution = EOMExc.erpa(
+        one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm, orthog="nonsymm"
     )
     print("E_HF", ehf)
-    print("E_erpa", np.einsum("pq, pq", Fk, one_dm) + dE)
+    print("E_erpa", np.einsum("pq, pq", Fk, one_dm) + solution['ecorr'])

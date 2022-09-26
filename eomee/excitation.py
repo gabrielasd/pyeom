@@ -114,7 +114,7 @@ class EOMExc(EOMState):
         return m.reshape(self._n ** 2, self._n ** 2)
 
     @classmethod
-    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
+    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=5, *args, **kwargs):
         r"""
         Compute the ERPA correlation energy for the operator.
 
@@ -125,51 +125,98 @@ class EOMExc(EOMState):
         dh = h_1 - h_0
         # V_1 - V_0
         dv = v_1 - v_0
+        
+        # def _pherpa_linearterms(_n, _dh, _dv, _dm1):
+        #     # Gamma_pqrs = < | p^+ q^+ s r | > = - < | p^+ q^+ r s | >
+        #     #            = - \delta_qr * \gamma_ps
+        #     #            + \gamma_pr * \gamma_qs
+        #     #            + \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
+        #     dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
+        #     # Compute linear term (eq. 19)
+        #     # dh * \gamma + 0.5 * dv * (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
+        #     _linear = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True) - dm1_eye
+        #     _linear = np.einsum("pq,pq", _dh, _dm1, optimize=True) + 0.5 * np.einsum(
+        #         "pqrs,pqrs", _dv, _linear, optimize=True
+        #     )
+        #     return _linear
+        linear = _pherpa_linearterms(n, dh, dv, dm1)
 
-        # Gamma_pqrs = < | p^+ q^+ s r | > = - < | p^+ q^+ r s | >
-        #            = - \delta_qr * \gamma_ps
-        #            + \gamma_pr * \gamma_qs
-        #            + \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
-        dm1_eye = np.einsum("qr,ps->pqrs", np.eye(n), dm1, optimize=True)
-        # Compute linear term (eq. 19)
-        # dh * \gamma + 0.5 * dv * (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
-        linear = np.einsum("pr,qs->pqrs", dm1, dm1, optimize=True) - dm1_eye
-        linear = np.einsum("pq,pq", dh, dm1, optimize=True) + 0.5 * np.einsum(
-            "pqrs,pqrs", dv, linear, optimize=True
-        )
+        # @np.vectorize
+        # Compute ERPA correction energy
+        # Nonlinear term (eq. 19 integrand)        
+        function = WrappNonlinear(cls, h_0, v_0, dh, dv, dm1, dm2)
+        nonlinear, abserr = integrate(function, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)
+        ecorr = linear + 0.5 * nonlinear
 
+        output = {}
+        output["ecorr"] = ecorr
+        output["error"] = abserr
+
+        return output
+
+
+def _pherpa_linearterms(_n, _dh, _dv, _dm1):
+            # Gamma_pqrs = < | p^+ q^+ s r | > = - < | p^+ q^+ r s | >
+            #            = - \delta_qr * \gamma_ps
+            #            + \gamma_pr * \gamma_qs
+            #            + \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
+            dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
+            # Compute linear term (eq. 19)
+            # dh * \gamma + 0.5 * dv * (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
+            _linear = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True) - dm1_eye
+            _linear = np.einsum("pq,pq", _dh, _dm1, optimize=True) + 0.5 * np.einsum(
+                "pqrs,pqrs", _dv, _linear, optimize=True
+            )
+            return _linear
+
+
+class WrappNonlinear:
+    r"""Compute adiabatic connection integrand."""
+    def __init__(self, method, h0, v0, dh, dv, dm1, dm2):
+        self.h_0 = h0
+        self.v_0 = v0
+        self.dh = dh
+        self.dv = dv
+        # TODO: Check that method is EOMExc
+        self.dm1 = dm1
+        self.dm2 = dm2
+        self.method = method
+    
+    @staticmethod
+    def eval_tdmterms(_n, _dm1):
         # Compute RDM terms of transition RDM
         # Commutator form: < |[p+q,s+r]| >
         # \delta_qs \gamma_pr - \delta_pr \gamma_sq
-        rdm_terms = np.einsum("qs,pr->pqrs", np.eye(n), dm1, optimize=True)
-        rdm_terms -= np.einsum("pr,sq->pqrs", np.eye(n), dm1, optimize=True)
-        # @np.vectorize
-        # Nonlinear term (eq. 19 integrand)
-        def nonlinear(alpha):
-            r""" """
-            # Compute H^alpha
-            h = alpha * dh
-            h += h_0
-            v = alpha * dv
-            v += v_0
-            # # Antysymmetrize v_pqrs
-            # v = antisymmetrize(v)
-            # Solve EOM equations
-            w, c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)
-            _, c, _ = pickpositiveeig(w, c)
-            # Compute transition RDMs (eq. 29)
-            rdms = np.einsum("mrs,pqrs->mpq", c.reshape(c.shape[0], n, n), rdm_terms)
-            # Compute nonlinear energy term
-            tv = np.zeros_like(dm2)
-            for rdm in rdms:
-                tv += np.einsum("pr,qs->pqrs", rdm, rdm, optimize=True)
-            return np.einsum("pqrs,pqrs", dv, tv, optimize=True)
+        _rdm_terms = np.einsum("qs,pr->pqrs", np.eye(_n), _dm1, optimize=True)
+        _rdm_terms -= np.einsum("pr,sq->pqrs", np.eye(_n), _dm1, optimize=True)
+        return _rdm_terms
+    
+    @staticmethod
+    def eval_nonlinearterms(_n, _dm1, coeffs, rdmterms):
+        # Compute transition RDMs (eq. 29)
+        rdms = np.einsum("mrs,pqrs->mpq", coeffs.reshape(coeffs.shape[0], _n, _n), rdmterms)
+        # Compute nonlinear energy term
+        _tv = np.zeros((_n, _n, _n, _n), dtype=_dm1.dtype)
+        for rdm in rdms:
+            _tv += np.einsum("pr,qs->pqrs", rdm, rdm, optimize=True)
+        return _tv
 
-        # Compute ERPA correlation energy (eq. 19)
-        return (
-            linear
-            + 0.5 * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[0]
-        )
+    def __call__(self, alpha, *args, **kwargs):
+        """Compute integrand."""
+        # Compute H^alpha
+        h = alpha * self.dh
+        h += self.h_0
+        v = alpha * self.dv
+        v += self.v_0
+        # Size of dimensions
+        n = h.shape[0]
+        # Solve EOM equations
+        w, c = self.method(h, v, self.dm1, self.dm2).solve_dense(*args, **kwargs)
+        _, c, _ = pickpositiveeig(w, c)
+        # Compute transition RDMs (eq. 29)
+        rdm_terms = WrappNonlinear.eval_tdmterms(n, self.dm1)
+        tv = WrappNonlinear.eval_nonlinearterms(n, self.dm1, c, rdm_terms)
+        return np.einsum("pqrs,pqrs", self.dv, tv, optimize=True)
 
 
 class EOMExc0(EOMState):
