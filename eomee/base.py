@@ -298,7 +298,7 @@ class EOMState(metaclass=ABCMeta):
             )
         
         w, v = _solver(self._lhs, self._rhs, tol=tol, err=err)
-        return w, v
+        return np.real(w), np.real(v)
 
     def solve_sparse(self, eigvals=6, tol=1.0e-10, err="ignore", *args, **kwargs):
         r"""
