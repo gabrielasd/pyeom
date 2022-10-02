@@ -44,9 +44,11 @@ def nonsymmetric(lhs, rhs, tol=1.0e-10, err="ignore"):
     A = np.dot(rhs_inv, lhs)    # Apply RHS^-1 * LHS
     # Run scipy `linalg.eig` eigenvalue solver
     w, v = eig(A)
+    if np.any(np.iscomplex(w)):
+        print(f'Warning: complex eigenvalues found.')
     # Return w (eigenvalues)
     #    and v (eigenvector column matrix -- so transpose it!)
-    return np.real(w), np.real(v.T)
+    return w, v.T
 
 
 def svd_lowdin(lhs, rhs, tol=1.0e-10, err="ignore"):
@@ -99,7 +101,7 @@ def svd_lowdin(lhs, rhs, tol=1.0e-10, err="ignore"):
     v = np.dot(rhs_inv, v)
     # Return w (eigenvalues)
     #    and v (eigenvector column matrix -- so transpose it!)
-    return np.real(w), np.real(v.T)
+    return w, v.T
 
 
 def lowdin(lhs, rhs, tol=1.0e-10, err="ignore"):
@@ -134,7 +136,7 @@ def lowdin(lhs, rhs, tol=1.0e-10, err="ignore"):
     # assert np.allclose(Hm, Hm.T)
     w, v = eigh(Hm)
     v = np.dot(ort_m, v)
-    return np.real(w), np.real(v.T)
+    return w, v.T
 
 
 def lowdin_complex(lhs, rhs, tol=1.0e-10):
@@ -176,4 +178,6 @@ def lowdin_complex(lhs, rhs, tol=1.0e-10):
     # assert np.allclose(Hm, Hm.T)
     w, v= eigh(Hm)
     v = np.dot(ort_m, v)
-    return np.real(w), np.real(v.T)
+    if np.any(np.iscomplex(w)):
+        print(f'Warning: complex eigenvalues found.')
+    return w, v.T
