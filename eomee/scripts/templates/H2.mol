@@ -1,0 +1,8 @@
+BASIS
+$basis_set1
+GVB
+RPA, ERPA
+Atomtypes=2 Nosymmetry
+ZMAT
+H1   1 1.0
+H2   2 1 $blength 1.0

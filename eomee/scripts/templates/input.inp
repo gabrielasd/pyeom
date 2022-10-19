@@ -1,0 +1,22 @@
+! molecule input
+  
+Calculation
+ JobTitle   TEST
+ Interface  DALTON
+ !JobType    AC  ! ERPA
+ JobType    ERPA
+ Triplet    True
+ RDMType    GVB
+ IPrint     5
+ TwoMoInt   INCORE
+end
+
+! define monA
+System
+ ZNucl   $znucl
+ Charge  $charge
+  ThrAct     $ThrAct
+  ThrSelAct  1.d-$ThrSelAct
+end
+
+

@@ -126,19 +126,6 @@ class EOMExc(EOMState):
         # V_1 - V_0
         dv = v_1 - v_0
         
-        # def _pherpa_linearterms(_n, _dh, _dv, _dm1):
-        #     # Gamma_pqrs = < | p^+ q^+ s r | > = - < | p^+ q^+ r s | >
-        #     #            = - \delta_qr * \gamma_ps
-        #     #            + \gamma_pr * \gamma_qs
-        #     #            + \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
-        #     dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
-        #     # Compute linear term (eq. 19)
-        #     # dh * \gamma + 0.5 * dv * (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
-        #     _linear = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True) - dm1_eye
-        #     _linear = np.einsum("pq,pq", _dh, _dm1, optimize=True) + 0.5 * np.einsum(
-        #         "pqrs,pqrs", _dv, _linear, optimize=True
-        #     )
-        #     return _linear
         linear = _pherpa_linearterms(n, dh, dv, dm1)
 
         # @np.vectorize
@@ -160,14 +147,14 @@ def _pherpa_linearterms(_n, _dh, _dv, _dm1):
             #            = - \delta_qr * \gamma_ps
             #            + \gamma_pr * \gamma_qs
             #            + \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
-            dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
             # Compute linear term (eq. 19)
             # dh * \gamma + 0.5 * dv * (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
-            _linear = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True) - dm1_eye
-            _linear = np.einsum("pq,pq", _dh, _dm1, optimize=True) + 0.5 * np.einsum(
-                "pqrs,pqrs", _dv, _linear, optimize=True
+            eye_dm1 = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
+            constant = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True) - eye_dm1
+            constant = np.einsum("pq,pq", _dh, _dm1, optimize=True) + 0.5 * np.einsum(
+                "pqrs,pqrs", _dv, constant, optimize=True
             )
-            return _linear
+            return constant
 
 
 class WrappNonlinear:

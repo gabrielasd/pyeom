@@ -23,7 +23,7 @@ import numpy as np
 from scipy.linalg import eig, svd
 from scipy.sparse.linalg import eigs
 
-from .solver import nonsymmetric, svd_lowdin
+from .solver import nonsymmetric, svd_lowdin, safe_eig, nonsymmetric2, prunned
 
 from .tools import antisymmetrize
 
@@ -287,7 +287,7 @@ class EOMState(metaclass=ABCMeta):
             Eigenvector matrix (m eigenvectors).
 
         """
-        modes = {'nonsymm': nonsymmetric, 'symm': svd_lowdin}
+        modes = {'nonsymm': nonsymmetric, 'symm': svd_lowdin, 'safe': safe_eig, 'nonsymm2': nonsymmetric2, 'prunned': prunned}
         if not isinstance(tol, float):
             raise TypeError("Argument tol must be a float")        
         try:
@@ -296,8 +296,10 @@ class EOMState(metaclass=ABCMeta):
             print(
                 "Invalid mode parameter. Valid options are nonsymm or symm."
             )
-        
-        w, v = _solver(self._lhs, self._rhs, tol=tol, err=err)
+        if mode in ['nonsymm2', 'prunned']:
+            w, v = _solver(self.lhs, self.rhs, tol=tol, **kwargs)
+        else:
+            w, v = _solver(self._lhs, self._rhs, tol=tol, err=err)
         return np.real(w), np.real(v)
 
     def solve_sparse(self, eigvals=6, tol=1.0e-10, err="ignore", *args, **kwargs):

@@ -34,6 +34,7 @@ def nonsymmetric(lhs, rhs, tol=1.0e-10, err="ignore"):
         Eigenvector matrix (m eigenvectors).
 
     """
+    # print(f'Using nonsymm solver.')
     # Invert RHS matrix
     U, s, V = svd(rhs)
     with np.errstate(divide=err):
@@ -44,8 +45,8 @@ def nonsymmetric(lhs, rhs, tol=1.0e-10, err="ignore"):
     A = np.dot(rhs_inv, lhs)    # Apply RHS^-1 * LHS
     # Run scipy `linalg.eig` eigenvalue solver
     w, v = eig(A)
-    if np.any(np.iscomplex(w)):
-        print(f'Warning: complex eigenvalues found.')
+    # if np.any(np.iscomplex(w)):
+    #     print(f'Warning: complex eigenvalues found.')
     # Return w (eigenvalues)
     #    and v (eigenvector column matrix -- so transpose it!)
     return w, v.T
@@ -180,4 +181,71 @@ def lowdin_complex(lhs, rhs, tol=1.0e-10):
     v = np.dot(ort_m, v)
     if np.any(np.iscomplex(w)):
         print(f'Warning: complex eigenvalues found.')
+    return w, v.T
+
+
+def safe_eig(h, s, tol=1e-10, err=None):
+    from functools import reduce
+    seig, t = eigh(s)
+    try:
+        w, v = eig(h, s)
+    except np.linalg.LinAlgError:
+        idx = np.abs(seig) >= tol
+        t = t[:,idx] * (1/seig[idx])
+        if t.size > 0:
+            heff = reduce(np.dot, (t.T.conj(), h, t))
+            w, v = eig(heff)
+            v = np.dot(t, v)
+        else:
+            w = np.zeros((0,))
+            v = t
+    return w, v.T
+
+
+def nonsymmetric2(lhs, rhs, eps=1.0e-2, tol=1.0e-10, err=None):
+    # print(f'Using nonsymm2 solver, eps {eps}')
+    def zeroing_rows_and_cols(h, s, lindep):
+        seig = np.diag(s)
+        idx = np.abs(seig) < lindep
+        t = np.ones_like(seig)
+        t[idx] = 0.
+        T = np.diag(t)
+        A = T@h@T
+        B = T@s@T
+        return A, B
+    lhs, rhs = zeroing_rows_and_cols(lhs, rhs, eps)
+    S_inv = pinv(rhs, rcond=tol)
+    A = np.dot(S_inv, lhs)
+    # Run scipy `linalg.eig` eigenvalue solver
+    w, v = eig(A)
+    # if np.any(np.iscomplex(w)):
+    #     print(f'Warning: complex eigenvalues found.')
+    # Return w (eigenvalues)
+    #    and v (eigenvector column matrix -- so transpose it!)
+    return w, v.T
+
+
+def prunned(lhs, rhs, eps=1.0e-2, tol=1.0e-10, err=None):
+    # print(f'Using prunned solver, eps {eps}')
+    def zeroing_rows_and_cols(h, s, lindep):
+        seig = np.diag(s)
+        # seig = eigh(s)[0]
+        idx = np.abs(seig) < lindep
+        t = np.ones_like(seig)
+        t[idx] = 0.
+        T = np.diag(t)
+        A = T@h@T
+        B = T@s@T
+        return A, B
+    lhs, rhs = zeroing_rows_and_cols(lhs, rhs, eps)
+    s, U = np.linalg.eigh(rhs)
+    idx = np.where(np.abs(s) > tol)[0]
+    B = np.dot(U[:, idx].T, np.dot(rhs, U[:, idx]))
+    A = np.dot(U[:, idx].T, np.dot(lhs, U[:, idx]))
+    w, v = eig(A, B)
+    v = np.dot(U[:, idx], v)
+    if np.any(np.iscomplex(w)):
+        print(f'Warning: complex eigenvalues found.')
+    # Return w (eigenvalues)
+    #    and v (eigenvector column matrix -- so transpose it!)
     return w, v.T
