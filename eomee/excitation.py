@@ -21,7 +21,7 @@ import numpy as np
 from scipy.integrate import quad as integrate
 
 from .base import EOMState
-from .tools import antisymmetrize, pickpositiveeig
+from .tools import antisymmetrize, pickpositiveeig, pick_singlets, pick_triplets
 
 
 __all__ = [
@@ -201,7 +201,7 @@ class WrappNonlinear:
             _tv += np.einsum("pr,qs->pqrs", rdm, rdm, optimize=True)
         return _tv
 
-    def __call__(self, alpha, *args, **kwargs):
+    def __call__(self, alpha, singlet=True, *args, **kwargs):
         """Compute integrand."""
         # Compute H^alpha
         h = alpha * self.dh
@@ -211,8 +211,23 @@ class WrappNonlinear:
         # Size of dimensions
         n = h.shape[0]
         # Solve EOM equations
-        w, c = self.method(h, v, self.dm1, self.dm2).solve_dense(*args, **kwargs)
-        _, c, _ = pickpositiveeig(w, c)
+        erpa = self.method(h, v, self.dm1, self.dm2)
+        w, c = erpa.solve_dense(*args, **kwargs)
+        ev_p, cv_p, _ = pickpositiveeig(w, c)
+        if singlet:
+            s_cv= pick_singlets(ev_p, cv_p)[1]
+            norm = np.dot(s_cv, np.dot(erpa.rhs, s_cv.T))
+            diag_n = np.diag(norm)
+            sqr_n = np.sqrt(diag_n)
+            c = (s_cv.T / sqr_n).T
+        else:
+            s_cv= pick_singlets(ev_p, cv_p)[1]
+            norm = np.dot(s_cv, np.dot(erpa.rhs, s_cv.T))
+            diag_n = np.diag(norm)
+            sqr_n = np.sqrt(diag_n)
+            s_cv = (s_cv.T / sqr_n).T
+            t_cv = pick_triplets(ev_p, cv_p)[1]
+            c = np.append(s_cv, t_cv, axis=0)
         # Compute transition RDMs (eq. 29)
         rdm_terms = WrappNonlinear.eval_tdmterms(n, self.dm1)
         tv = WrappNonlinear.eval_nonlinearterms(n, self.dm1, c, rdm_terms)

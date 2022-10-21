@@ -295,7 +295,7 @@ def make_gvbpp_hamiltonian(one_mo, two_mo, gem_matrix, dm1a):
 
     return one_mo_0, two_mo_0, two_mo_inter
 
-
+# FIXME: make pickpositiveeig return sorted w, c and remove sorting from pick_{singlet, triplet}
 def pickpositiveeig(w, cv, tol=0.01):
     r"""
     Adapted from PySCF TDSCF module.
