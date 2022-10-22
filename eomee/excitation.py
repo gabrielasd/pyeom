@@ -21,7 +21,7 @@ import numpy as np
 from scipy.integrate import quad as integrate
 
 from .base import EOMState
-from .tools import antisymmetrize, pickpositiveeig, pick_singlets, pick_triplets
+from .tools import antisymmetrize, pickpositiveeig, pick_singlets, pick_multiplets
 
 
 __all__ = [
@@ -150,6 +150,7 @@ class EOMExc(EOMState):
 
         output = {}
         output["ecorr"] = ecorr
+        output["linear"] = linear
         output["error"] = abserr
 
         return output
@@ -211,22 +212,22 @@ class WrappNonlinear:
         # Size of dimensions
         n = h.shape[0]
         # Solve EOM equations
-        erpa = self.method(h, v, self.dm1, self.dm2)
-        w, c = erpa.solve_dense(*args, **kwargs)
+        ph = self.method(h, v, self.dm1, self.dm2)
+        w, c = ph.solve_dense(*args, **kwargs)
         ev_p, cv_p, _ = pickpositiveeig(w, c)
         if singlet:
             s_cv= pick_singlets(ev_p, cv_p)[1]
-            norm = np.dot(s_cv, np.dot(erpa.rhs, s_cv.T))
+            norm = np.dot(s_cv, np.dot(ph.rhs, s_cv.T))
             diag_n = np.diag(norm)
             sqr_n = np.sqrt(diag_n)
             c = (s_cv.T / sqr_n).T
         else:
             s_cv= pick_singlets(ev_p, cv_p)[1]
-            norm = np.dot(s_cv, np.dot(erpa.rhs, s_cv.T))
+            norm = np.dot(s_cv, np.dot(ph.rhs, s_cv.T))
             diag_n = np.diag(norm)
             sqr_n = np.sqrt(diag_n)
             s_cv = (s_cv.T / sqr_n).T
-            t_cv = pick_triplets(ev_p, cv_p)[1]
+            t_cv = pick_multiplets(ev_p, cv_p)[1]
             c = np.append(s_cv, t_cv, axis=0)
         # Compute transition RDMs (eq. 29)
         rdm_terms = WrappNonlinear.eval_tdmterms(n, self.dm1)
