@@ -18,7 +18,8 @@ r"""Excitation EOM state class."""
 
 import numpy as np
 
-from scipy.integrate import quad as integrate
+# from scipy.integrate import quad as integrate
+from scipy.integrate import quadrature as integrate
 
 from .base import EOMState
 from .tools import antisymmetrize, pickpositiveeig, pick_singlets, pick_multiplets
@@ -145,7 +146,8 @@ class EOMExc(EOMState):
         # Compute ERPA correction energy
         # Nonlinear term (eq. 19 integrand)        
         function = WrappNonlinear(cls, h_0, v_0, dh, dv, dm1, dm2)
-        nonlinear, abserr = integrate(function, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)
+        # nonlinear, abserr = integrate(function, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)
+        nonlinear, abserr = integrate(function, 0, 1, tol=1.49e-04, maxiter=5, vec_func=False)
         ecorr = linear + 0.5 * nonlinear
 
         output = {}
