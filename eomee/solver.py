@@ -44,10 +44,10 @@ def nonsymmetric(lhs, rhs, tol=1.0e-10, err="ignore"):
     A = np.dot(rhs_inv, lhs)    # Apply RHS^-1 * LHS
     # Run scipy `linalg.eig` eigenvalue solver
     w, v = eig(A)
-    if len(np.iscomplex(w)) != 0:
-        print(f'Warning: complex eigenvalues found.')
-    # Return w (eigenvalues)
-    #    and v (eigenvector column matrix -- so transpose it!)
+    # if len(np.iscomplex(w)) != 0:
+    #     print(f'Warning: complex eigenvalues found.')
+    # # Return w (eigenvalues)
+    # #    and v (eigenvector column matrix -- so transpose it!)
     return w, v.T
 
 

@@ -19,9 +19,10 @@ r"""Double electron removal EOM state class."""
 import numpy as np
 
 from scipy.integrate import quad as integrate
+from scipy.integrate import quadrature as fixed_quad
 
 from .base import EOMState
-from .tools import pickpositiveeig
+from .tools import pickpositiveeig, pick_singlets, pick_multiplets
 
 
 __all__ = [
@@ -125,59 +126,104 @@ class EOMDIP(EOMState):
         # V_1 - V_0
         dv = v_1 - v_0
 
-        # Linear term (eq. 20)
-        # dh_pq * \gamma_pq
-        linear = np.einsum("pq,pq", dh, dm1, optimize=True)
+        linear = _hherpa_linearterms(dh, dm1)
 
+        # Nonlinear term (integrand)        
+        function = WrappNonlinear(cls, h_0, v_0, dh, dv, dm1, dm2)
+        # nonlinear, abserr = integrate(function, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)
+        nonlinear, abserr = fixed_quad(function, 0, 1, tol=1.49e-04, maxiter=5, vec_func=False)
+        # Compute ERPA correction energy
+        ecorr = linear + 0.5 * nonlinear
+
+        output = {}
+        output["ecorr"] = ecorr
+        output["linear"] = linear
+        output["error"] = abserr
+
+        return output
+
+
+def _hherpa_linearterms(_dh, _dm1):
+    # Linear term (eq. 20)
+    # dh_pq * \gamma_pq
+    _linear = np.einsum("pq,pq", _dh, _dm1, optimize=True)
+    return _linear
+
+
+class WrappNonlinear:
+    r"""Compute adiabatic connection integrand."""
+    def __init__(self, method, h0, v0, dh, dv, dm1, dm2):
+        self.h_0 = h0
+        self.v_0 = v0
+        self.dh = dh
+        self.dv = dv
+        # TODO: Check that method is EOMDIP
+        self.dm1 = dm1
+        self.dm2 = dm2
+        self.method = method
+    
+    @staticmethod
+    def eval_tdmterms(_n, _dm1):
         # Compute RDM terms of transition RDM
         # Gamma_pqrs = < | p^+ q^+ s r | >
         #            = \sum_{n=0} < | p^+ q^+ |N-2> <N-2|s r| >
         #
         # Commutator form: < |[p+ q+, i j]| >
         # \delta_{i k} \delta_{j l} - \delta_{i l} \delta_{j k}
-        rdm_terms = np.einsum("ik,jl->klji", np.eye(n), np.eye(n), optimize=True)
-        rdm_terms -= np.einsum("il,jk->klji", np.eye(n), np.eye(n), optimize=True)
+        _rdm_terms = np.einsum("ik,jl->klji", np.eye(_n), np.eye(_n), optimize=True)
+        _rdm_terms -= np.einsum("il,jk->klji", np.eye(_n), np.eye(_n), optimize=True)
         # - \delta_{i k} \left\{a^\dagger_{l} a_{j}\right\}
         # + \delta_{i l} \left\{a^\dagger_{k} a_{j}\right\}
-        rdm_terms -= np.einsum("ik,jl->klji", np.eye(n), dm1, optimize=True)
-        rdm_terms += np.einsum("il,jk->klji", np.eye(n), dm1, optimize=True)
+        _rdm_terms -= np.einsum("ik,jl->klji", np.eye(_n), _dm1, optimize=True)
+        _rdm_terms += np.einsum("il,jk->klji", np.eye(_n), _dm1, optimize=True)
         # - \delta_{j l} \left\{a^\dagger_{k} a_{i}\right\}
         # + \delta_{j k} \left\{a^\dagger_{l} a_{i}\right\}
-        rdm_terms -= np.einsum("jl,ik->klji", np.eye(n), dm1, optimize=True)
-        rdm_terms += np.einsum("jk,il->klji", np.eye(n), dm1, optimize=True)
+        _rdm_terms -= np.einsum("jl,ik->klji", np.eye(_n), _dm1, optimize=True)
+        _rdm_terms += np.einsum("jk,il->klji", np.eye(_n), _dm1, optimize=True)
+        return _rdm_terms
+    
+    @staticmethod
+    def eval_nonlinearterms(_n, _dm1, coeffs, rdmterms):
+        # Compute transition RDMs (eq. 32)
+        # \gamma_m;pq = c_m;ji * < |p+q+ji| >
+        rdms = np.einsum("mji,pqij->mpq", coeffs.reshape(coeffs.shape[0], _n, _n), rdmterms)
+        _tv = np.zeros((_n, _n, _n, _n), dtype=_dm1.dtype)
+        for rdm in rdms:
+            tv += np.einsum("pq,rs->pqrs", rdm, rdm, optimize=True)
+        return _tv
 
-        # # No commutator form: < |p+q+ji]| > = \Gamma_{pqij}
-        # rdm_terms = dm2
-        # Nonlinear term (eq. 20 integrand)
-        @np.vectorize
-        def nonlinear(alpha):
-            r""" """
-            # Compute H^alpha
-            h = alpha * dh
-            h += h_0
-            v = alpha * dv
-            v += v_0
-            # Antysymmetrize v_pqrs
-            # Solve EOM equations
-            w, c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)
-            _, c, _ = pickpositiveeig(w, c)
-            # Compute transition RDMs (eq. 32)
-            # \gamma_m;pq = c_m;ji * < |p+q+ji| >
-            rdms = np.einsum("mji,pqij->mpq", c.reshape(c.shape[0], n, n), rdm_terms)
-            # Compute nonlinear energy term
-            # dv_pqrs * {sum_{m}{\gamma_m;pq * \gamma_m;rs}}_pqrs
-            tv = np.zeros_like(dm2)
-            for rdm in rdms:
-                tv += np.einsum("pq,rs->pqrs", rdm, rdm, optimize=True)
-
-            return np.einsum("pqrs,pqrs", dv, tv/2, optimize=True)
-
-        # Compute ERPA correlation energy (eq. 20)
-        # return linear - 0.5 * fixed_quad(nonlinear, 0, 1, n=nint)[0]
-        return (
-            linear
-            + 0.5 * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[0]
-        )
+    def __call__(self, alpha, singlet=True, *args, **kwargs):
+        """Compute integrand."""
+        # Compute H^alpha
+        h = alpha * self.dh
+        h += self.h_0
+        v = alpha * self.dv
+        v += self.v_0
+        n = h.shape[0]
+        # Solve EOM equations
+        hh = self.method(h, v, self.dm1, self.dm2)
+        w, c = hh.solve_dense(*args, **kwargs)
+        ev_p, cv_p, _ = pickpositiveeig(w, c)
+        if singlet:
+            s_cv= pick_singlets(ev_p, cv_p)[1]
+            norm = np.dot(s_cv, np.dot(hh.rhs, s_cv.T))
+            diag_n = np.diag(norm)
+            sqr_n = np.sqrt(diag_n)
+            c = (s_cv.T / sqr_n).T
+        else:
+            s_cv= pick_singlets(ev_p, cv_p)[1]
+            norm = np.dot(s_cv, np.dot(hh.rhs, s_cv.T))
+            diag_n = np.diag(norm)
+            sqr_n = np.sqrt(diag_n)
+            s_cv = (s_cv.T / sqr_n).T
+            t_cv = pick_multiplets(ev_p, cv_p)[1]
+            c = np.append(s_cv, t_cv, axis=0)
+        # Compute transition RDMs (eq. 32)
+        rdm_terms = WrappNonlinear.eval_tdmterms(n, self.dm1)
+        tv = WrappNonlinear.eval_nonlinearterms(n, self.dm1, c, rdm_terms)
+        # Compute nonlinear energy term
+        # dv_pqrs * {sum_{m}{\gamma_m;pq * \gamma_m;rs}}_pqrs        
+        return np.einsum("pqrs,pqrs", self.dv, tv/2, optimize=True)
 
 
 class EOMDIP2(EOMState):
