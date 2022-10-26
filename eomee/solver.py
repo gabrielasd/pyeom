@@ -4,7 +4,7 @@ from scipy.linalg import eig, svd, pinv, eigh
 from numpy.lib.scimath import sqrt as csqrt
 
 
-def nonsymmetric(lhs, rhs, tol=1.0e-10, err="ignore"):
+def eig_svd(lhs, rhs, tol=1.0e-10, err="ignore"):
     r"""
     Solve the EOM eigenvalue system.
 
@@ -202,9 +202,7 @@ def safe_eig(h, s, tol=1e-10, err=None):
     return w, v.T
 
 
-def nonsymmetric2(lhs, rhs, eps=1.0e-2, tol=1.0e-10, err=None):
-    # print(f'Using nonsymm2 solver, eps {eps}')
-    def zeroing_rows_and_cols(h, s, lindep):
+def _zeroing_rows_and_cols(h, s, lindep):
         seig = np.diag(s)
         idx = np.abs(seig) < lindep
         t = np.ones_like(seig)
@@ -213,7 +211,11 @@ def nonsymmetric2(lhs, rhs, eps=1.0e-2, tol=1.0e-10, err=None):
         A = T@h@T
         B = T@s@T
         return A, B
-    lhs, rhs = zeroing_rows_and_cols(lhs, rhs, eps)
+
+
+def eig_pinv_Qtr(lhs, rhs, tol=1.0e-10, err=None):
+    # print(f'Using nonsymm2 solver, eps {tol}')    
+    lhs, rhs = _zeroing_rows_and_cols(lhs, rhs, tol)
     S_inv = pinv(rhs, rcond=tol)
     A = np.dot(S_inv, lhs)
     # Run scipy `linalg.eig` eigenvalue solver
@@ -225,27 +227,17 @@ def nonsymmetric2(lhs, rhs, eps=1.0e-2, tol=1.0e-10, err=None):
     return w, v.T
 
 
-def prunned(lhs, rhs, eps=1.0e-2, tol=1.0e-10, err=None):
-    # print(f'Using prunned solver, eps {eps}')
-    def zeroing_rows_and_cols(h, s, lindep):
-        seig = np.diag(s)
-        # seig = eigh(s)[0]
-        idx = np.abs(seig) < lindep
-        t = np.ones_like(seig)
-        t[idx] = 0.
-        T = np.diag(t)
-        A = T@h@T
-        B = T@s@T
-        return A, B
-    lhs, rhs = zeroing_rows_and_cols(lhs, rhs, eps)
+def eig_AB_prunned(lhs, rhs, tol=1.0e-10, err=None):
+    # print(f'Using prunned solver, eps {tol}')
+    lhs, rhs = _zeroing_rows_and_cols(lhs, rhs, tol)
     s, U = np.linalg.eigh(rhs)
     idx = np.where(np.abs(s) > tol)[0]
     B = np.dot(U[:, idx].T, np.dot(rhs, U[:, idx]))
     A = np.dot(U[:, idx].T, np.dot(lhs, U[:, idx]))
     w, v = eig(A, B)
     v = np.dot(U[:, idx], v)
-    if np.any(np.iscomplex(w)):
-        print(f'Warning: complex eigenvalues found.')
-    # Return w (eigenvalues)
-    #    and v (eigenvector column matrix -- so transpose it!)
+    # if np.any(np.iscomplex(w)):
+    #     print(f'Warning: complex eigenvalues found.')
+    # # Return w (eigenvalues)
+    # #    and v (eigenvector column matrix -- so transpose it!)
     return w, v.T
