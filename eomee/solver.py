@@ -181,3 +181,23 @@ def lowdin_complex(lhs, rhs, tol=1.0e-10):
     if len(np.iscomplex(w)) != 0:
         print(f'Warning: complex eigenvalues found.')
     return w, v.T
+
+
+def eig_pinv(lhs, rhs, tol=1.0e-10, err=None):
+    def zeroing_rows_and_cols(h, s, lindep):
+        seig = np.diag(s)
+        idx = np.abs(seig) < lindep
+        t = np.ones_like(seig)
+        t[idx] = 0.
+        T = np.diag(t)
+        A = T@h@T
+        B = T@s@T
+        return A, B
+    lhs, rhs = zeroing_rows_and_cols(lhs, rhs, tol)
+    S_inv = pinv(rhs, rcond=tol)
+    A = np.dot(S_inv, lhs)
+    # Run scipy `linalg.eig` eigenvalue solver
+    w, v = eig(A)
+    # if np.any(np.iscomplex(w)):
+    #     print(f'Warning: complex eigenvalues found.')
+    return w, v.T
