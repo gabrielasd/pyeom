@@ -226,6 +226,42 @@ def make_doci_hamiltonian(one_mo, two_mo):
     return one_mo_sen0, two_mo_sen0
 
 
+def make_doci_ham_spinized(one_mo, two_mo):
+    # DOCI Hamiltonian
+    n = one_mo.shape[0]
+    m = 2*n
+    one_int_aa = np.zeros((n,n))
+    two_int_aaaa = np.zeros((n,n,n,n))
+    two_int_abab = np.zeros((n,n,n,n))
+
+    for p in range(n):
+        one_int_aa[p, p] = one_mo[p, p]
+    # aaaa
+    for p in range(n):
+        for q in range(n):
+            #may need to exclude p==q
+            two_int_aaaa[p, q, p, q] = two_mo[p, q, p, q] 
+            two_int_aaaa[p, q, q, p] = two_mo[p, q, q, p]
+    # abab        
+    for p in range(n):
+        for q in range(n):
+            two_int_abab[p, p, q, q] = two_mo[p, p, q, q]
+            two_int_abab[p, q, p, q] = two_mo[p, q, p, q] # p==q overwrites above
+    
+    _h = np.zeros((m, m))
+    _h[:n, :n] = one_int_aa
+    _h[n:, n:] = one_int_aa
+    _v = np.zeros((m, m, m, m))
+    # aaaa
+    _v[:n, :n, :n, :n] = two_int_aaaa
+    # bbbb
+    _v[n:, n:, n:, n:] = two_int_aaaa
+    # abab
+    _v[:n, n:, :n, n:] = two_int_abab
+    _v[n:, :n, n:, :n] = two_int_abab.transpose((1,0,3,2))
+    return _h, _v
+
+
 def make_spinized_fock_hamiltonian(one_mo, two_mo, one_dm):
     one_mo = spinize(one_mo)
     two_mo = spinize(two_mo)
