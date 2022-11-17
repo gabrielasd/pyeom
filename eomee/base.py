@@ -23,7 +23,7 @@ import numpy as np
 from scipy.linalg import eig, svd
 from scipy.sparse.linalg import eigs
 
-from .solver import nonsymmetric, svd_lowdin
+from .solver import nonsymmetric, svd_lowdin, eig_pinv
 
 from .tools import antisymmetrize
 
@@ -287,14 +287,14 @@ class EOMState(metaclass=ABCMeta):
             Eigenvector matrix (m eigenvectors).
 
         """
-        modes = {'nonsymm': nonsymmetric, 'symm': svd_lowdin}
+        modes = {'nonsymm': nonsymmetric, 'symm': svd_lowdin, 'qtrunc': eig_pinv}
         if not isinstance(tol, float):
             raise TypeError("Argument tol must be a float")        
         try:
             _solver = modes[mode]
         except KeyError:
             print(
-                "Invalid mode parameter. Valid options are nonsymm or symm."
+                "Invalid mode parameter. Valid options are nonsymm, symm or qtrunc."
             )
         
         w, v = _solver(self._lhs, self._rhs, tol=tol, err=err)
