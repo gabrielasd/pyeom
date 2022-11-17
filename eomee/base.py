@@ -29,7 +29,7 @@ from .tools import antisymmetrize
 
 
 __all__ = [
-    "EOMBase",
+    "EOMState",
 ]
 
 
