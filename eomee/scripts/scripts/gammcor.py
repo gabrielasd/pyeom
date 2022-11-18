@@ -244,7 +244,7 @@ def process_gammcor(args):
             continue
         
         content = os.popen(f"grep 'Final\ GVB-PP\ energy' {molname}.out").read()
-        # print("The content is: ", content)
+        print("The content is: ", content)
         if "NOT CONVERGED" in content:
             print(f"{fp_job}: GVB-PP did not converge")
             os.chdir(base_database)
@@ -256,6 +256,7 @@ def process_gammcor(args):
         if content is None:
             print(f"Abnormal GammCor termination in {fp_job}")
             gammcor_aborted.append(fp_job)
+            os.chdir(base_database)
             continue
         etot = float(content.split()[-1])
         ecorr = float(content.split()[-2])
@@ -267,6 +268,7 @@ def process_gammcor(args):
         if len(data) != 6:
             print(f"Missing data files in {fp_job}")
             gammcor_missfiles.append(fp_job)
+            os.chdir(base_database)
             continue
         el_files = ['gvb_1el_integ.dat', 'gvb_2el_integ.dat']
         one_int, two_int = get_gammcor_hamiltonian(el_files)
@@ -276,8 +278,13 @@ def process_gammcor(args):
         assert nb == one_int.shape[0]
         # FIXME: figure rignt way to asign coeffs to geminals
         coeffs = np.zeros(nb)
-        coeffs[:ngems] = load_geminals_coeffs(f'{molname}.out')
-        # coeffs = load_geminals_coeffs(f'{molname}.out')
+        # ninactive = 0
+        # stop = 2 * (ngems -1 - ninactive)
+        # coeffs[:ninactive] = 1.0
+        # coeffs[ninactive:stop] = load_geminals_coeffs(f'{molname}.out')
+        stop = 2 * (ngems - 1 )
+        coeffs[:stop] = load_geminals_coeffs(f'{molname}.out')
+        ## coeffs = load_geminals_coeffs(f'{molname}.out')
         dm1, dm2aa, dm2ab = make_gvbpp_rdms(gem_matrix, coeffs)
         rdm1 = [dm1, dm1]
         rdm2 = [dm2aa, dm2ab]    

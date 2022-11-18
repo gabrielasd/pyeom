@@ -3,8 +3,8 @@
 Calculation
  JobTitle   TEST
  Interface  DALTON
- !JobType    AC  ! ERPA
- JobType    ERPA
+ JobType    AC
+ !JobType    ERPA
  Triplet    True
  RDMType    GVB
  IPrint     5
@@ -15,8 +15,8 @@ end
 System
  ZNucl   $znucl
  Charge  $charge
-  ThrAct     $ThrAct
-  ThrSelAct  1.d-$ThrSelAct
+ ThrAct     $ThrAct
+ ThrSelAct  1.d-$ThrSelAct
 end
 
 

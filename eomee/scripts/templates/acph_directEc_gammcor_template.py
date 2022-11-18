@@ -3,7 +3,7 @@ import os
 
 import numpy as np
 
-from scipy.integrate import quadrature as gauss
+from scipy.integrate import fixed_quad
 
 import pyci
 
@@ -11,7 +11,7 @@ from eomee.excitation import EOMExc, WrappNonlinear,  _pherpa_linearterms
 from eomee.tools import spinize, pickpositiveeig, TDM
 from eomee.solver import nonsymmetric as solver_d
 # from eomee.solver import nonsymmetric2 as solver_d2
-from eomee.solver import eig_pinv as solver_d3
+from eomee.solver import eig_pinv as solver_d3 
 
 
 def fill_ham_inter(two_mo0, two_mo, set_i, set_j, dm1):
@@ -130,38 +130,105 @@ def build_ph_gevp(h0, v0, h1, v1, rdm1, rdm2, alpha):
     return EOMExc(h, v, rdm1, rdm2)
 
 
-def omega_alpha(cv_ab, dvv, dm1, dm2):    
-    tdms = TDM(cv_ab, dm1, dm2).get_tdm('ph', comm=True)
-    tdtd = np.zeros_like(dm2)
-    for rdm in tdms:
-        tdtd += np.einsum("pr,qs->pqrs", rdm, rdm.T, optimize=True)
-    dv_tdm = np.einsum("pqrs,pqrs", dvv, tdtd)
-    return dv_tdm
+def load_accepted_pairs(fname):
+    npairs = os.popen(f"grep 'Reduced\ to' {fname}").read()
+    npairs = int(npairs.split()[-1])
+    with open(fname, 'r') as f:
+        content = f.read()
+    last = content.split('Accepted pairs read:\n')[-1]
+    accepted = last.split('\n')[:npairs]
+    fn = lambda _row,x: int(_row.split()[x].strip()) -1 
+    accepted = [[fn(row,0), fn(row,1)] for row in accepted]
+    return accepted, npairs
 
 
-def W_alpha(la, _h0, _v0, _h1, _v1, rdm1, rdm2, _eigs, tol, singlet):
-    solvers = {'nonsymm': solver_d, 'qtrunc': solver_d3} #, 'nonsymm2': solver_d2
-    solver = solvers[_eigs]
-    dvv = _v1 - _v0
-    erpa = build_ph_gevp(_h0, _v0, _h1, _v1, rdm1, rdm2, la)
-    ev, cv = solver(erpa.lhs, erpa.rhs, tol=tol)
+def truncate_w_alpha_exch_accepted_pairs(_nbasis, _dv, _dm1dm1, _eyedm1, pairs):
+    alpha_indep = 0
+    # Only contributions from same spin components
+    # alpha alpha alpha alpha
+    _dv_aa = _dv[:_nbasis, :_nbasis, :_nbasis, :_nbasis]
+    _dm1dm1_aa = _dm1dm1[:_nbasis, :_nbasis, :_nbasis, :_nbasis]
+    _eyedm1_aa = _eyedm1[:_nbasis, :_nbasis, :_nbasis, :_nbasis]
+    for p, q in pairs:
+        for r, s in pairs:
+            alpha_indep += 0.5 * _dv_aa[p,q,r,s] * _dm1dm1_aa[p,q,r,s]
+            alpha_indep += 0.5 * _dv_aa[q,p,r,s] * _dm1dm1_aa[q,p,r,s]
+            alpha_indep += 0.5 * _dv_aa[p,q,s,r] * _dm1dm1_aa[p,q,s,r]
+            alpha_indep += 0.5 * _dv_aa[q,p,s,r] * _dm1dm1_aa[q,p,s,r]
+            alpha_indep -= 0.5 * _dv_aa[p,q,r,s] * _eyedm1_aa[p,q,r,s]
+            alpha_indep -= 0.5 * _dv_aa[q,p,r,s] * _eyedm1_aa[q,p,r,s]
+            alpha_indep -= 0.5 * _dv_aa[p,q,s,r] * _eyedm1_aa[p,q,s,r]
+            alpha_indep -= 0.5 * _dv_aa[q,p,s,r] * _eyedm1_aa[q,p,s,r]
+    alpha_indep *= 2
+    return alpha_indep
+
+
+def truncate_w_alpha_exchange_terms(_nbasis, rhs, _dv, _dm1dm1, _eyedm1, tol):
+    alpha_indep = 0
+    nspins = 2*_nbasis
+    nt = nspins**2
+    ij_d_occs = np.diag(rhs)
+    for pq in range(nt):
+        for rs in range(nt):
+            cond1 = np.abs(ij_d_occs[pq]) > tol
+            cond2 = np.abs(ij_d_occs[rs]) > tol
+            if cond1 and cond2:
+                p = pq//nspins
+                q = pq%nspins
+                r = rs//nspins
+                s = rs%nspins
+                alpha_indep += _dv[p,q,r,s] * _dm1dm1[p,q,r,s]
+                alpha_indep -= _dv[p,q,r,s] * _eyedm1[p,q,r,s]
+    return 0.5*alpha_indep
+
+
+def _erpa_tdms(erpa, _dm1, _dm2, _eigsol, _eig_tol, singl=True):
+    solve_gevp = {'nonsymm': solver_d, 'qtrunc': solver_d3}[_eigsol]
+    ev, cv = solve_gevp(erpa.lhs, erpa.rhs, tol=_eig_tol)
     ev, cv = np.real(ev), np.real(cv)
-    ev_p, cv_p, _ = pickpositiveeig(ev, cv)
-    if singlet:
-        s_cv= get_singlets(ev_p, cv_p)[1]
+    pev, pcv, _ = pickpositiveeig(ev, cv)
+    ###
+    if singl:
+        s_cv = get_singlets(pev, pcv)[1]
         norm = np.dot(s_cv, np.dot(erpa.rhs, s_cv.T))
         diag_n = np.diag(norm)
-        sqr_n = np.sqrt(np.abs(diag_n)) #sqr_n = np.sqrt(diag_n)
+        sqr_n = np.sqrt(np.abs(diag_n))
         new_cv = s_cv.T / sqr_n
-        cv_s = new_cv.T
-        w_l = omega_alpha(cv_s, dvv, rdm1, rdm2)
+        pcv = new_cv.T
     else:
-        cv_t = get_triplets(ev_p, cv_p)[1]
-        w_l = omega_alpha(cv_t, dvv, rdm1, rdm2)
-    return w_l
+        pcv = get_triplets(pev, pcv)[1]
+    ###
+    tdms = TDM(pcv, _dm1, _dm2).get_tdm('ph', comm=True)
+    _tdtd = np.zeros_like(_dm2)
+    for rdm in tdms:
+        _tdtd += np.einsum("pr,qs->pqrs", rdm, rdm.T, optimize=True)
+    return _tdtd
 
 
-def run_acph(NAME, operator, eigs, eigtol, alpha):
+def omega_alpha_summ(erpa, _dv, dm1, dm2, _eigsol, eig_tol):
+    tdtd = _erpa_tdms(erpa, dm1, dm2, _eigsol, eig_tol, singl=True)
+    w_alpha = 0.5*np.einsum("pqrs,pqrs", _dv, tdtd)
+    tdtd = _erpa_tdms(erpa, dm1, dm2, _eigsol, eig_tol, singl=False)
+    w_alpha += 0.5*np.einsum("pqrs,pqrs", _dv, tdtd)
+    return w_alpha
+
+
+def int_w_alpha_gauss(_n, _h0, _v0, _h1, _v1, rdm1, rdm2, gpairs, dv, exc_terms, _eigsol, eig_tol=1.e-7):
+    dm1dm1_ex, eyedm1_ex = exc_terms
+    @np.vectorize
+    def _func(alpha):
+        _erpa = build_ph_gevp(_h0, _v0, _h1, _v1, rdm1, rdm2, alpha)
+        w_l = omega_alpha_summ(_erpa, dv, rdm1, rdm2, _eigsol, eigtol)
+        if gpairs is not None:
+            exch = truncate_w_alpha_exch_accepted_pairs(_n, dv, dm1dm1_ex, eyedm1_ex, gpairs)
+        else:
+            exch = truncate_w_alpha_exchange_terms(_n, _erpa.rhs, dv, dm1dm1_ex, eyedm1_ex, eig_tol)
+        return w_l + exch
+    
+    return fixed_quad(_func, 0, 1, n=5)[0]
+
+
+def run_acph(NAME, operator, eigs, eigtol):
     # Get electron integrals in MO format
     print('Load Hamiltonian')
     if not os.path.isfile(f'{NAME}.ham.npz'):
@@ -176,6 +243,7 @@ def run_acph(NAME, operator, eigs, eigtol, alpha):
     if not os.path.isfile(f"{NAME}.gvb.npz"):
         raise ValueError(f"{NAME}.gvb.npz not found")
     data = np.load(f"{NAME}.gvb.npz")
+    energy_gvb = data["energy"]
     dm1aa, dm1ab = data['rdm1']
     rdm1 = from_spins([dm1aa, dm1ab])
     dm2aaaa, dm2abab = data['rdm2']
@@ -208,27 +276,21 @@ def run_acph(NAME, operator, eigs, eigtol, alpha):
     v0 = spinize(two_mo_0)
     h1 = spinize(one_mo) 
     v1 = spinize(two_mo)
-    dh= h1-h0
+    # dh= h1-h0
     dv= v1-v0
-    energy = np.einsum('ij,ji', h0, rdm1) + 0.5 * np.einsum('ijkl,ijkl', v0, rdm2)
 
-    linear = _pherpa_linearterms(h1.shape[0], dh, dv, rdm1)
-    # min, max, step = alpha
-    # walpha_sing = W_alpha(h0, v0, h1, v1, rdm1, rdm2, alpha, eigs, eigtol, singlet=True)
-    # walpha_trip = W_alpha(h0, v0, h1, v1, rdm1, rdm2, alpha, eigs, eigtol, singlet=False)
-    
-    # int_wa_s = np.trapz(walpha_sing, dx=step)
-    # int_wa_t = np.trapz(walpha_trip, dx=step)
-    arg_s = (h0, v0, h1, v1, rdm1, rdm2, eigs, eigtol, True)
-    args_t = (h0, v0, h1, v1, rdm1, rdm2, eigs, eigtol, False)
-    int_wa_s = gauss(W_alpha, 0, 1, args=arg_s, tol=1.e-4, maxiter=5, vec_func=False)[0]
-    int_wa_t = gauss(W_alpha, 0, 1, args=args_t, tol=1.e-4, maxiter=5, vec_func=False)[0]
-    nonlinear = int_wa_s + int_wa_t
-    ecorr = linear + 0.5 * nonlinear
-    etot = energy + ecorr + nucnuc
+    dm1dm1_ex = np.einsum("ps,qr->pqrs", rdm1, rdm1)
+    eyedm1_ex = np.einsum("ps,qr->pqrs", rdm1, np.eye(rdm1.shape[0]))
+    ph = build_ph_gevp(h0, v0, h1, v1, rdm1, rdm2, 0)
+    pairs, _  = load_accepted_pairs("gammcor.out")
+    # aindep_exch = truncate_w_alpha_exchange_terms(nbasis, ph.rhs, dv, dm1dm1_ex, eyedm1_ex, eigtol)
+    aindep_exch = truncate_w_alpha_exch_accepted_pairs(nbasis, dv, dm1dm1_ex, eyedm1_ex, pairs)
+    terms = [dm1dm1_ex, eyedm1_ex]
+    ecorr = int_w_alpha_gauss(nbasis, h0, v0, h1, v1, rdm1, rdm2, pairs, dv, terms, eigs, eigtol)
+    etot = energy_gvb + ecorr
 
     # Save EOM results
-    np.savez(f"{NAME}.ac{operator}{eigs}.npz", energy=etot, ecorr=ecorr, ctnt=linear, integ=nonlinear, intega=int_wa_s, abserr=None)
+    np.savez(f"{NAME}.ac{operator}{eigs}.npz", energy=etot, ecorr=ecorr, ctnt=aindep_exch, integ=None, abserr=None)
     print('')
 
 
@@ -236,7 +298,6 @@ NAME = '$output'
 CHARGE = $charge
 MULT = $spinmult
 eigtol = 1.0e-5
-alpha = [0.0, 1.1, 0.1]
 
 
-run_acph(NAME, 'ph', 'nonsymm', eigtol, alpha) #'safe', 'nonsymm
+run_acph(NAME, 'ph', 'qtrunc', eigtol) #'safe', 'nonsymm

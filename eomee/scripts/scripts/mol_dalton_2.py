@@ -1,16 +1,19 @@
 import sys
+sys.path.insert(0, '../../numdata/work_data/')
 from glob import glob
 import os
 import numpy as np
 from string import Template
 
 
-def make_geom(dirname, dists, basis, template_name): 
-    """Make a .mol file.
+def make_geom(atnames, dirname, dists, basis, aunits, template_name): 
+    """Make a geometry file 2(H2) asymmetric chain molecule.
+    MolFactory chain_asymm: 'ch2'.
     """
+    from src.scripts.generate_xyz import MolFactory
+
     if not os.path.exists(dirname):
         os.makedirs(dirname)
-        # os.system(f'mkdir {dirname}')
     os.chdir(dirname)
 
     params = { "basis_set1": basis}
@@ -18,12 +21,20 @@ def make_geom(dirname, dists, basis, template_name):
         content = f.read()
     template = Template(content)
 
-    for bond in dists:
-        params['blength'] = f'{bond:.11f}'
+    for b in dists:
+        bintra = 2.0
+        geom = MolFactory.from_shape(atnames, 'ch2', [bintra, b], bohr=aunits)
+        geom.to_xyz(f'temp.xyz')
+
+        with open('temp.xyz', 'r') as f:
+            content = f.read()
+        number, title, geometry = content.split('\n', 2)
+        params['GEOM'] = geometry
         string = template.substitute(params)
+        os.system('rm temp.xyz')
 
         # write input file    
-        with open(f'{dirname}_{bond:.2f}.mol', 'w') as f:
+        with open(f'{dirname}_{b:.2f}.mol', 'w') as f:
             f.write(string)
     os.chdir('..')
 
@@ -44,20 +55,14 @@ def make_mol_dirs(dirname):
 
 
 if __name__ == "__main__":
-    prefix = 'h2o'   
-    bonds = np.arange(0.7, 4.4, 0.1)
-    basisset = '6-31G'  #'cc-pVDZ'
-    template_path = f'../../templates/h2o.mol' #f'../common/h2o.mol'  #
-    # prefix = 'n2'   
-    # bonds = np.arange(0.7, 4.4, 0.1)
-    # basisset = 'cc-pVDZ'
-    # template_path = f'../../templates/n2.mol'
-    # prefix = 'h2'   
-    # bonds = np.arange(0.4, 5.1, 0.1)
-    # basisset = 'STO-6G' #'6-31G'
-    # template_path = f'../../templates/H2.mol'
+    atms = ['H', 'H', 'H', 'H']
+    prefix = 'h4_achain'   
+    bonds = np.arange(1.0, 7.2, 0.2)
+    aunits = True
+    basisset = '3-21G'  
+    template_path = f'../../templates/H4ach.mol'
 
     # Make geometry
-    make_geom(prefix, bonds, basisset, template_path)
+    make_geom(atms, prefix, bonds, basisset, aunits, template_path)
 
     make_mol_dirs(prefix)

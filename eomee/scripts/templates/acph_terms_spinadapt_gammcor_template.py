@@ -130,13 +130,36 @@ def build_ph_gevp(h0, v0, h1, v1, rdm1, rdm2, alpha):
     return EOMExc(h, v, rdm1, rdm2)
 
 
-def omega_alpha(cv_ab, dvv, dm1, dm2):    
-    tdms = TDM(cv_ab, dm1, dm2).get_tdm('ph', comm=True)
-    tdtd = np.zeros_like(dm2)
-    for rdm in tdms:
-        tdtd += np.einsum("pr,qs->pqrs", rdm, rdm.T, optimize=True)
+def omega_alpha_spinadapted(cv_aa, dvv, metric):
+    nb = metric.shape[0]
+    cv = cv_aa.reshape(cv_aa.shape[0], nb, nb)
+    tdms_aa =  np.einsum("mrs,pqsr->mpq", cv, metric)
+    tdtd_aa = np.zeros_like(metric)
+    for rdm in tdms_aa:
+        tdtd_aa += np.einsum("pr,qs->pqrs", rdm, rdm.T, optimize=True)
+    tdtd_aa = 0.5 * tdtd_aa
+    tdtd = spinize(tdtd_aa)
     dv_tdm = np.einsum("pqrs,pqrs", dvv, tdtd)
     return dv_tdm
+
+
+def spin_adapt_singles(nbasis, lhs, rhs):
+    nspins = 2 * nbasis
+    lhs = lhs.reshape(nspins, nspins, nspins, nspins)
+    rhs = rhs.reshape(nspins, nspins, nspins, nspins)
+    A_aaaa = lhs[:nbasis, :nbasis, :nbasis, :nbasis]
+    A_bbbb = lhs[nbasis:, nbasis:, nbasis:, nbasis:]
+    A_aabb = lhs[:nbasis, :nbasis, nbasis:, nbasis:]
+    A_bbaa = lhs[nbasis:, nbasis:, :nbasis, :nbasis]
+    M_aaaa = rhs[:nbasis, :nbasis, :nbasis, :nbasis]
+    M_bbbb = rhs[nbasis:, nbasis:, nbasis:, nbasis:]
+    M_aabb = rhs[:nbasis, :nbasis, nbasis:, nbasis:]
+    M_bbaa = rhs[nbasis:, nbasis:, :nbasis, :nbasis]
+    A_sa = A_aaaa + A_bbbb + A_aabb + A_bbaa
+    M_sa = M_aaaa + M_bbbb + M_aabb + M_bbaa
+    A_sa = 0.5*A_sa.reshape(nbasis**2, nbasis**2)
+    M_sa = 0.5*M_sa.reshape(nbasis**2, nbasis**2)
+    return A_sa, M_sa
 
 
 def W_alpha(la, _h0, _v0, _h1, _v1, rdm1, rdm2, _eigs, tol, singlet):
@@ -144,20 +167,21 @@ def W_alpha(la, _h0, _v0, _h1, _v1, rdm1, rdm2, _eigs, tol, singlet):
     solver = solvers[_eigs]
     dvv = _v1 - _v0
     erpa = build_ph_gevp(_h0, _v0, _h1, _v1, rdm1, rdm2, la)
-    ev, cv = solver(erpa.lhs, erpa.rhs, tol=tol)
+    nbasis = erpa.n // 2
+    _lhs, _rhs = spin_adapt_singles(nbasis, erpa.lhs, erpa.rhs)
+    ev, cv = solver(_lhs, _rhs, tol=tol)
     ev, cv = np.real(ev), np.real(cv)
     ev_p, cv_p, _ = pickpositiveeig(ev, cv)
     if singlet:
-        s_cv= get_singlets(ev_p, cv_p)[1]
-        norm = np.dot(s_cv, np.dot(erpa.rhs, s_cv.T))
+        norm = np.dot(cv_p, np.dot(_rhs, cv_p.T))
         diag_n = np.diag(norm)
         sqr_n = np.sqrt(np.abs(diag_n)) #sqr_n = np.sqrt(diag_n)
-        new_cv = s_cv.T / sqr_n
-        cv_s = new_cv.T
-        w_l = omega_alpha(cv_s, dvv, rdm1, rdm2)
+        new_cv = cv_p.T / sqr_n
+        cv_p = new_cv.T
+        _rhs = _rhs.reshape(nbasis, nbasis, nbasis, nbasis)
+        w_l = omega_alpha_spinadapted(cv_p, dvv, _rhs)
     else:
-        cv_t = get_triplets(ev_p, cv_p)[1]
-        w_l = omega_alpha(cv_t, dvv, rdm1, rdm2)
+        raise NotImplementedError
     return w_l
 
 
@@ -220,10 +244,10 @@ def run_acph(NAME, operator, eigs, eigtol, alpha):
     # int_wa_s = np.trapz(walpha_sing, dx=step)
     # int_wa_t = np.trapz(walpha_trip, dx=step)
     arg_s = (h0, v0, h1, v1, rdm1, rdm2, eigs, eigtol, True)
-    args_t = (h0, v0, h1, v1, rdm1, rdm2, eigs, eigtol, False)
+    # args_t = (h0, v0, h1, v1, rdm1, rdm2, eigs, eigtol, False)
     int_wa_s = gauss(W_alpha, 0, 1, args=arg_s, tol=1.e-4, maxiter=5, vec_func=False)[0]
-    int_wa_t = gauss(W_alpha, 0, 1, args=args_t, tol=1.e-4, maxiter=5, vec_func=False)[0]
-    nonlinear = int_wa_s + int_wa_t
+    # int_wa_t = gauss(W_alpha, 0, 1, args=args_t, tol=1.e-4, maxiter=5, vec_func=False)[0]
+    nonlinear = int_wa_s #+ int_wa_t
     ecorr = linear + 0.5 * nonlinear
     etot = energy + ecorr + nucnuc
 
@@ -239,4 +263,4 @@ eigtol = 1.0e-5
 alpha = [0.0, 1.1, 0.1]
 
 
-run_acph(NAME, 'ph', 'nonsymm', eigtol, alpha) #'safe', 'nonsymm
+run_acph(NAME, 'ph', 'qtrunc', eigtol, alpha) #'safe', 'nonsymm

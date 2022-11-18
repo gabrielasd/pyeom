@@ -14,45 +14,64 @@ from eomee.solver import nonsymmetric as solver_d
 from eomee.solver import eig_pinv as solver_d3
 
 
-def fill_ham_inter(two_mo0, two_mo, set_i, set_j, dm1):
-    for p in set_i:
-        for q in set_i:
-            for r in set_j:
-                # g_pqrs_aaaa
-                two_mo0 [p, q]+= dm1[r,r]*two_mo[p,r,q,r]
-                two_mo0[p, q] -= dm1[r,r]*two_mo[p,r,r,q]
-                # g_pqrs_abab
-                two_mo0[p, q] += dm1[r,r]*two_mo[p,r,q,r]
-    return two_mo0
+def make_doci_hamiltonian(one_mo, two_mo):
+    nbasis = one_mo.shape[0]
+    one_mo_sen0 = np.zeros_like(one_mo)
+    two_mo_sen0 = np.zeros_like(two_mo)
+    for p in range(nbasis):
+        one_mo_sen0[p, p] = one_mo[p, p]
+        for q in range(nbasis):
+            two_mo_sen0[p, p, q, q] = two_mo[p, p, q, q]
+            two_mo_sen0[p, q, p, q] = two_mo[p, q, p, q]
+            two_mo_sen0[p, q, q, p] = two_mo[p, q, q, p]
+    return one_mo_sen0, two_mo_sen0
 
 
-def fill_ham_intra(one_mo0, two_mo0, one_mo, two_mo, set_i):
-    for p in set_i:
-        for q in set_i:
-            one_mo0[p, q] = one_mo[p, q]
-            for r in set_i:
-                for s in set_i:
-                    two_mo0[p, q, r, s] = two_mo[p, q, r, s]
-    return one_mo0, two_mo0
+def ham0_spinized(one_mo, two_mo):
+    # DOCI Hamiltonian
+    n = one_mo.shape[0]
+    m = 2*n
+    one_int_aa = np.zeros((n,n))
+    two_int_aaaa = np.zeros((n,n,n,n))
+    two_int_abab = np.zeros((n,n,n,n))
+
+    for p in range(n):
+        one_int_aa[p, p] = one_mo[p, p]
+    # aaaa
+    for p in range(n):
+        for q in range(n):
+            #may need to exclude p==q
+            two_int_aaaa[p, q, p, q] = two_mo[p, q, p, q] 
+            two_int_aaaa[p, q, q, p] = two_mo[p, q, q, p]
+    # abab        
+    for p in range(n):
+        for q in range(n):
+            two_int_abab[p, p, q, q] = two_mo[p, p, q, q]
+            two_int_abab[p, q, p, q] = two_mo[p, q, p, q] #may need to exclude p==q
+    
+    _h = np.zeros((m, m))
+    _h[:n, :n] = one_int_aa
+    _h[n:, n:] = one_int_aa
+    _v = np.zeros((m, m, m, m))
+    # aaaa
+    _v[:n, :n, :n, :n] = two_int_aaaa
+    # bbbb
+    _v[n:, n:, n:, n:] = two_int_aaaa
+    # abab
+    _v[:n, n:, :n, n:] = two_int_abab
+    _v[n:, :n, n:, :n] = two_int_abab.transpose((1,0,3,2))
+    return _h, _v
 
 
-def make_gvbpp_ham_zero(one_mo, two_mo, gem_matrix, dm1a):
-    k = one_mo.shape[0]
-    assert k == gem_matrix.shape[0]
-    n_gems = gem_matrix.shape[1]    
+def get_pyci_rdms(nparts, nuc_rep, h, g):
+    ham = pyci.hamiltonian(nuc_rep, h, g)
+    wfn = pyci.doci_wfn(ham.nbasis, *nparts)
+    wfn.add_all_dets()
 
-    one_mo0 = np.zeros_like(one_mo)
-    two_mo0 = np.zeros_like(two_mo)
-    two_mo_inter = np.zeros_like(one_mo)
-    for i in range(n_gems):
-        gem_i = np.nonzero(gem_matrix.T[i])[0]
-        one_mo_0, two_mo_0 = fill_ham_intra(one_mo0, two_mo0, one_mo, two_mo, gem_i)
-        for j in range(n_gems):
-            if j != i:
-                gem_j = np.nonzero(gem_matrix.T[j])[0]
-                two_mo_inter = fill_ham_inter(two_mo_inter, two_mo, gem_i, gem_j, dm1a)    
-
-    return one_mo_0, two_mo_0, two_mo_inter
+    op = pyci.sparse_op(ham, wfn)
+    ev, cv = op.solve(n=1, tol=1.0e-9)
+    d1, d2 = pyci.compute_rdms(wfn, cv[0])
+    return pyci.spinize_rdms(d1, d2)
 
 
 def from_spins(blocks):
@@ -107,6 +126,7 @@ def get_singlets(eigvals, eigvecs):
     singlets_cv = eigvecs[singlet_idx]
     return singlets_ev, singlets_cv, singlet_idx
 
+
 def get_triplets(eigvals, eigvecs):
     # sort ev and cv correspondingly
     idx = eigvals.argsort()
@@ -119,6 +139,15 @@ def get_triplets(eigvals, eigvecs):
     return triplets_ev, triplets_cv
 
 
+def omega_alpha(cv_aa, dvv, dm1, dm2):
+    tdms = TDM(cv_aa, dm1, dm2).get_tdm('ph', comm=True)
+    tdtd = np.zeros_like(dm2)
+    for rdm in tdms:
+        tdtd += np.einsum("pr,qs->pqrs", rdm, rdm.T, optimize=True)
+    dv_tdm = np.einsum("pqrs,pqrs", dvv, tdtd)
+    return dv_tdm
+
+
 def build_ph_gevp(h0, v0, h1, v1, rdm1, rdm2, alpha):
     # Compute H^alpha
     dh= h1-h0
@@ -128,15 +157,6 @@ def build_ph_gevp(h0, v0, h1, v1, rdm1, rdm2, alpha):
     v = alpha * dv
     v += v0
     return EOMExc(h, v, rdm1, rdm2)
-
-
-def omega_alpha(cv_ab, dvv, dm1, dm2):    
-    tdms = TDM(cv_ab, dm1, dm2).get_tdm('ph', comm=True)
-    tdtd = np.zeros_like(dm2)
-    for rdm in tdms:
-        tdtd += np.einsum("pr,qs->pqrs", rdm, rdm.T, optimize=True)
-    dv_tdm = np.einsum("pqrs,pqrs", dvv, tdtd)
-    return dv_tdm
 
 
 def W_alpha(la, _h0, _v0, _h1, _v1, rdm1, rdm2, _eigs, tol, singlet):
@@ -160,7 +180,6 @@ def W_alpha(la, _h0, _v0, _h1, _v1, rdm1, rdm2, _eigs, tol, singlet):
         w_l = omega_alpha(cv_t, dvv, rdm1, rdm2)
     return w_l
 
-
 def run_acph(NAME, operator, eigs, eigtol, alpha):
     # Get electron integrals in MO format
     print('Load Hamiltonian')
@@ -168,57 +187,50 @@ def run_acph(NAME, operator, eigs, eigtol, alpha):
         raise ValueError(f'{NAME}.ham.npz not found')
     data = np.load(f"{NAME}.ham.npz")
     one_mo = data["onemo"]
-    two_mo = data["twomo"]
+    two_mo = np.einsum('ijkl->ikjl', data["twomo"])
     nucnuc = data["nuc"]
     nbasis = one_mo.shape[0]
     
     print('Load CI')
-    if not os.path.isfile(f"{NAME}.gvb.npz"):
-        raise ValueError(f"{NAME}.gvb.npz not found")
-    data = np.load(f"{NAME}.gvb.npz")
-    dm1aa, dm1ab = data['rdm1']
-    rdm1 = from_spins([dm1aa, dm1ab])
-    dm2aaaa, dm2abab = data['rdm2']
-    dm2baba = dm2abab.transpose((1,0,3,2))
-    rdm2 = from_spins([dm2aaaa, dm2abab, dm2baba, dm2aaaa])
-    
-    nparts = int(np.ceil(np.trace(rdm1)))
-    npairs = nparts // 2
-    # FIXME: this is a hack to get the number of elgeminals right for H2 STO-6G
-    ngems = npairs + 1     # considering fictitious geminals
-
-    print('Load Geminals data')
-    if not os.path.isfile("gvb_geminals.dat"):
-        raise ValueError(f"gvb_geminals.dat not found")
-    index_m = np.loadtxt("gvb_geminals.dat", dtype=int)
-    assert index_m.shape[0] == nbasis
-    assert index_m[nbasis-1, 1] == ngems
-    index_m -= 1
-    gem_mtrix = np.zeros((nbasis, ngems))
-    for n,g in index_m:
-        gem_mtrix[n, g] = 1.0
+    if not os.path.isfile(f"{NAME}.ci.npz"):
+        raise ValueError(f"{NAME}.ci.npz not found")
+    data = np.load(f"{NAME}.ci.npz")
+    rdm1 = from_spins(data['rdm1'])
+    dm2aa, dm2ab, dm2ba, dm2bb = data['rdm2'] # transform 2-RDMs to our notation <|p*q*sr|>=\Gamma_pqrs
+    dm2aa = np.einsum("ijkl->ikjl", dm2aa)
+    dm2ab = np.einsum("ijkl->ikjl", dm2ab)
+    dm2ba = np.einsum("ijkl->ikjl", dm2ba)
+    dm2bb = np.einsum("ijkl->ikjl", dm2bb)
+    rdm2 = from_spins([dm2aa, dm2ab, dm2ba, dm2bb])
 
     # Evaluate AC-ERPA (DIP)
     print('Run AC-ERPA (particle-hole)')
     if operator != 'ph':
         raise ValueError('Invalid operator.')
-    one_mo_0, two_mo_0, two_mo_0_inter = make_gvbpp_ham_zero(one_mo, two_mo, gem_mtrix, dm1aa)
-    h0 = spinize(one_mo_0) 
-    h0 += spinize(two_mo_0_inter)
-    v0 = spinize(two_mo_0)
+    ### Use explicit spinized representation of DOCI Hamiltonian
+    h0, v0 = ham0_spinized(one_mo, two_mo)
+    # one_mo_0, two_mo_0 = make_doci_hamiltonian(one_mo, two_mo)
+    # h0 = spinize(one_mo_0) 
+    # v0 = spinize(two_mo_0)
     h1 = spinize(one_mo) 
-    v1 = spinize(two_mo)
+    v1 = spinize(two_mo)     
     dh= h1-h0
     dv= v1-v0
     energy = np.einsum('ij,ji', h0, rdm1) + 0.5 * np.einsum('ijkl,ijkl', v0, rdm2)
 
     linear = _pherpa_linearterms(h1.shape[0], dh, dv, rdm1)
     # min, max, step = alpha
-    # walpha_sing = W_alpha(h0, v0, h1, v1, rdm1, rdm2, alpha, eigs, eigtol, singlet=True)
-    # walpha_trip = W_alpha(h0, v0, h1, v1, rdm1, rdm2, alpha, eigs, eigtol, singlet=False)
-    
+    # lpath = np.arange(min, max, step)
+    # walpha_sing = []
+    # walpha_trip = []
+    # for l in lpath:
+    #     val1 = W_alpha(l, h0, v0, h1, v1, rdm1, rdm2, eigs, eigtol, True)
+    #     walpha_sing.append(val1)
+    #     val2 = W_alpha(l, h0, v0, h1, v1, rdm1, rdm2, eigs, eigtol, False)
+    #     walpha_trip.append(val2)
     # int_wa_s = np.trapz(walpha_sing, dx=step)
     # int_wa_t = np.trapz(walpha_trip, dx=step)
+
     arg_s = (h0, v0, h1, v1, rdm1, rdm2, eigs, eigtol, True)
     args_t = (h0, v0, h1, v1, rdm1, rdm2, eigs, eigtol, False)
     int_wa_s = gauss(W_alpha, 0, 1, args=arg_s, tol=1.e-4, maxiter=5, vec_func=False)[0]
@@ -236,7 +248,7 @@ NAME = '$output'
 CHARGE = $charge
 MULT = $spinmult
 eigtol = 1.0e-5
-alpha = [0.0, 1.1, 0.1]
+alpha = [0.0, 1.0, 0.1]
 
 
-run_acph(NAME, 'ph', 'nonsymm', eigtol, alpha) #'safe', 'nonsymm
+run_acph(NAME, 'ph', 'qtrunc', eigtol, alpha) #'safe', 'nonsymm, 'qtrunc'

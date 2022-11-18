@@ -16,7 +16,7 @@ parser = ArgumentParser()
 parser.add_argument("-r", action="store_true", default=False, help="submit calculations")
 parser.add_argument("-i", action="store_true", default=False, help="Write an job script")
 parser.add_argument(
-        "program", type=str, choices=["pyci", "erpa", "gqcp"], help="Name of the program in the python script."
+        "program", type=str, choices=["pyci", "erpa", "gqcp", "pyscf"], help="Name of the program in the python script."
     )
 parser.add_argument("fnames", nargs="*", help="Path to existing input file(s).")
 parser.add_argument("-c", "--charge", type=int, default=0, help="Charge of the molecule. Default: 0.")
@@ -82,7 +82,11 @@ def make_input(args):
         os.chdir(fp_job)
 
         # write input file
-        with open(f'{subdir}_ac.py', 'w') as f:
+        if ("rpa" in args.temp) or ("pyscf" in args.temp):
+            ofilename = f'{subdir}_hf_ac.py'
+        else:
+            ofilename = f'{subdir}_ac.py'
+        with open(ofilename, 'w') as f:
             f.write(string)
         
         os.chdir(base_database)

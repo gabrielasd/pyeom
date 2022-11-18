@@ -1,0 +1,10 @@
+BASIS
+$basis_set1
+CASSCF
+AC
+Atomtypes=3 
+ZMAT
+O   1 8.0
+H1  2 1 $blength 1.0
+H2  3 1 $blength 2 104.5 1.0
+

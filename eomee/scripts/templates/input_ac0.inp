@@ -1,0 +1,17 @@
+! AC0 interactions
+  
+Calculation
+ JobTitle   Intera
+ Interface  DALTON
+ JobType    AC0
+ RDMType    CAS
+ TwoMoInt   FOFO
+end
+
+System
+ ZNucl   $znucl
+ Charge  $charge
+ ThrSelAct    1.d-$ThrSelAct
+end
+
+

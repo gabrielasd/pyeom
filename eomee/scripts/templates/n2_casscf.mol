@@ -1,0 +1,9 @@
+BASIS
+$basis_set1
+CASSCF
+AC
+Atomtypes=1 Angstrom
+Charge=7. Atoms=2
+N1   0.0000000000 -0.0000000000  0.0000000000
+N2   0.0000000000 -0.0000000000  $blength
+
