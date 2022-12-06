@@ -100,12 +100,12 @@ class EOMExcSA(EOMExc):
     
     def _compute_lhs_30(self):
         A_aaaa, A_bbbb, A_aabb, A_bbaa = self._lhs_sb
-        A = A_aaaa + A_bbbb + A_aabb + A_bbaa
+        A = A_aaaa + A_bbbb - A_aabb - A_bbaa
         return 0.5 * A.reshape(self._k**2, self._k**2)
 
     def _compute_rhs_1(self):
         M_aaaa, M_bbbb, M_aabb, M_bbaa = self._rhs_sb 
-        M = M_aaaa + M_bbbb - M_aabb - M_bbaa
+        M = M_aaaa + M_bbbb + M_aabb + M_bbaa
         return 0.5 * M.reshape(self._k**2, self._k**2)
     
     def _compute_rhs_30(self):
@@ -370,7 +370,7 @@ class IntegrandPh:
         # Compute nonlinear energy term
         _tv = np.zeros((_k, _k, _k, _k), dtype=_dm1.dtype)
         for tdm in tdms:
-            _tv += np.einsum("pr,qs->pqrs", tdm, tdm, optimize=True)
+            _tv += np.einsum("pr,qs->pqrs", tdm, tdm.T, optimize=True)
         return _tv
 
     def eval_integrand(self, alpha, gevps, tol, singlets):
@@ -399,11 +399,11 @@ class IntegrandPh:
 
         # Compute transition RDMs energy contribution (eq. 29)
         metric = metric.reshape(k, k, k, k)
-        tdtd = 0.5 * IntegrandPh.eval_alphadependent_terms(k, self.dm1, c, metric)
+        tdtd_aa = 0.5 * IntegrandPh.eval_alphadependent_terms(k, self.dm1, c, metric)
 
         if singlets:
-            tdtd = spinize(tdtd)                        
+            tdtd = spinize(tdtd_aa)                        
         else:
             # tdtd = [tdtd_aa, tdtd_ab, tsts_bb]
-            tdtd = from_unrestricted([tdtd, -tdtd, tdtd])       
+            tdtd = from_unrestricted([tdtd_aa, -tdtd_aa, tdtd_aa])       
         return np.einsum("pqrs,pqrs", self.dv, tdtd, optimize=True)
