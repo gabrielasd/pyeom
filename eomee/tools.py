@@ -741,3 +741,139 @@ def matrix_Q_to_matrix(matrix, nbasis, dm1, dm2, matrixq=None):
         return np.einsum('qs,pr->pqrs', I, dm1) - matrix_Q_to_matrix('p', nbasis, dm1, dm2)
     else:
         raise ValueError(f'Matrix must be `p` or `g`, {matrix} given.')
+
+
+def brute_hherpa_lhs(h, v, dm1, dm2):
+    """hole-hole ERPA left-hand side supermatrix
+
+    Parameters
+    ----------
+    h : ndarray(n,n)
+        spin resolved one-electron integrals
+    v : ndarray(n,n,n,n)
+        spin resolved two-electron integrals (<pq|rs>)
+    dm1 : ndarray(n,n)
+        1-RDM
+    dm2 : ndarray(n,n,n,n)
+        2-RDM
+    """
+    n = h.shape[0]
+    I = np.eye(n, dtype=h.dtype)
+
+    a = np.einsum("ik,lj->klji", h, dm1)
+    a -= np.einsum("jk,li->klji", h, dm1)
+    a += np.einsum("jl,ki->klji", h, dm1)
+    a -= np.einsum("il,kj->klji", h, dm1)
+    #
+    b = np.einsum("ik,jp->ijkp", I, I)
+    hdm1 = np.einsum("pq,lq->pl", h, dm1)
+    a += np.einsum("pl,ijkp->klji", hdm1, b)
+    a -= np.einsum("pl,ijkp->klji", h, b)
+    b = np.einsum("ip,jk->ijpk", I, I)
+    a -= np.einsum("pl,ijpk->klji", hdm1, b)
+    a += np.einsum("pl,ijpk->klji", h, b)
+    #
+    b = np.einsum("il,jp->ijlp", I, I)
+    hdm1 = np.einsum("pq,kq->pk", h, dm1)
+    a += np.einsum("pk,ijlp->klji", h, b)
+    a -= np.einsum("pk,ijlp->klji", hdm1, b)
+    b = np.einsum("ip,jl->ijpl", I, I)
+    a -= np.einsum("pk,ijpl->klji", h, b)
+    a += np.einsum("pk,ijpl->klji", hdm1, b)
+    ##
+    # # b = np.einsum("pi,qj->pqij", I, I)
+    # # vI = np.einsum("pqrs,pqij->rsij", v, b)
+    # # b = np.einsum("kr,ls->klrs", I, I)
+    # # a -= 0.5 * np.einsum("rsij,klrs->klji", vI, b)
+    # # b = np.einsum("ks,lr->klsr", I, I)
+    # # a += 0.5 * np.einsum("rsij,klsr->klji", vI, b)
+    # # #
+    # # b = np.einsum("pj,qi->pqji", I, I)
+    # # vI = np.einsum("pqrs,pqji->rsji", v, b)
+    # # b = np.einsum("kr,ls->klrs", I, I)
+    # # a += 0.5 * np.einsum("rsji,klrs->klji", vI, b)
+    # # b = np.einsum("ks,lr->klsr", I, I)
+    # # a -= 0.5 * np.einsum("rsji,klsr->klji", vI, b)
+    nu = v - v.transpose(1, 0, 2, 3)
+    a -= np.einsum("ijkl->klji", nu)
+    ##
+    b = np.einsum("kr,ls->klrs", I, dm1)
+    b -= np.einsum("ks,lr->klrs", I, dm1)
+    b -= np.einsum("lr,ks->klrs", I, dm1)
+    b += np.einsum("ls,kr->klrs", I, dm1)
+    nu = v - v.transpose(1, 0, 2, 3)
+    a += 0.5 * np.einsum("ijrs,klrs->klji", nu, b)
+    #
+    b = np.einsum("qj,pi->qpji", I, dm1)
+    b -= np.einsum("qi,pj->qpji", I, dm1)
+    b -= np.einsum("pj,qi->qpji", I, dm1)
+    b += np.einsum("pi,qj->qpji", I, dm1)
+    nu = v - v.transpose(0, 1, 3, 2)
+    a += 0.5 * np.einsum("pqkl,qpji->klji", nu, b)
+    ##
+    b = np.einsum("pj,qr->pqjr", I, dm1)
+    b -= np.einsum("qj,pr->pqjr", I, dm1)
+    ii = np.einsum("ki,ls->klis", I, I)
+    ii -= np.einsum("li,ks->klis", I, I)
+    vb = np.einsum("pqrs,pqjr->sj", v, b)
+    a += 0.5 * np.einsum("sj,klis->klji", vb, ii)
+    #
+    b = np.einsum("pj,qs->pqjs", I, dm1)
+    b -= np.einsum("qj,ps->pqjs", I, dm1)
+    ii = np.einsum("li,kr->lkir", I, I)
+    ii -= np.einsum("ki,lr->lkir", I, I)
+    vb = np.einsum("pqrs,pqjs->rj", v, b)
+    a += 0.5 * np.einsum("rj,lkir->klji", vb, ii)
+    #
+    b = np.einsum("pi,qs->pqis", I, dm1)
+    b -= np.einsum("qi,ps->pqis", I, dm1)
+    ii = np.einsum("kj,lr->kljr", I, I)
+    ii -= np.einsum("lj,kr->kljr", I, I)
+    vb = np.einsum("pqrs,pqis->ri", v, b)
+    a += 0.5 * np.einsum("ri,kljr->klji", vb, ii)
+    #
+    b = np.einsum("pi,qr->pqir", I, dm1)
+    b -= np.einsum("qi,pr->pqir", I, dm1)
+    ii = np.einsum("lj,ks->lkjs", I, I)
+    ii -= np.einsum("kj,ls->lkjs", I, I)
+    vb = np.einsum("pqrs,pqir->si", v, b)
+    a += 0.5 * np.einsum("si,lkjs->klji", vb, ii)
+    ##
+    a -= 0.5 * np.einsum("jqks,qlsi->klji", v, dm2)
+    a += 0.5 * np.einsum("jqrk,qlri->klji", v, dm2)
+    a += 0.5 * np.einsum("iqks,qlsj->klji", v, dm2)
+    a -= 0.5 * np.einsum("iqrk,qlrj->klji", v, dm2)
+    #
+    a += 0.5 * np.einsum("jqls,qksi->klji", v, dm2)
+    a -= 0.5 * np.einsum("jqrl,qkri->klji", v, dm2)
+    a -= 0.5 * np.einsum("iqls,qksj->klji", v, dm2)
+    a += 0.5 * np.einsum("iqrl,qkrj->klji", v, dm2)
+    #
+    a += 0.5 * np.einsum("pjks,plsi->klji", v, dm2)
+    a -= 0.5 * np.einsum("pjrk,plri->klji", v, dm2)
+    a -= 0.5 * np.einsum("piks,plsj->klji", v, dm2)
+    a += 0.5 * np.einsum("pirk,plrj->klji", v, dm2)
+    #
+    a -= 0.5 * np.einsum("pjls,pksi->klji", v, dm2)
+    a += 0.5 * np.einsum("pjrl,pkri->klji", v, dm2)
+    a += 0.5 * np.einsum("pils,pksj->klji", v, dm2)
+    a -= 0.5 * np.einsum("pirl,pkrj->klji", v, dm2)
+    ##
+    vdm2 = np.einsum("iqrs,qlrs->il", v, dm2)
+    a += 0.5 * np.einsum("kj,il->klji", I, vdm2)
+    vdm2 = np.einsum("jqrs,qlrs->jl", v, dm2)
+    a -= 0.5 * np.einsum("ki,jl->klji", I, vdm2)
+    vdm2 = np.einsum("jqrs,qkrs->jk", v, dm2)
+    a += 0.5 * np.einsum("li,jk->klji", I, vdm2)
+    vdm2 = np.einsum("iqrs,qkrs->ik", v, dm2)
+    a -= 0.5 * np.einsum("lj,ik->klji", I, vdm2)
+    #
+    vdm2 = np.einsum("pjrs,plrs->jl", v, dm2)
+    a += 0.5 * np.einsum("ki,jl->klji", I, vdm2)
+    vdm2 = np.einsum("pirs,plrs->il", v, dm2)
+    a -= 0.5 * np.einsum("kj,il->klji", I, vdm2)
+    vdm2 = np.einsum("pirs,pkrs->ik", v, dm2)
+    a += 0.5 * np.einsum("lj,ik->klji", I, vdm2)
+    vdm2 = np.einsum("pjrs,pkrs->jk", v, dm2)
+    a -= 0.5 * np.einsum("li,jk->klji", I, vdm2)
+    return a.reshape(n**2, n**2)
