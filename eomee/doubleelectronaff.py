@@ -89,7 +89,9 @@ class EOMDEA_2(EOMState):
         vdm2 = np.einsum("abcd,abce->de", self._v, self._dm2)
         a -= np.einsum("jk,li->klji", vdm2, I)
         a += np.einsum("jl,ki->klji", vdm2, I)
-        return a.reshape(self._n ** 2, self._n ** 2)
+        # FIX: Missing symmetric permutation terms
+        a = a + a.transpose(1, 0, 3, 2)
+        return 0.5 * a.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
         r"""
@@ -254,7 +256,9 @@ class EOMDEA(EOMState):
         vdm2 = np.einsum("abcd,abce->de", self._v, self._dm2)
         a -= np.einsum("jk,li->klji", vdm2, I)
         a += np.einsum("jl,ki->klji", vdm2, I)
-        return a.reshape(self._n ** 2, self._n ** 2)
+        # FIX: Missing symmetric permutation terms
+        a = a + a.transpose(1, 0, 3, 2)
+        return 0.5 * a.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
         r"""
