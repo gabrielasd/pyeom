@@ -92,7 +92,9 @@ class EOMDIP(EOMState):
         vdm2 = np.einsum("abcd,aecd->be", self._v, self._dm2, optimize=True)
         a += np.einsum("jl,ki->klji", vdm2, I, optimize=True)
         a -= np.einsum("jk,li->klji", vdm2, I, optimize=True)
-        return a.reshape(self._n ** 2, self._n ** 2)
+        # FIX: Missing symmetric permutation terms
+        a = a + a.transpose(1, 0, 3, 2)
+        return 0.5 * a.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
         r"""
@@ -287,7 +289,9 @@ class EOMDIP2(EOMState):
         vdm2 = np.einsum("abcd,aecd->be", self._v, self._dm2, optimize=True)
         a += np.einsum("jl,ki->klji", vdm2, I, optimize=True)
         a -= np.einsum("jk,li->klji", vdm2, I, optimize=True)
-        return a.reshape(self._n ** 2, self._n ** 2)
+        # FIX: Missing symmetric permutation terms
+        a = a + a.transpose(1, 0, 3, 2)
+        return 0.5 * a.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
         r"""
