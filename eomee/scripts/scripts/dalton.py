@@ -78,13 +78,17 @@ def make_input(args):
         # get folder & filename
         folder, molfile = os.path.split(fp_mol)
         assert molfile.endswith('.mol')
-        f_name = molfile.split('_')[0] #molfile.strip('.mol') #
-        subdir = f'{f_name}_q000_m01_k00_sp_{method}_{basisname}'
+        f_name = molfile.strip('.mol').split('_')[0]
+        # HARDCODED
+        charge = 0
+        subdir = f'{f_name}_q00{charge}_m01_k00_sp_{method}_{basisname}'
 
         # get base directory
         base_database = os.getcwd()
 
         # Make job folder
+        if folder == "":
+            folder = '.'
         fp_job = f'{folder}/{subdir}'
         if not os.path.exists(fp_job):
             os.makedirs(fp_job)

@@ -79,7 +79,7 @@ n_elec = run_scf(GEOM, CHARGE, MULT, BASIS, NAME, unit='A')[0]
 n_a, n_b = n_elec
 
 # Run HCI
-eigenvals, eigenvecs, pyci_wfn = run_pyci(n_a, n_b, NAME, nprocs, wfn_type=method[WFN])
+eigenvals, eigenvecs, pyci_wfn = run_pyci(n_a, n_b, NAME, nprocs, wfn_type=method[WFN], nsol=1)
 energy = eigenvals[0]
 print("HCI energy", energy)
 

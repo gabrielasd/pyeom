@@ -1,0 +1,8 @@
+{
+	"co": {
+		"name": "carbonmonoxide",
+		"charge": 2,
+		"multiplicity": 1,
+		"smiles": "[C-]#[O+]"
+	}
+}

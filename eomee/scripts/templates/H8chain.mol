@@ -1,0 +1,7 @@
+BASIS
+$basis_set1
+GVB
+RPA, ERPA
+Atomtypes=1 Nosymmetry Angstrom
+Charge=1.0 Atoms=8
+$GEOM

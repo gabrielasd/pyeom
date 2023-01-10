@@ -1,0 +1,10 @@
+BASIS
+$basis_set1
+GVB
+RPA, ERPA
+Atomtypes=2 Nosymmetry Angstrom
+Charge=4.0 Atoms=1
+Be    0.0000000000    0.0000000000    $RZ
+Charge=1.0 Atoms=2
+H    -$RHH    0.0000000000    0.0000000000
+H     $RHH    0.0000000000    0.0000000000

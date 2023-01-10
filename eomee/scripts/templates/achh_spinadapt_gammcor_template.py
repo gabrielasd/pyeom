@@ -3,9 +3,11 @@ import os
 
 import numpy as np
 
+import pyci
 
-# from eomee.excitation import EOMExc
-from eomee.spinadapted.particlehole import EOMExcSA as EOMExc
+from iodata import load_one
+
+from eomee.spinadapted.holehole import DIPSA
 from eomee.tools import spinize, make_gvbpp_hamiltonian
 
 
@@ -44,7 +46,7 @@ def from_spins(blocks):
     return y
 
 
-def run_acph(NAME, operator, solver, eigtol, summall):
+def run_achh(NAME, operator, solver, eigtol):
     # Get electron integrals in MO format
     print('Load Hamiltonian')
     if not os.path.isfile(f'{NAME}.ham.npz'):
@@ -55,7 +57,7 @@ def run_acph(NAME, operator, solver, eigtol, summall):
     nucnuc = data["nuc"]
     nbasis = one_mo.shape[0]
     
-    print('Load CI')
+    print('Load RDMs')
     if not os.path.isfile(f"{NAME}.gvb.npz"):
         raise ValueError(f"{NAME}.gvb.npz not found")
     data = np.load(f"{NAME}.gvb.npz")
@@ -79,10 +81,10 @@ def run_acph(NAME, operator, solver, eigtol, summall):
     gem_mtrix = np.zeros((nbasis, ngems))
     for n,g in index_m:
         gem_mtrix[n, g] = 1.0
-
+    
     # Evaluate AC-ERPA (DIP)
-    print('Run AC-ERPA (particle-hole)')
-    if operator != 'ph':
+    print('Run AC-ERPA (hole-hole)')
+    if operator != 'hh':
         raise ValueError('Invalid operator.')
     one_mo_0, two_mo_0, two_mo_0_inter = make_gvbpp_hamiltonian(one_mo, two_mo, gem_mtrix, dm1aa)
     h0 = spinize(one_mo_0) 
@@ -90,26 +92,26 @@ def run_acph(NAME, operator, solver, eigtol, summall):
     v0 = spinize(two_mo_0)
     h1 = spinize(one_mo) 
     v1 = spinize(two_mo)
-    energy_ref = np.einsum('ij,ji', h1, rdm1) + 0.5 * np.einsum('ijkl,ijkl', v1, rdm2)
+    energy = np.einsum('ij,ji', h0, rdm1) + 0.5 * np.einsum('ijkl,ijkl', v0, rdm2)
 
-    data = EOMExc.erpa_ecorr(h0, v0, h1, v1, rdm1, rdm2, solver=solver, eigtol=eigtol, summall=summall)
-    ecorr = data['ecorr']
-    linear = data['linear']
-    etot = energy_ref + ecorr + nucnuc
+    data = DIPSA.erpa(h0, v0, h1, v1, rdm1, rdm2, solver=solver, eigtol=eigtol, mult=1)
+    int_vtdtd_s = data['ecorr'] - data['linear']
+    data = DIPSA.erpa(h0, v0, h1, v1, rdm1, rdm2, solver=solver, eigtol=eigtol, mult=3)
+    int_vtdtd_t = data['ecorr'] - data['linear']
 
-    # Save EOM results
-    if summall:
-        mode='f' # full operator
-    else:
-        mode='t' # truncated operator
-    np.savez(f"{NAME}.ac{mode}{operator}{solver}.npz", energy=etot, ecorr=ecorr, ctnt=linear, integ=None, intega=None, abserr=None)
+    cnst = data['linear']
+    int_vtdtd = int_vtdtd_s + int_vtdtd_t   # 1/2 faactor already included
+    ecorr = cnst + int_vtdtd
+    etot = energy + ecorr + nucnuc
+    # Save ERPA results
+    np.savez(f"{NAME}.ac{operator}{solver}.npz", energy=etot, ecorr=ecorr, ctnt=cnst, integ=int_vtdtd, intega=int_vtdtd_s, abserr=None)
     print('')
 
 
 NAME = '$output'
 CHARGE = $charge
 MULT = $spinmult
-eigtol = 1.0e-5
-fulloperator = False
+eigtol = 1.0e-7
 
-run_acph(NAME, 'ph', 'qtrunc', eigtol, fulloperator) # 'nonsymm' 'qtrunc'
+
+run_achh(NAME, 'hh', 'qtrunc', eigtol)

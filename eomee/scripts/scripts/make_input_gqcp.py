@@ -5,11 +5,12 @@ from string import Template
 #############
 # Edit lines bellow (file names, template path, folders)
 
-prefix = 'n2' #'h2o' #'h2' # 'h4_achain' # 'lih'  # 'h2o_asymm' #'h4_chain' #
+# prefix = 'h8' #'f2' #'c2h4' #'h8_chain' #'n2' #'h2o' #'h2' # 'h4_achain' # 'lih'  # 'h2o_asymm' #'h4_chain' #
+prefix = 'beh2'
 # prefix = 'PYBEL_Beryllium'
-subdir = f'0007_q000_m01_k00_sp_oodoci'
+subdir = f'0004_q000_m01_k00_sp_oodoci'
 q = 0
-basis = 'cc-pvdz' # '3-21G'# '6-31G' #'aug-cc-pvdz' #'sto-6g' # 'sto-3g' # 
+basis =  'cc-pvdz' # '6-31G' #'3-21G'# 'aug-cc-pvdz' #'sto-6g' # 'sto-3g' # 
 basisname = basis.lower().replace("-", "").replace("*", "p").replace("+", "d")
 subdir += f'_{basisname}'
 template_name = 'gqcp_template_iterative.py' #'gqcp_template.py'

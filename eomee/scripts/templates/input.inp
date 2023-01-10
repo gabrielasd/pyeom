@@ -5,7 +5,7 @@ Calculation
  Interface  DALTON
  JobType    AC
  !JobType    ERPA
- Triplet    True
+ !Triplet    True
  RDMType    GVB
  IPrint     5
  TwoMoInt   INCORE

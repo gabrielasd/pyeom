@@ -1,7 +1,7 @@
 {
-	"0001": {
+	"Be": {
 		"name": "Beryllium",
-		"charge": 0,
+		"charge": 2,
 		"multiplicity": 1,
 		"smiles": "[Be]"
 	}

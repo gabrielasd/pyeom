@@ -33,7 +33,9 @@ def run_scf(atcoords, charge, mult, basis, fname, unit='B'):
     molden.from_scf(hf, f"{fname}.molden", ignore_h=False)
     fcidump.from_scf(hf, f"{fname}.FCIDUMP", tol=0.0)
 
-    # nelec = mol.nelec
+    nelec = mol.nelec
+    norb = hf.mo_coeff.shape[0]
+    print(f"norb = {norb}, nelec = {nelec}")
     # mo_energy = hf.mo_energy
     # mo_occ = hf.mo_occ
     nuc_rep = hf.energy_nuc()
@@ -43,13 +45,9 @@ def run_scf(atcoords, charge, mult, basis, fname, unit='B'):
 
 
 NAME = '$output'
-
-# ELEM = NAME.split("_", 1)[0]
-GEOM = '$geometry'
+GEOM = """$geometry"""
 CHARGE = $charge
 MULT = $spinmult
-# nprocs = $nprocs
-WFN = '$lot'.lower()
 
 BASIS = """$basis_set1"""
 

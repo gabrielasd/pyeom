@@ -52,7 +52,7 @@ def OODOCI_calculation(N_P, basis, hamiltonian, fname):
     
     onv_basis = gqcpy.SeniorityZeroONVBasis(K, N_P)
     x0 = gqcpy.LinearExpansion_SeniorityZero.HartreeFock(onv_basis).coefficients()
-    solver_davidson = gqcpy.EigenproblemSolver.Davidson(maximum_number_of_iterations=5000, convergence_threshold=1.0e-04)
+    solver_davidson = gqcpy.EigenproblemSolver.Davidson(maximum_number_of_iterations=10000, convergence_threshold=1.0e-05)
     environment_davidson = gqcpy.CIEnvironment.Iterative(hamiltonian, onv_basis, x0)
     
     optimizer = gqcpy.DOCINewtonOrbitalOptimizer(onv_basis, solver_davidson, environment_davidson)

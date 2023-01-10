@@ -1,0 +1,12 @@
+BASIS
+$basis_set1
+GVB
+RPA, ERPA
+Atomtypes=6 Nosymmetry
+ZMAT
+C1  1 6.0
+C2  2 1 $RCC 6.0
+H1  3 1 $RCH 2 $HCC 1.0
+H2  4 1 $RCH 2 $HCC 3 180. 0 1.0
+H3  5 2 $RCH 1 $HCC 3 $Angle1 0 1.0
+H4  6 2 $RCH 1 $HCC 3 $Angle2 0 1.0
