@@ -275,9 +275,9 @@ class Integrandhh:
         cv_p = pickpositiveeig(w, c)[1]
         norm = np.dot(cv_p, np.dot(metric, cv_p.T))
         diag_n = np.diag(norm)
-        # sqr_n = np.sqrt(np.abs(diag_n))
-        sqr_n = np.sqrt(diag_n)
-        c = (cv_p.T / sqr_n).T
+        idx = np.where(diag_n > 0)[0]  # Remove eigenvalues with negative norm
+        sqr_n = np.sqrt(diag_n[idx])
+        c = (cv_p[idx].T / sqr_n).T
 
         # Compute transition RDMs energy contribution (eq. 29)
         metric = metric.reshape(k, k, k, k)
