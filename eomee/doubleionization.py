@@ -210,16 +210,19 @@ class WrappNonlinear:
             s_cv= pick_singlets(ev_p, cv_p)[1]
             norm = np.dot(s_cv, np.dot(hh.rhs, s_cv.T))
             diag_n = np.diag(norm)
-            sqr_n = np.sqrt(diag_n)
-            c = (s_cv.T / sqr_n).T
+            idx = np.where(diag_n > 0)[0]  # Remove eigenvalues with negative norm
+            sqr_n = np.sqrt(diag_n[idx])
+            c = (s_cv[idx].T / sqr_n).T
         else:
-            s_cv= pick_singlets(ev_p, cv_p)[1]
-            norm = np.dot(s_cv, np.dot(hh.rhs, s_cv.T))
-            diag_n = np.diag(norm)
-            sqr_n = np.sqrt(diag_n)
-            s_cv = (s_cv.T / sqr_n).T
-            t_cv = pick_multiplets(ev_p, cv_p)[1]
-            c = np.append(s_cv, t_cv, axis=0)
+            raise NotImplementedError("Only singlets are implemented")
+            # s_cv= pick_singlets(ev_p, cv_p)[1]
+            # norm = np.dot(s_cv, np.dot(hh.rhs, s_cv.T))
+            # diag_n = np.diag(norm)
+            # idx = np.where(diag_n > 0)[0]
+            # sqr_n = np.sqrt(diag_n[idx])
+            # s_cv = (s_cv[idx].T / sqr_n).T
+            # t_cv = pick_multiplets(ev_p, cv_p)[1]
+            # c = np.append(s_cv, t_cv, axis=0)
         # Compute transition RDMs (eq. 32)
         rdm_terms = WrappNonlinear.eval_tdmterms(n, self.dm1)
         tv = WrappNonlinear.eval_nonlinearterms(n, self.dm1, c, rdm_terms)
