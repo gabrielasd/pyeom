@@ -160,7 +160,7 @@ class DIPSA(EOMDIP):
     
 
     @classmethod
-    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, mult=1, nint=5):
+    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, mult=1, nint=5, dm1ac=True):
         r"""
         Compute the ERPA correlation energy for the operator.
 
@@ -172,25 +172,27 @@ class DIPSA(EOMDIP):
         # V_1 - V_0
         dv = v_1 - v_0
         
-        linear = _hherpa_linearterms(dh, dm1)
-
         # Compute ERPA correction energy
         # Nonlinear term (eq. 19 integrand)        
         function = Integrandhh(cls, h_0, v_0, dh, dv, dm1, dm2)
         if mult == 1:
-            params = (solver, eigtol, True)
+            params = (solver, eigtol, True, dm1ac)
             alphadep=  fixed_quad(function.vfunc, 0, 1, args=params, n=nint)[0]
         elif mult == 3:
-            params = (solver, eigtol, False)
-            alphadep =  3 * fixed_quad(function.vfunc, 0, 1, args=params, n=nint)[0]
-        elif mult == 13:
-            params = (solver, eigtol, True)
+            params = (solver, eigtol, False, dm1ac)
             alphadep =  fixed_quad(function.vfunc, 0, 1, args=params, n=nint)[0]
-            params = (solver, eigtol, False)
-            alphadep += 3 * fixed_quad(function.vfunc, 0, 1, args=params, n=nint)[0]
+        elif mult == 13:
+            params = (solver, eigtol, True, dm1ac)
+            alphadep =  fixed_quad(function.vfunc, 0, 1, args=params, n=nint)[0]
+            params = (solver, eigtol, False, dm1ac)
+            alphadep += fixed_quad(function.vfunc, 0, 1, args=params, n=nint)[0]
         else:
             raise ValueError("Invalid mult parameter. Valid options are 1, 3 or 13.")
-        ecorr = linear + 0.5 * alphadep
+        if not dm1ac:
+            linear = 0.
+        else:
+            linear = _hherpa_linearterms(dh, dm1)
+        ecorr = linear + alphadep
 
         output = {}
         output["ecorr"] = ecorr
@@ -220,15 +222,12 @@ class Integrandhh:
     
     @staticmethod
     def eval_dmterms(_n, _dm1):
-        #FIXME: This functions returns the generalized particle-hole RHS
+        #FIXME: This functions returns the generalized hole-hole RHS
         # not the spin-adapted one. It is left here because its used to 
         # compute the alpha-independent terms in the classmethodsa bove.
 
         # Compute RDM terms of transition RDM
         # Commutator form: < |[p+q+,s r]| >
-        _rdm_terms = np.einsum("qs,pr->pqrs", np.eye(_n), _dm1, optimize=True)
-        _rdm_terms -= np.einsum("pr,sq->pqrs", np.eye(_n), _dm1, optimize=True)
-
         # \delta_{i k} \delta_{j l} - \delta_{i l} \delta_{j k}
         _rdm_terms = np.einsum("ik,jl->klji", np.eye(_n), np.eye(_n), optimize=True)
         _rdm_terms -= np.einsum("il,jk->klji", np.eye(_n), np.eye(_n), optimize=True)
@@ -252,14 +251,15 @@ class Integrandhh:
             _tv += np.einsum("pq,rs->pqrs", tdm, tdm, optimize=True)
         return _tv
 
-    def eval_integrand(self, alpha, gevps, tol, singlets):
+    def eval_integrand(self, alpha, gevps, tol, singlets, _dm1ac):
         """Compute integrand."""
         # Compute H^alpha
         h = alpha * self.dh
         h += self.h_0
         v = alpha * self.dv
         v += self.v_0
-        k = h.shape[0] // 2
+        m = h.shape[0]
+        k = m // 2
         # Solve EOM equations
         hh = self.method(h, v, self.dm1, self.dm2)
 
@@ -269,9 +269,7 @@ class Integrandhh:
         else:
             w, c = hh.solve_dense(tol=tol, mode=gevps, mult=3)
             metric = hh._rhs3
-        # FIXME: the function `pickpositiveeig` may left out relevant components
-        # of the spectrum in the case of charged species. 
-        # Instead the sign of the norm should be used to pick the correct eigenvectors. 
+        
         cv_p = pickpositiveeig(w, c)[1]
         norm = np.dot(cv_p, np.dot(metric, cv_p.T))
         diag_n = np.diag(norm)
@@ -281,9 +279,24 @@ class Integrandhh:
 
         # Compute transition RDMs energy contribution (eq. 29)
         metric = metric.reshape(k, k, k, k)
-        tdtd_ab = 0.5 * Integrandhh.eval_alphadependent_2rdmterms(k, self.dm1, c, metric)
+        tdtd_ab = Integrandhh.eval_alphadependent_2rdmterms(k, self.dm1, c, metric)
+        hh_rdm2 = np.zeros((m,m,m,m), dtype=self.dm2.dtype)
+        if singlets:
+            hh_rdm2[:k, k:, :k, k:] = 0.5 * tdtd_ab
+            hh_rdm2[k:, :k, k:, :k] = 0.5 * tdtd_ab
+        else:
+            # 30
+            hh_rdm2[:k, k:, :k, k:] += 0.5 * tdtd_ab
+            hh_rdm2[k:, :k, k:, :k] += 0.5 * tdtd_ab
+            # 31
+            hh_rdm2[:k, :k, :k, :k] = tdtd_ab
+            hh_rdm2[k:, k:, k:, k:] = tdtd_ab
+        result = 0.5 * np.einsum("pqrs,pqrs", self.dv, hh_rdm2, optimize=True)
 
-        # Part bellow is common for both singlet and triplet spin-adapted solutions
-        # alpha beta alpha beta + beta alpha beta alpha
-        dv_ab = self.dv[:k, k:, :k, k:]
-        return 2 * np.einsum("pqrs,pqrs", dv_ab, tdtd_ab, optimize=True)        
+        if not _dm1ac:
+            # Evaluate ERPA 1RDM^alpha
+            nparts = np.trace(self.dm1)
+            hh_rdm1 = np.einsum('pqrq->pr', hh_rdm2) / (nparts-1)
+            result += np.einsum('pq,pq->', self.dh, hh_rdm1)
+        
+        return result     
