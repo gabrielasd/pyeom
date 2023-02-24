@@ -30,7 +30,7 @@ __all__ = [
     "EOMDEA",
     "EOMDIP2",
     "EOMExc0",
-    "EOMDEA_2",
+    "EOMDEA2",
     "EOMExcSA",
 ]
 
@@ -44,7 +44,7 @@ from .electronaff import EOMEADoubleCommutator
 from .electronaff import EOMEAAntiCommutator
 from .doubleionization import EOMDIP, EOMDIP2
 from .excitation import EOMExc, EOMExc0
-from .doubleelectronaff import EOMDEA, EOMDEA_2
+from .doubleelectronaff import EOMDEA, EOMDEA2
 from .spinadapted.particlehole import EOMExcSA
 
 

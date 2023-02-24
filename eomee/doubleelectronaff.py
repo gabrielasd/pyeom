@@ -24,10 +24,10 @@ from .base import EOMState
 from .tools import pickpositiveeig
 
 
-__all__ = ["EOMDEA", "EOMDEA_2"]
+__all__ = ["EOMDEA", "EOMDEA2"]
 
 
-class EOMDEA_2(EOMState):
+class EOMDEA2(EOMState):
     r"""
     Double electron  attachment EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a^{\dagger}_i a^{\dagger}_j}`.
 
