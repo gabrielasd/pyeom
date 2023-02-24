@@ -308,7 +308,7 @@ class DIP2SA(EOMDIP2):
 
     .. math::
         \left< \Psi^{(N)}_0 \middle| \left[a^\dagger_k  a^\dagger_{\bar{l}} \mp a^\dagger_{\bar{k}} a^\dagger_l , \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_{k} \left< \Psi^{(N)}_0 \middle| \left[a^\dagger_k  a^\dagger_{\bar{l}} \mp a^\dagger_{\bar{k}} a^\dagger_l, \hat{Q} \right] \Psi^{(N)}_0 \right>
+        = \Delta_{k} \left< \Psi^{(N)}_0 \middle| a^\dagger_k  a^\dagger_{\bar{l}} \mp a^\dagger_{\bar{k}} a^\dagger_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
 
     """
     def __init__(self, h, v, dm1, dm2):
