@@ -20,7 +20,7 @@ import numpy as np
 
 from scipy.integrate import fixed_quad
 
-from eomee.doubleionization import EOMDEA, EOMDEA2
+from eomee.doubleelectronaff import EOMDEA, EOMDEA2
 from eomee.tools import pickpositiveeig, spinize, from_unrestricted
 from eomee.solver import nonsymmetric, svd_lowdin, eig_pinv
 
