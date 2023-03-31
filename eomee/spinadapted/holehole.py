@@ -23,6 +23,7 @@ from scipy.integrate import fixed_quad
 from eomee.doubleionization import EOMDIP, EOMDIP2
 from eomee.tools import pickpositiveeig, spinize, from_unrestricted
 from eomee.solver import nonsymmetric, svd_lowdin, eig_pinv
+from eomee.base import EOMState
 
 
 __all__ = [
@@ -429,3 +430,191 @@ class DIP2SA(EOMDIP2):
             raise ValueError("Invalid state multiplicity. Valid options are 1 or 3.")
         w, v = _solver(lhs, rhs, tol=tol, err=err)
         return np.real(w), np.real(v)
+
+
+class DIPSAidxs(EOMState):
+    r"""
+    Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a_i  a_{\bar{j}} \mp a_{\bar{i}} a_j)}`.
+
+    .. math::
+        \left< \Psi^{(N)}_0 \middle| \left[a^\dagger_k  a^\dagger_{\bar{l}} \mp a^\dagger_{\bar{k}} a^\dagger_l , \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
+        = \Delta_{k} \left< \Psi^{(N)}_0 \middle| \left[a^\dagger_k  a^\dagger_{\bar{l}} \mp a^\dagger_{\bar{k}} a^\dagger_l, \hat{Q} \right] \Psi^{(N)}_0 \right>
+
+    """
+    def __init__(self, h, v, dm1, dm2, mult=1):
+        if not isinstance(mult, int):
+            raise TypeError("Argument mult must be an integer")
+        if mult not in [1, 3]:
+            raise ValueError("Invalid state multiplicity. Valid options are 1 or 3.")
+        self._m = mult
+        self._k = h.shape[0] // 2
+        super().__init__(h, v, dm1, dm2)
+
+    @property
+    def neigs(self):
+        r""" """
+        return self._k ** 2
+    
+    @property
+    def k(self):
+        r"""
+        Return the number of spatial orbital basis functions.
+
+        Returns
+        -------
+        k : int
+            Number of spatial orbital basis functions.
+
+        """
+        return self._k
+
+    def _lhs_ab(self):
+        k = self._k
+        M = np.zeros((k,k,k,k), dtype=self._h.dtype)
+        for k_i in range(k):
+            for l_i in range(k):
+                for j_i in range(k):
+                    for i_i in range(k):
+                        params = (k, self._h, self._v, self._dm1, self._dm2, M, (k_i, l_i, j_i, i_i), 'ab')
+                        M += _factor2terms_lhs(*params)
+                        M += _factor1terms_lhs(*params) 
+        
+        M -= self._v[:k, k:, :k, k:]    # v_abab
+        M += M.transpose(1, 0, 3, 2)
+        return M
+
+    def _lhs_aa(self):
+        k = self._k
+        M = np.zeros((k,k,k,k), dtype=self._h.dtype)
+        for k_i in range(k):
+            for l_i in range(k):
+                for j_i in range(k):
+                    for i_i in range(k):
+                        params = (k, self._h, self._v, self._dm1, self._dm2, M, (k_i, l_i, j_i, i_i), 'aa')
+                        # M = _factor2terms_lhs(*params)
+                        M = _factor1terms_lhs(*params)     
+        M -= self._v[:k, :k, :k, :k]    # v_aaaa
+        M += M.transpose(1, 0, 3, 2)
+        return M
+    
+    def _rhs_ab(self):
+        k = self._k
+        B = np.zeros((k,k,k,k), dtype=self._h.dtype)
+        for k_i in range(k):
+            for l_i in range(k):
+                for j_i in range(k):
+                    for i_i in range(k):
+                        B = _terms_rhs(k, self._dm1, B, (k_i, l_i, j_i, i_i), 'ab')
+        return B
+
+    def _compute_lhs(self):
+        r"""
+        Compute
+
+        .. math::
+
+            A_{klji} = 
+        """
+        A_abab = self._lhs_ab()
+        if self._m == 1:
+            A = A_abab - A_abab.transpose(0, 1, 3, 2)
+        else:
+            A = A_abab + A_abab.transpose(0, 1, 3, 2)
+        return A.reshape(self._k**2, self._k**2)
+    
+    def _compute_rhs(self):
+        r"""
+        Compute :math:`M_{klji} = `
+        """
+        M_abab = self._rhs_ab()
+        if self._m == 1:
+            M = M_abab - M_abab.transpose(0, 1, 3, 2)
+        else:
+            M = M_abab + M_abab.transpose(0, 1, 3, 2)
+        return M.reshape(self._k**2, self._k**2)
+
+
+def _factor2terms_lhs(nb, h, v, d1, d2, M, idxs, blok):
+    k_mo, l_mo, j_mo, i_mo = idxs
+    I = np.eye(2*nb, dtype=h.dtype)
+
+    if blok == 'ab':
+        k_idx, j_idx = k_mo, j_mo
+        l_idx, i_idx = l_mo + nb, i_mo + nb
+    elif blok == 'aa':
+        k_idx, j_idx = k_mo, j_mo
+        l_idx, i_idx = l_mo, i_mo
+    else:
+        raise ValueError("Invalid block. Valid options are 'ab' or 'aa'")
+
+    M[k_mo, l_mo, j_mo, i_mo] += (
+        h[i_idx, l_idx] * I[j_idx, k_idx] -
+        h[i_idx, l_idx] * d1[j_idx, k_idx] +
+        h[i_idx, k_idx] * d1[j_idx, l_idx] -
+        h[i_idx, k_idx] * I[i_idx, j_idx]
+    )
+
+    M[k_mo, l_mo, j_mo, i_mo] += (
+        d1[l_idx, :] @ h[:, j_idx] * I[k_idx, i_idx] -
+        d1[k_idx, :] @ h[:, j_idx] * I[l_idx, i_idx]
+    )
+
+    M[k_mo, l_mo, j_mo, i_mo] += (
+        np.sum(v[i_idx, :, :, k_idx] * d1 * I[l_idx, j_idx]) -
+        np.sum(v[i_idx, :, :, l_idx] * d1 * I[k_idx, j_idx])
+    )
+
+    M[k_mo, l_mo, j_mo, i_mo] += (
+        np.sum(v[j_idx, :, :, k_idx] * d2[:, l_idx, :,  i_idx]) -
+        np.sum(v[j_idx, :, :, l_idx] * d2[:, k_idx, :,  i_idx])
+    )
+    return 2 * M
+
+
+def _factor1terms_lhs(nb, h, v, d1, d2, M, idxs, blok):
+    k_mo, l_mo, j_mo, i_mo = idxs
+    I = np.eye(2*nb, dtype=d1.dtype)
+
+    if blok == 'ab':
+        k_idx, j_idx = k_mo, j_mo
+        l_idx, i_idx = l_mo + nb, i_mo + nb
+    elif blok == 'aa':
+        k_idx, j_idx = k_mo, j_mo
+        l_idx, i_idx = l_mo, i_mo
+    else:
+        raise ValueError("Invalid block. Valid options are 'ab' or 'aa'")
+    
+    M[k_mo, l_mo, j_mo, i_mo] += (
+        v[j_idx, i_idx, l_idx, :] @ d1[k_idx, :] -
+        v[j_idx, i_idx, k_idx, :] @ d1[l_idx, :] +
+        2 *  v[:, j_idx, k_idx, l_idx] @ d1[:, i_idx]
+    )
+    M[k_mo, l_mo, j_mo, i_mo] += (
+        np.sum(v[:, j_idx, :, :] * d2[:, l_idx, :, :] * I[k_idx, i_idx]) -
+        np.sum(v[:, j_idx, :, :] * d2[:, k_idx, :, :] * I[l_idx, i_idx])
+    )
+    return M
+
+
+def _terms_rhs(nb, d1, B, idxs, blok):
+    k_mo, l_mo, j_mo, i_mo = idxs
+    I = np.eye(2*nb, dtype=d1.dtype)
+
+    if blok == 'ab':
+        k_idx, j_idx = k_mo, j_mo
+        l_idx, i_idx = l_mo + nb, i_mo + nb
+    elif blok == 'aa':
+        k_idx, j_idx = k_mo, j_mo
+        l_idx, i_idx = l_mo, i_mo
+    else:
+        raise ValueError("Invalid block. Valid options are 'ab' or 'aa'")
+   
+    B[k_mo, l_mo, j_mo, i_mo] += (
+        I[i_idx, k_idx] * I[j_idx, l_idx] -
+        I[i_idx, l_idx] * I[j_idx, k_idx] -
+        I[i_idx, k_idx] * d1[j_idx, l_idx] +
+        I[i_idx, l_idx] * d1[j_idx, k_idx] -
+        I[j_idx, l_idx] * d1[i_idx, k_idx] +
+        I[j_idx, k_idx] * d1[i_idx, l_idx]
+    )
+    return B
