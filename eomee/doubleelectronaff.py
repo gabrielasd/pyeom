@@ -21,7 +21,7 @@ import numpy as np
 from scipy.integrate import quad as integrate
 
 from .base import EOMState
-from .tools import pickpositiveeig
+from .tools import pickpositiveeig, pick_singlets
 
 
 __all__ = ["EOMDEA", "EOMDEA2"]
@@ -281,7 +281,7 @@ class EOMDEA(EOMState):
         return m.reshape(self._n ** 2, self._n ** 2)
 
     @classmethod
-    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
+    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, singl=True, nint=5):
         r"""
         Compute the ERPA correlation energy for the operator.
 
@@ -292,71 +292,128 @@ class EOMDEA(EOMState):
         dh = h_1 - h_0
         # V_1 - V_0
         dv = v_1 - v_0
-        # \delta_pr * \gamma_qs
-        eye_dm1 = np.einsum("pr,qs->pqrs", np.eye(n), dm1, optimize=True)
-        # \delta_qs * \gamma_pr
-        dm1_eye = np.einsum("pr,qs->pqrs", dm1, np.eye(n), optimize=True)
+        # # \delta_pr * \gamma_qs
+        # eye_dm1 = np.einsum("pr,qs->pqrs", np.eye(n), dm1, optimize=True)
+        # # \delta_qs * \gamma_pr
+        # dm1_eye = np.einsum("pr,qs->pqrs", dm1, np.eye(n), optimize=True)
 
-        # Compute inmutable terms in (eq. 35)
-        # #
-        # rdm_terms = (
-        #     np.einsum("li,kj->klji", np.eye(n), np.eye(n), optimize=True)
-        #     - np.einsum("ki,lj->klji", np.eye(n), np.eye(n), optimize=True)
-        #     + eye_dm1
-        #     - np.transpose(eye_dm1, axes=(0, 1, 3, 2))
-        #     + dm1_eye
-        #     - np.transpose(dm1_eye, axes=(0, 1, 3, 2))
-        #     + dm2
-        # )
-        # #
-        # \delta_{i l} \delta_{j k} -\delta_{i k} \delta_{j l}
-        rdm_terms = np.einsum("il,jk->klji", np.eye(n), np.eye(n), optimize=True)
-        rdm_terms -= np.einsum("ik,jl->klji", np.eye(n), np.eye(n), optimize=True)
-        # + \delta_{i k} \left\{a^\dagger_{j} a_{l}\right\}
-        # - \delta_{i l} \left\{a^\dagger_{j} a_{k}\right\}
-        rdm_terms += np.einsum("ik,jl->klji", np.eye(n), dm1, optimize=True)
-        rdm_terms -= np.einsum("il,jk->klji", np.eye(n), dm1, optimize=True)
-        # + \delta_{j l} \left\{a^\dagger_{i} a_{k}\right\}
-        # - \delta_{j k} \left\{a^\dagger_{i} a_{l}\right\}
-        rdm_terms += np.einsum("jl,ik->klji", np.eye(n), dm1, optimize=True)
-        rdm_terms -= np.einsum("jk,il->klji", np.eye(n), dm1, optimize=True)
-
-        # Nonlinear term (eq. 19 integrand)
-        def nonlinear(alpha):
-            r""" """
-            # Compute H^alpha
-            h = alpha * dh
-            h += h_0
-            v = alpha * dv
-            v += v_0
-            # Solve EOM equations
-            w, c = cls(h, v, dm1, dm2).solve_dense(*args, **kwargs)
-            _, c, _ = pickpositiveeig(w, c)
-            # Compute transition RDMs (eq. 35)
-            rdms = np.einsum("mrs,pqsr->mpq", c.reshape(c.shape[0], n, n), rdm_terms)
-            # Compute nonlinear energy term
-            tv = np.zeros_like(dm2)
-            for rdm in rdms:
-                tv += np.einsum("sr,qp->pqrs", rdm, rdm, optimize=True)
-            return np.einsum("pqrs,pqrs", dv, tv/2, optimize=True)
-
-        # Compute linear term (eq. 19)
-        # dh * \gamma + 0.5 * dv * (\delta_pr * \gamma_qs + \delta_qs * \gamma_pr - \delta_ps * \gamma_qr
-        #                           - \delta_qr * \gamma_ps - \delta_pr * \delta_qs + \delta_ps * \delta_qr)
-        linear = (
-            eye_dm1
-            - np.transpose(eye_dm1, axes=(0, 1, 3, 2))
-            + dm1_eye
-            - np.transpose(dm1_eye, axes=(0, 1, 3, 2))
-            - np.einsum("pr,qs->pqrs", np.eye(n), np.eye(n), optimize=True)
-            + np.einsum("ps,qr->pqrs", np.eye(n), np.eye(n), optimize=True)
-        )
-        linear = np.einsum("pq,pq", dh, dm1, optimize=True) + 0.5 * np.einsum(
-            "pqrs,pqrs", dv, linear, optimize=True
-        )
+        linear = _pperpa_linearterms(dh, dv, dm1)
 
         # Compute ERPA correlation energy (eq. 19)
-        return (
-            linear
-            + 0.5 * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.)[0]
-        )
+        # return (
+        #     linear
+        #     + 0.5 * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.)[0]
+        # )
+        function = IntegrandPP(cls, h_0, v_0, dh, dv, dm1, dm2)
+        params = (solver, eigtol, singl)
+        nonlinear, abserr = integrate(function.vfunc, 0, 1, args=params, tol=1.49e-04, maxiter=nint, vec_func=True)
+        ecorr = linear + 0.5 * nonlinear        
+        
+        output = {}
+        output["ecorr"] = ecorr
+        output["linear"] = linear
+        output["error"] = abserr
+        return output
+
+
+def _pperpa_linearterms(_dh, _dv, _dm1):
+    _n = _dm1.shape[0]
+    # \delta_pr * \gamma_qs
+    eye_dm1 = np.einsum("pr,qs->pqrs", np.eye(_n), _dm1, optimize=True)
+    # \delta_qs * \gamma_pr
+    dm1_eye = np.einsum("pr,qs->pqrs", _dm1, np.eye(_n), optimize=True)
+
+    # Compute linear term (eq. 19)
+    # dh * \gamma + 0.5 * dv * (\delta_pr * \gamma_qs + \delta_qs * \gamma_pr - \delta_ps * \gamma_qr
+    #                           - \delta_qr * \gamma_ps - \delta_pr * \delta_qs + \delta_ps * \delta_qr)
+    _linear = (
+        eye_dm1
+        - np.transpose(eye_dm1, axes=(0, 1, 3, 2))
+        + dm1_eye
+        - np.transpose(dm1_eye, axes=(0, 1, 3, 2))
+        - np.einsum("pr,qs->pqrs", np.eye(_n), np.eye(_n), optimize=True)
+        + np.einsum("ps,qr->pqrs", np.eye(_n), np.eye(_n), optimize=True)
+    )
+    _linear = np.einsum("pq,pq", _dh, _dm1, optimize=True) + 0.5 * np.einsum(
+        "pqrs,pqrs", _dv, _linear, optimize=True
+    )
+    return _linear
+
+
+def eval_tdmterms(_dm1):
+    n = _dm1.shape[0]
+    # Compute inmutable terms in (eq. 35)
+    # #
+    # rdm_terms = (
+    #     np.einsum("li,kj->klji", np.eye(n), np.eye(n), optimize=True)
+    #     - np.einsum("ki,lj->klji", np.eye(n), np.eye(n), optimize=True)
+    #     + eye_dm1
+    #     - np.transpose(eye_dm1, axes=(0, 1, 3, 2))
+    #     + dm1_eye
+    #     - np.transpose(dm1_eye, axes=(0, 1, 3, 2))
+    #     + dm2
+    # )
+    # #
+    # \delta_{i l} \delta_{j k} -\delta_{i k} \delta_{j l}
+    _rdm_terms = np.einsum("il,jk->klji", np.eye(n), np.eye(n), optimize=True)
+    _rdm_terms -= np.einsum("ik,jl->klji", np.eye(n), np.eye(n), optimize=True)
+    # + \delta_{i k} \left\{a^\dagger_{j} a_{l}\right\}
+    # - \delta_{i l} \left\{a^\dagger_{j} a_{k}\right\}
+    _rdm_terms += np.einsum("ik,jl->klji", np.eye(n), _dm1, optimize=True)
+    _rdm_terms -= np.einsum("il,jk->klji", np.eye(n), _dm1, optimize=True)
+    # + \delta_{j l} \left\{a^\dagger_{i} a_{k}\right\}
+    # - \delta_{j k} \left\{a^\dagger_{i} a_{l}\right\}
+    _rdm_terms += np.einsum("jl,ik->klji", np.eye(n), _dm1, optimize=True)
+    _rdm_terms -= np.einsum("jk,il->klji", np.eye(n), _dm1, optimize=True)
+    return _rdm_terms
+
+
+def eval_alphadependent_terms(_dm1, evecs, dmterms):
+    n = _dm1.shape[0]
+    # Compute transition RDMs (eq. 35)
+    rdms = np.einsum("mrs,pqsr->mpq", evecs.reshape(evecs.shape[0], n, n), dmterms)
+    _tv = np.zeros((n, n, n, n), dtype=_dm1.dtype)
+    for rdm in rdms:
+        _tv += np.einsum("sr,qp->pqrs", rdm, rdm, optimize=True)
+    return _tv
+
+
+class IntegrandPP:
+    r"""Compute adiabatic connection integrand."""
+    def __init__(self, method, h0, v0, dh, dv, dm1, dm2):
+        self.h_0 = h0
+        self.v_0 = v0
+        self.dh = dh
+        self.dv = dv
+        # TODO: Check that method is EOMDEA
+        self.dm1 = dm1
+        self.dm2 = dm2
+        self.method = method
+        self.rdm_terms = eval_tdmterms(self.dm1)
+        self.vfunc = np.vectorize(self.eval_integrand)        
+    
+    # Nonlinear term (eq. 19 integrand)
+    def eval_integrand(self, alpha, gevps, tol, singlet):
+        r""" """
+        # Compute H^alpha
+        h = alpha * self.dh
+        h += self.h_0
+        v = alpha * self.dv
+        v += self.v_0
+        # Solve EOM equations
+        pp = self.method(h, v, self.dm1, self.dm2)
+        w, c = pp.solve_dense(tol=tol, mode=gevps)
+        w, c, _ = pickpositiveeig(w, c)
+        if singlet:
+            s_cv= pick_singlets(w, c)[1]
+            norm = np.dot(s_cv, np.dot(pp.rhs, s_cv.T))
+            diag_n = np.diag(norm)
+            idx = np.where(diag_n > 0)[0]  # Remove eigenvalues with negative norm
+            sqr_n = np.sqrt(diag_n[idx])
+            c = (s_cv[idx].T / sqr_n).T
+        else:
+            raise NotImplementedError("Only singlets are implemented")
+        
+        # Compute transition RDMs energy term
+        tdtd = eval_alphadependent_terms(self.dm1, c, self.rdm_terms)
+        return np.einsum("pqrs,pqrs", self.dv, tdtd/2, optimize=True)
