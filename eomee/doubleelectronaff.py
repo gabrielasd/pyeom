@@ -226,36 +226,33 @@ class EOMDEA(EOMState):
 
         I = np.eye(self._n, dtype=self._h.dtype)
 
-        # A_klji = 2 (h_li \delta_kj - h_ki \delta_lj)
-        #       += 2 (h_ki \gamma_lj - h_li \gamma_kj)
-        a = np.einsum("kj,li->klji", I, self._h)
-        a -= np.einsum("ki,lj->klji", self._h, I)
-        a += np.einsum("ki,lj->klji", self._h, self._dm1)
-        a -= np.einsum("kj,li->klji", self._dm1, self._h)
-        # A_klji += 2 (h_ip \gamma_pk \delta_lj + h_jp \gamma_pl \delta_ki)
-        hdm1 = np.einsum("ab,bc->ac", self._h, self._dm1)
-        a += np.einsum("ik,lj->klji", hdm1, I)
-        a += np.einsum("jl,ki->klji", hdm1, I)
-        # A_klji += 2 <v_lkjr> \gamma_ir
-        a += np.einsum("lkjr,ir->klji", self._v, self._dm1)
-        # A_klji += 2 (<v_qljr> \gamma_qr \delta_ki - <v_qkjr> \gamma_qr \delta_li)
-        vdm1 = np.einsum("abcd,ad->bc", self._v, self._dm1)
-        a += np.einsum("lj,ki->klji", vdm1, I)
-        a -= np.einsum("kj,li->klji", vdm1, I)
-        # A_klji += 2 (<v_qlir> \Gamma_qjrk - <v_qkir> \Gamma_qjrl)
-        a += np.einsum("qlir,qjrk->klji", self._v, self._dm2)
-        a -= np.einsum("qkir,qjrl->klji", self._v, self._dm2)
+        # A_klji = 2 h_il \delta_jk - 2 h_il \gamma_jk + 2 h_ik \gamma_jl - 2 h_ik \delta_jl
+        a = np.einsum("il,jk->klji", self._h, I, optimize=True)
+        a -= np.einsum("il,jk->klji", self._h, self._dm1, optimize=True)
+        a += np.einsum("ik,jl->klji", self._h, self._dm1, optimize=True)
+        a -= np.einsum("ik,jl->klji", self._h, I, optimize=True)
+        # A_klji += 2 \gamma_lq h_qj \delta_ki - 2 \gamma_kq h_qj \delta_li
+        dm1h = np.einsum("ab,bc->ac", self._dm1, self._h, optimize=True)
+        a += np.einsum("lj,ki->klji", dm1h, I, optimize=True)
+        a -= np.einsum("kj,li->klji", dm1h, I, optimize=True)
         a *= 2
         # A_klji += <v_klji>
         a += self._v
-        # A_klji += <v_qlij> \gamma_qk - <v_qkij> \gamma_ql
-        a += np.einsum("qlij,qk->klji", self._v, self._dm1)
-        a -= np.einsum("qkij,ql->klji", self._v, self._dm1)
-        # A_klji += <v_pqjr> \Gamma_pqrk \delta_li - <v_pqjr> \Gamma_pqrl \delta_ki
-        #         = -<v_pqrj> \Gamma_pqrk \delta_li + <v_pqrj> \Gamma_pqrl \delta_ki
-        vdm2 = np.einsum("abcd,abce->de", self._v, self._dm2)
-        a -= np.einsum("jk,li->klji", vdm2, I)
-        a += np.einsum("jl,ki->klji", vdm2, I)
+        # A_klji += <v_jilr> \gamma_kr - <v_jikr> \gamma_lr + 2 <v_qjkl> \gamma_qi
+        a += np.einsum("jilr,kr->klji", self._v, self._dm1, optimize=True)
+        a -= np.einsum("jikr,lr->klji", self._v, self._dm1, optimize=True)
+        a += 2 * np.einsum("qjkl,qi->klji", self._v, self._dm1, optimize=True)
+        # A_klji += 2 ( <v_iqrk> \gamma_qr \delta_lj - <v_iqrl> \gamma_qr \delta_kj )
+        vdm1 = np.einsum("abcd,bc->ad", self._v, self._dm1, optimize=True)
+        a += 2 * np.einsum("ik,lj->klji", vdm1, I, optimize=True)
+        a -= 2 * np.einsum("il,kj->klji", vdm1, I, optimize=True)
+        # A_klji += 2 ( <v_jqrk> \Gamma_qlri + <v_jqlr> \Gamma_qkri )
+        a += 2 * np.einsum("jqrk,qlri->klji", self._v, self._dm2, optimize=True)
+        a += 2 * np.einsum("jqlr,qkri->klji", self._v, self._dm2, optimize=True)
+        # A_klji += <v_qjrs> \Gamma_qlrs \delta_ki - <v_qjrs> \Gamma_qkrs \delta_li
+        vdm2 = np.einsum("abcd,aecd->be", self._v, self._dm2, optimize=True)
+        a += np.einsum("jl,ki->klji", vdm2, I, optimize=True)
+        a -= np.einsum("jk,li->klji", vdm2, I, optimize=True)
         # FIX: Missing symmetric permutation terms
         a = a + a.transpose(1, 0, 3, 2)
         return 0.5 * a.reshape(self._n ** 2, self._n ** 2)
