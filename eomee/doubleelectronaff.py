@@ -386,7 +386,7 @@ class IntegrandPP:
         self.dm1 = dm1
         self.dm2 = dm2
         self.method = method
-        self.rdm_terms = eval_tdmterms(self.dm1)
+        # self.rdm_terms = eval_tdmterms(self.dm1)
         self.vfunc = np.vectorize(self.eval_integrand)        
     
     # Nonlinear term (eq. 19 integrand)
@@ -412,5 +412,5 @@ class IntegrandPP:
             raise NotImplementedError("Only singlets are implemented")
         
         # Compute transition RDMs energy term
-        tdtd = eval_alphadependent_terms(self.dm1, c, self.rdm_terms)
+        tdtd = eval_alphadependent_terms(self.dm1, c, pp.rhs)
         return np.einsum("pqrs,pqrs", self.dv, tdtd/2, optimize=True)
