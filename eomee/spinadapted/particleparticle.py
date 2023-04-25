@@ -174,7 +174,7 @@ class DEASA(EOMDEA):
         if not dm1ac:
             raise NotImplementedError("dm1ac=False not implemented yet.")
         else:
-            linear = _pperpa_linearterms(dh, dm1)
+            linear = _pperpa_linearterms(dh, dv, dm1)
 
         # Compute ERPA correction energy (eq. 19 integrand) 
         function = IntegrandPP(cls, h_0, v_0, dh, dv, dm1, dm2)
