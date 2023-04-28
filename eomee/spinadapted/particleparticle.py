@@ -21,7 +21,7 @@ import numpy as np
 from scipy.integrate import fixed_quad
 
 from eomee.doubleelectronaff import EOMDEA, EOMDEA2
-from eomee.tools import pickpositiveeig, spinize, from_unrestricted
+from eomee.tools import picknonzeroeigs
 from eomee.solver import nonsymmetric, svd_lowdin, eig_pinv
 
 
@@ -298,7 +298,7 @@ class IntegrandPP:
             w, c = pp.solve_dense(tol=tol, mode=gevps, mult=3)
             metric = pp._rhs3
         
-        cv_p = pickpositiveeig(w, c)[1]
+        cv_p = picknonzeroeigs(w, c)[1]
         norm = np.dot(cv_p, np.dot(metric, cv_p.T))
         diag_n = np.diag(norm)
         idx = np.where(diag_n > 0)[0]  # Remove eigenvalues with negative norm
