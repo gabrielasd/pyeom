@@ -341,6 +341,15 @@ def pickpositiveeig(w, cv, tol=0.01):
     return w[idx], cv[idx], idx
 
 
+def picknonzeroeigs(w, cv, tol=0.01):
+    r"""
+    Prune out the GEVP solutions whose eigenvalues are close to zero as determined by the tolerance tol.
+
+    """
+    idx = np.where(np.abs(w) > tol ** 2)[0]
+    return w[idx], cv[idx], idx
+
+
 def pickeig(w, tol=0.001):
     "adapted from PySCF TDSCF module"
     idx = np.where(w > tol ** 2)[0]
