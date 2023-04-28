@@ -592,10 +592,11 @@ def two_positivity_condition(matrix, nbasis, dm1, dm2):
         # Q_pqrs = <\Psi|a_p a_q s^\dagger r^\dagger|\Psi>
         #        = \Gamma_pqrs + \delta_qs \delta_pr - \delta_ps \delta_qr
         #        - \delta_qs \gamma_pr + \delta_ps \gamma_qr + \delta_qr \gamma_ps - \delta_pr \gamma_qs
-        Q_matrix = dm2
-        Q_matrix += (np.einsum('qs,pr->pqrs', I, I) -  np.einsum('ps,qr->pqrs', I, I))
+        # Q_matrix = dm2
+        Q_matrix = (np.einsum('qs,pr->pqrs', I, I) -  np.einsum('ps,qr->pqrs', I, I))
         Q_matrix -= (np.einsum('qs,pr->pqrs', I, dm1) +  np.einsum('pr,qs->pqrs', I, dm1))
         Q_matrix += (np.einsum('ps,qr->pqrs', I, dm1) +  np.einsum('qr,ps->pqrs', I, dm1)) 
+        Q_matrix += dm2
         return Q_matrix
     elif matrix == 'g':
         # G-condition: G >= 0
