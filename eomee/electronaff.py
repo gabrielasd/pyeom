@@ -175,7 +175,7 @@ class EOMEADoubleCommutator(EOMState):
         )
         # A_mn += <v_pqrn> \Gamma_pqmr
         #      -= <v_pqnr> \Gamma_pqmr
-        a -= 2 * np.einsum(
+        a -= np.einsum(
             "pqmr,pqnr->mn",
             self._dm2,
             self._v,
