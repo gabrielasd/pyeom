@@ -20,13 +20,14 @@ import numpy as np
 
 from scipy.integrate import fixed_quad
 
-from eomee.excitation import EOMExc
+from eomee.excitation import EOMExc, EOMExc0
 from eomee.tools import pickpositiveeig, spinize, from_unrestricted
 from eomee.solver import nonsymmetric, svd_lowdin, eig_pinv
 
 
 __all__ = [
     "EOMExcSA",
+    "EOMExc0SA",
 ]
 
 
@@ -255,6 +256,135 @@ class EOMExcSA(EOMExc):
 
         return output
 
+
+class EOMExc0SA(EOMExc0):
+    r"""
+    Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a^{\dagger}_i  a_j \pm a^{\dagger}_{\bar{i}}  a_{\bar{j}})}`.
+
+    .. math::
+        \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l \pm a^{\dagger}_{\bar{k}}  a_{\bar{l}}, \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
+        = \Delta_{k} \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k  a_l \pm a^{\dagger}_{\bar{k}}  a_{\bar{l}} \hat{Q} \middle| \Psi^{(N)}_0 \right>
+
+    """
+    def __init__(self, h, v, dm1, dm2):
+        super().__init__(h, v, dm1, dm2)
+        self._k = self._n // 2
+        self._lhs_sb = self._get_lhs_spinblocks()
+        self._rhs_sb = self._get_rhs_spinblocks()
+        self._lhs1 = self._compute_lhs_1()
+        self._rhs1 = self._compute_rhs_1()
+        self._lhs3 = self._compute_lhs_30()
+        self._rhs3 = self._compute_rhs_30()
+    
+
+    @property
+    def k(self):
+        r"""
+        Return the number of spatial orbital basis functions.
+
+        Returns
+        -------
+        k : int
+            Number of spatial orbital basis functions.
+
+        """
+        return self._k
+
+    @property
+    def neigs(self):
+        r"""
+        Return the size of the eigensystem.
+
+        Returns
+        -------
+        neigs : int
+            Size of eigensystem.
+
+        """
+        # Number of q_n terms = n_{\text{basis}} * n_{\text{basis}}
+        return (self._k) ** 2
+    
+    def _get_lhs_spinblocks(self):
+        lhs = self._lhs.reshape(self._n, self._n, self._n, self._n)
+        A_aaaa = lhs[:self._k, :self._k, :self._k, :self._k]
+        A_bbbb = lhs[self._k:, self._k:, self._k:, self._k:]
+        A_aabb = lhs[:self._k, :self._k, self._k:, self._k:]
+        A_bbaa = lhs[self._k:, self._k:, :self._k, :self._k]
+        return (A_aaaa, A_bbbb, A_aabb, A_bbaa)
+
+    def _get_rhs_spinblocks(self):
+        rhs = self._rhs.reshape(self._n, self._n, self._n, self._n)
+        M_aaaa = rhs[:self._k, :self._k, :self._k, :self._k]
+        M_bbbb = rhs[self._k:, self._k:, self._k:, self._k:]
+        M_aabb = rhs[:self._k, :self._k, self._k:, self._k:]
+        M_bbaa = rhs[self._k:, self._k:, :self._k, :self._k]
+        return (M_aaaa, M_bbbb, M_aabb, M_bbaa)
+    
+    def _compute_lhs_1(self):
+        A_aaaa, A_bbbb, A_aabb, A_bbaa = self._lhs_sb
+        A = A_aaaa + A_bbbb + A_aabb + A_bbaa
+        return 0.5 * A.reshape(self._k**2, self._k**2)
+    
+    def _compute_lhs_30(self):
+        A_aaaa, A_bbbb, A_aabb, A_bbaa = self._lhs_sb
+        A = A_aaaa + A_bbbb - A_aabb - A_bbaa
+        return 0.5 * A.reshape(self._k**2, self._k**2)
+
+    def _compute_rhs_1(self):
+        M_aaaa, M_bbbb, M_aabb, M_bbaa = self._rhs_sb 
+        M = M_aaaa + M_bbbb + M_aabb + M_bbaa
+        return 0.5 * M.reshape(self._k**2, self._k**2)
+    
+    def _compute_rhs_30(self):
+        M_aaaa, M_bbbb, M_aabb, M_bbaa = self._rhs_sb 
+        M = M_aaaa + M_bbbb - M_aabb - M_bbaa
+        return 0.5 * M.reshape(self._k**2, self._k**2)
+    
+    def solve_dense(self, tol=1.0e-10, mode="nonsymm", err="ignore", mult=1):
+        r"""
+        Solve the EOM eigenvalue system.
+
+        Parameters
+        ----------
+        tol : float, optional
+            Tolerance for small singular values. Default: 1.0e-10
+        mode : str, optional
+            Specifies whether a symmetric or nonsymmetric method is used to solve the GEVP.
+            Default is `nonsymm` in which the inverse of the right hand side matrix is taken.
+        err : ("warn" | "ignore" | "raise")
+            What to do if a divide-by-zero floating point error is raised.
+            Default behavior is to ignore divide by zero errors.
+        mult : int, optional
+            State multiplicity. Singlet (1) ot triplet (3) states. Default: 1
+
+        Returns
+        -------
+        w : np.ndarray((m,))
+            Eigenvalue array (m eigenvalues).
+        v : np.ndarray((m, n))
+            Eigenvector matrix (m eigenvectors).
+
+        """
+        modes = {'nonsymm': nonsymmetric, 'symm': svd_lowdin, 'qtrunc': eig_pinv}
+        if not isinstance(tol, float):
+            raise TypeError("Argument tol must be a float")        
+        try:
+            _solver = modes[mode]
+        except KeyError:
+            print(
+                "Invalid mode parameter. Valid options are nonsymm, symm or qtrunc."
+            )
+        if mult == 1:
+            lhs = self._lhs1
+            rhs = self._rhs1
+        elif mult == 3:
+            lhs = self._lhs3
+            rhs = self._rhs3
+        else:
+            raise ValueError("Invalid state multiplicity. Valid options are 1 or 3.")
+        w, v = _solver(lhs, rhs, tol=tol, err=err)
+        return np.real(w), np.real(v)
+    
 
 def _pherpa_linearterms(_n, _dh, _dv, _dm1):
     # Gamma_pqrs = < | p^+ q^+ s r | > = - < | p^+ q^+ r s | >
