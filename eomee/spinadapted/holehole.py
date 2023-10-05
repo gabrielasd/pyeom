@@ -200,11 +200,83 @@ class DIPSA(EOMDIP):
         output["error"] = None
 
         return output
+    
+    @classmethod
+    def erpa_ecorr(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, summall=True, mult=1, nint=5, dm1ac=True):
+        r"""
+        Compute the ERPA correlation energy for the operator.
+
+        .. math::
+        E_corr = (E^{\alpha=1} - E^{\alpha=0}) - (< \Psi^{\alpha=0}_0 | \hat{H} | \Psi^{\alpha=0}_0 > - E^{\alpha=0})
+        = 0.5 \sum_{pqrs} \int_{0}_{1} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) \Gamma^{\alpha}_{pqrs} d \alpha
+        - 0.5 \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) \Gamma^{\alpha=0}_{pqrs}
+
+        where :math:`\Gamma^{\alpha}_{pqrs}` is
+
+        .. math::
+        \Gamma^{\alpha}_{pqrs} = \sum_{\nu =0} \gamma^{\alpha;0 \nu}_{pq} \gamma^{\alpha;\nu 0}_{rs}
+        """
+        # Size of dimensions
+        n = h_0.shape[0]
+        # H_1 - H_0
+        dh = h_1 - h_0
+        # V_1 - V_0
+        dv = v_1 - v_0
+
+        integrand = Integrandhh(cls, h_0, v_0, dh, dv, dm1, dm2)
+        if mult == 1:
+            params = (solver, eigtol, True, dm1ac)
+            alphadep=  fixed_quad(integrand.vfunc, 0, 1, args=params, n=nint)[0]
+        elif mult == 3:
+            params = (solver, eigtol, False, dm1ac)
+            alphadep =  fixed_quad(integrand.vfunc, 0, 1, args=params, n=nint)[0]
+        elif mult == 13:
+            params = (solver, eigtol, True, dm1ac)
+            alphadep =  fixed_quad(integrand.vfunc, 0, 1, args=params, n=nint)[0]
+            params = (solver, eigtol, False, dm1ac)
+            alphadep +=  fixed_quad(integrand.vfunc, 0, 1, args=params, n=nint)[0]
+        else:
+            raise ValueError("Invalid mult parameter. Valid options are 1, 3 or 13.")
+        
+        rhs = Integrandhh.eval_dmterms(n, dm1).reshape(n ** 2, n ** 2)
+        temp = _rdm2_a0(n, dm2, rhs, summall, eigtol)
+        alphaindep = -0.5 * np.einsum("pqrs,pqrs", dv, temp, optimize=True)
+        ecorr = alphadep + alphaindep
+
+        output = {}
+        output["ecorr"] = ecorr
+        output["linear"] = alphaindep
+        output["error"] = None
+
+        return output
 
 
 def _hherpa_linearterms(_dh, _dm1):
     # dh * \gamma
     return np.einsum("pq,pq", _dh, _dm1, optimize=True)
+
+
+def _rdm2_a0(_n, _rdm2, _rhs, _summall, _eigtol):
+    if not _summall:
+        d_occs_ij = np.diag(_rhs)
+        _rdm2  = truncate_rdm2_matrix(_n, d_occs_ij, _rdm2, _eigtol)
+    return _rdm2
+
+
+def truncate_rdm2_matrix(nspins, ij_d_occs, _rdm2, _eigtol):
+    nt = nspins**2
+    truncated = np.zeros_like(_rdm2)
+    for pq in range(nt):
+        for rs in range(nt):
+            cond1 = np.abs(ij_d_occs[pq]) > _eigtol
+            cond2 = np.abs(ij_d_occs[rs]) > _eigtol
+            if cond1 and cond2:
+                p = pq//nspins
+                q = pq%nspins
+                r = rs//nspins
+                s = rs%nspins
+                truncated[p,q,r,s] = _rdm2[p,q,r,s]
+    return truncated
 
 
 class Integrandhh:
