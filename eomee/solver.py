@@ -183,8 +183,9 @@ def lowdin_complex(lhs, rhs, tol=1.0e-10):
     return w, v.T
 
 
-def eig_pinv(lhs, rhs, tol=1.0e-10, err=None):
-    def zeroing_rows_and_cols(h, s, lindep):
+def _zeroing_rows_and_cols(h, s, lindep):
+        # HARD CODED
+        # lindep = 1.0e-2
         seig = np.diag(s)
         idx = np.abs(seig) < lindep
         t = np.ones_like(seig)
@@ -193,11 +194,47 @@ def eig_pinv(lhs, rhs, tol=1.0e-10, err=None):
         A = T@h@T
         B = T@s@T
         return A, B
-    lhs, rhs = zeroing_rows_and_cols(lhs, rhs, tol)
+
+
+def eig_pinv(lhs, rhs, tol=1.0e-10, err=None):
+    # lhs, rhs = _zeroing_rows_and_cols(lhs, rhs, tol)
     S_inv = pinv(rhs, rcond=tol)
     A = np.dot(S_inv, lhs)
     # Run scipy `linalg.eig` eigenvalue solver
     w, v = eig(A)
+    # if np.any(np.iscomplex(w)):
+    #     print(f'Warning: complex eigenvalues found.')
+    return w, v.T
+
+
+def _pruneQ(L, R, tol):     
+    # Fid the eigenvalues of the metric matrix smaller than a tolerance assuming 
+    # it is a Hermitian matrix.
+    s, _U = eigh(R)
+    _idx = np.where(np.abs(s) > tol)[0]
+    _B = np.dot(_U[:, _idx].T, np.dot(R, _U[:, _idx]))
+    _A = np.dot(_U[:, _idx].T, np.dot(L, _U[:, _idx]))
+    return (_A, _B, _U, _idx)
+
+
+def eig_prunned(lhs, rhs, tol=1.0e-10, err=None):
+    # Remove configurations with small amplitudes in the metric matrix from the
+    # transition operator.
+    A, B, U, idx = _pruneQ(lhs, rhs, tol)
+    w, v = eig(A, B)
+    # Transform back to original eigenvector matrix
+    v = np.dot(U[:, idx], v)
+    return w, v.T
+
+
+def eig_prunned_pinv(lhs, rhs, tol=1.0e-10, err=None):
+    A, B, U, idx = _pruneQ(lhs, rhs, tol)
+    S_inv = pinv(B, rcond=tol)
+    A = np.dot(S_inv, A)
+    # Run scipy `linalg.eig` eigenvalue solver
+    w, v = eig(A)
+    # Transform back to original eigenvector matrix
+    v = np.dot(U[:, idx], v)
     # if np.any(np.iscomplex(w)):
     #     print(f'Warning: complex eigenvalues found.')
     return w, v.T
