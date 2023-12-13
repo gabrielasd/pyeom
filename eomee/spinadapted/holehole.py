@@ -353,6 +353,9 @@ class Integrandhh:
         metric = metric.reshape(k, k, k, k)
         tdtd_ab = Integrandhh.eval_alphadependent_2rdmterms(k, self.dm1, c, metric)
         hh_rdm2 = np.zeros((m,m,m,m), dtype=self.dm2.dtype)
+        # NOTE: the 0.5 factor in the singlet and triplet alpha-beta transition DM contributions is because each
+        # contributes to G_abab and G_baba blocks of 2RDM. This factor wouldn't be necesary if we ommited the G_baba
+        # block, or restricted the DIP transition operator to Q_pq with p>q.
         if singlets:
             hh_rdm2[:k, k:, :k, k:] = 0.5 * tdtd_ab
             hh_rdm2[k:, :k, k:, :k] = 0.5 * tdtd_ab
