@@ -331,64 +331,64 @@ def make_gvbpp_hamiltonian(one_mo, two_mo, gem_matrix, dm1a):
 
     return one_mo_0, two_mo_0, two_mo_inter
 
-# FIXME: make pickpositiveeig return sorted w, c and remove sorting from pick_{singlet, triplet}
-def pickpositiveeig(w, cv, tol=0.01):
-    r"""
-    Adapted from PySCF TDSCF module.
+# # FIXME: make pickpositiveeig return sorted w, c and remove sorting from pick_{singlet, triplet}
+# def pickpositiveeig(w, cv, tol=0.01):
+#     r"""
+#     Adapted from PySCF TDSCF module.
 
-    """
-    idx = np.where(w > tol ** 2)[0]
-    return w[idx], cv[idx], idx
-
-
-def picknonzeroeigs(w, cv, tol=0.01):
-    r"""
-    Prune out the GEVP solutions whose eigenvalues are close to zero as determined by the tolerance tol.
-
-    """
-    idx = np.where(np.abs(w) > tol ** 2)[0]
-    return w[idx], cv[idx], idx
+#     """
+#     idx = np.where(w > tol ** 2)[0]
+#     return w[idx], cv[idx], idx
 
 
-def pickeig(w, tol=0.001):
-    "adapted from PySCF TDSCF module"
-    idx = np.where(w > tol ** 2)[0]
-    # get unique eigvals
-    b = np.sort(w[idx])
-    d = np.append(True, np.diff(b))
-    TOL = 1e-6
-    w = b[d > TOL]
-    return w
+# def picknonzeroeigs(w, cv, tol=0.01):
+#     r"""
+#     Prune out the GEVP solutions whose eigenvalues are close to zero as determined by the tolerance tol.
+
+#     """
+#     idx = np.where(np.abs(w) > tol ** 2)[0]
+#     return w[idx], cv[idx], idx
 
 
-def pick_singlets(eigvals, eigvecs):
-    # sort ev and cv correspondingly
-    idx = eigvals.argsort()
-    b = eigvals[idx]
-    eigvecs = eigvecs[idx]
-    # start picking up singlets
-    mask = np.append(True, np.diff(b)) > 1.e-7
-    unique_eigs_idx = np.where(mask)[0]
-    number_unique_eigs = np.diff(unique_eigs_idx)
-    idx = np.where(number_unique_eigs == 1)[0]
-    singlet_idx = unique_eigs_idx[idx]
-    if unique_eigs_idx[-1] == len(eigvals)-1:
-        singlet_idx = np.append(singlet_idx, unique_eigs_idx[-1])
-    singlets_ev = b[singlet_idx]
-    singlets_cv = eigvecs[singlet_idx]
-    return singlets_ev, singlets_cv, singlet_idx
+# def pickeig(w, tol=0.001):
+#     "adapted from PySCF TDSCF module"
+#     idx = np.where(w > tol ** 2)[0]
+#     # get unique eigvals
+#     b = np.sort(w[idx])
+#     d = np.append(True, np.diff(b))
+#     TOL = 1e-6
+#     w = b[d > TOL]
+#     return w
 
 
-def pick_multiplets(eigvals, eigvecs):
-    # sort ev and cv correspondingly
-    idx = eigvals.argsort()
-    b = eigvals[idx]
-    eigvecs = eigvecs[idx]
-    # start picking up triplets
-    _, _, singlet_idx = pick_singlets(eigvals, eigvecs)
-    triplets_ev = np.delete(b, singlet_idx)
-    triplets_cv = np.delete(eigvecs, singlet_idx, axis=0)
-    return triplets_ev, triplets_cv
+# def pick_singlets(eigvals, eigvecs):
+#     # sort ev and cv correspondingly
+#     idx = eigvals.argsort()
+#     b = eigvals[idx]
+#     eigvecs = eigvecs[idx]
+#     # start picking up singlets
+#     mask = np.append(True, np.diff(b)) > 1.e-7
+#     unique_eigs_idx = np.where(mask)[0]
+#     number_unique_eigs = np.diff(unique_eigs_idx)
+#     idx = np.where(number_unique_eigs == 1)[0]
+#     singlet_idx = unique_eigs_idx[idx]
+#     if unique_eigs_idx[-1] == len(eigvals)-1:
+#         singlet_idx = np.append(singlet_idx, unique_eigs_idx[-1])
+#     singlets_ev = b[singlet_idx]
+#     singlets_cv = eigvecs[singlet_idx]
+#     return singlets_ev, singlets_cv, singlet_idx
+
+
+# def pick_multiplets(eigvals, eigvecs):
+#     # sort ev and cv correspondingly
+#     idx = eigvals.argsort()
+#     b = eigvals[idx]
+#     eigvecs = eigvecs[idx]
+#     # start picking up triplets
+#     _, _, singlet_idx = pick_singlets(eigvals, eigvecs)
+#     triplets_ev = np.delete(b, singlet_idx)
+#     triplets_cv = np.delete(eigvecs, singlet_idx, axis=0)
+#     return triplets_ev, triplets_cv
 
 
 class TDM():
