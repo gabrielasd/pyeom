@@ -21,8 +21,8 @@ import numpy as np
 from scipy.integrate import fixed_quad
 
 from eomee.excitation import EOMExc, EOMExc0
-from eomee.tools import pickpositiveeig, spinize, from_unrestricted
-from eomee.solver import nonsymmetric, svd_lowdin, eig_pinv
+from eomee.tools import spinize, from_unrestricted
+from eomee.solver import eig_pinvb, lowdin_svd, eig_pruneq_pinvb, pick_positive
 
 
 __all__ = [
@@ -139,7 +139,7 @@ class EOMExcSA(EOMExc):
             Eigenvector matrix (m eigenvectors).
 
         """
-        modes = {'nonsymm': nonsymmetric, 'symm': svd_lowdin, 'qtrunc': eig_pinv}
+        modes = {'nonsymm': eig_pinvb, 'symm': lowdin_svd, 'qtrunc': eig_pruneq_pinvb}
         if not isinstance(tol, float):
             raise TypeError("Argument tol must be a float")        
         try:
@@ -521,7 +521,7 @@ class IntegrandPh:
         else:
             w, c = ph.solve_dense(tol=tol, mode=gevps, mult=3)
             metric = ph._rhs3
-        cv_p = pickpositiveeig(w, c)[1]
+        cv_p = pick_positive(w, c)[1]
         norm = np.dot(cv_p, np.dot(metric, cv_p.T))
         diag_n = np.diag(norm)
         sqr_n = np.sqrt(np.abs(diag_n))

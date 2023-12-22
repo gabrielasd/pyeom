@@ -22,7 +22,7 @@ from scipy.integrate import quad as integrate
 from scipy.integrate import quadrature as fixed_quad
 
 from .base import EOMState
-from .tools import pickpositiveeig, pick_singlets, pick_multiplets
+from .solver import pick_positive, _pick_singlets, _pick_multiplets
 
 
 __all__ = [
@@ -205,9 +205,9 @@ class WrappNonlinear:
         # Solve EOM equations
         hh = self.method(h, v, self.dm1, self.dm2)
         w, c = hh.solve_dense(*args, **kwargs)
-        ev_p, cv_p, _ = pickpositiveeig(w, c)
+        ev_p, cv_p, _ = pick_positive(w, c)
         if singlet:
-            s_cv= pick_singlets(ev_p, cv_p)[1]
+            s_cv= _pick_singlets(ev_p, cv_p)[1]
             norm = np.dot(s_cv, np.dot(hh.rhs, s_cv.T))
             diag_n = np.diag(norm)
             idx = np.where(diag_n > 0)[0]  # Remove eigenvalues with negative norm
@@ -215,14 +215,6 @@ class WrappNonlinear:
             c = (s_cv[idx].T / sqr_n).T
         else:
             raise NotImplementedError("Only singlets are implemented")
-            # s_cv= pick_singlets(ev_p, cv_p)[1]
-            # norm = np.dot(s_cv, np.dot(hh.rhs, s_cv.T))
-            # diag_n = np.diag(norm)
-            # idx = np.where(diag_n > 0)[0]
-            # sqr_n = np.sqrt(diag_n[idx])
-            # s_cv = (s_cv[idx].T / sqr_n).T
-            # t_cv = pick_multiplets(ev_p, cv_p)[1]
-            # c = np.append(s_cv, t_cv, axis=0)
         # Compute transition RDMs (eq. 32)
         rdm_terms = WrappNonlinear.eval_tdmterms(n, self.dm1)
         tv = WrappNonlinear.eval_nonlinearterms(n, self.dm1, c, rdm_terms)

@@ -21,7 +21,7 @@ import numpy as np
 from scipy.integrate import quad as integrate
 
 from .base import EOMState
-from .tools import picknonzeroeigs, pick_singlets
+from .solver import pick_nonzero, _pick_singlets
 
 
 __all__ = ["EOMDEA", "EOMDEA2"]
@@ -400,9 +400,9 @@ class IntegrandPP:
         # Solve EOM equations
         pp = self.method(h, v, self.dm1, self.dm2)
         w, c = pp.solve_dense(tol=tol, mode=gevps)
-        w, c, _ = picknonzeroeigs(w, c)
+        w, c, _ = pick_nonzero(w, c)
         if singlet:
-            s_cv= pick_singlets(w, c)[1]
+            s_cv= _pick_singlets(w, c)[1]
             norm = np.dot(s_cv, np.dot(pp.rhs, s_cv.T))
             diag_n = np.diag(norm)
             idx = np.where(diag_n > 0)[0]  # Remove eigenvalues with negative norm

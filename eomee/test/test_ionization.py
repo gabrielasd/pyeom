@@ -116,17 +116,17 @@ def test_eomip_one_body_term():
     # EOM solution
     eom = EOMIP(one_mo, two_mo, one_dm, two_dm)
     aval1, _ = eom.solve_dense()
-    aval1 = np.sort(aval1)
+    # aval1 = np.sort(aval1)
     assert abs(aval1[-1] - ip[-1]) < 1e-8
 
     eom = EOMIPDoubleCommutator(one_mo, two_mo, one_dm, two_dm)
     aval2, _ = eom.solve_dense()
-    aval2 = np.sort(aval2)
+    # aval2 = np.sort(aval2)
     assert abs(aval2[-1] - ip[-1]) < 1e-8
 
     eom = EOMIPAntiCommutator(one_mo, two_mo, one_dm, two_dm)
     aval3, _ = eom.solve_dense()
-    aval3 = np.sort(aval3)
+    # aval3 = np.sort(aval3)
     assert abs(aval3[-1] - ip[-1]) < 1e-8
 
 
@@ -143,9 +143,9 @@ def test_eomip_one_body_term():
         ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, EOMIP),
         ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, EOMIPDoubleCommutator),
         ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, EOMIPAntiCommutator),
-        ("b_sto3g", 5, (3, 2), 4, 0.20051823, 1e-8, EOMIP),
-        ("b_sto3g", 5, (3, 2), 4, 0.20051823, 1e-8, EOMIPDoubleCommutator),
-        ("b_sto3g", 5, (3, 2), 4, 0.20051823, 1e-8, EOMIPAntiCommutator),
+        ("b_sto3g", 5, (3, 2), 0, 0.20051823, 1e-8, EOMIP),
+        ("b_sto3g", 5, (3, 2), 0, 0.20051823, 1e-8, EOMIPDoubleCommutator),
+        ("b_sto3g", 5, (3, 2), 0, 0.20051823, 1e-8, EOMIPAntiCommutator),
     ],
 )
 def test_ionization_eom_methods(filename, nbasis, nocc, evidx, expected, tol, eom_type):

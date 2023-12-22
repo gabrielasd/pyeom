@@ -23,7 +23,7 @@ from scipy.integrate import quadrature as integrate
 from scipy.integrate import fixed_quad
 
 from .base import EOMState
-from .tools import antisymmetrize, pickpositiveeig, pick_singlets, pick_multiplets
+from .solver import pick_positive, _pick_singlets
 
 
 __all__ = [
@@ -314,9 +314,10 @@ class IntegrandPh:
         # Solve EOM equations
         ph = self.method(h, v, self.dm1, self.dm2)
         w, c = ph.solve_dense(tol=tol, mode=gevps)
-        ev_p, cv_p, _ = pickpositiveeig(w, c)
+        # ev_p, cv_p, _ = pick_positive(w, c)
+        ev_p, cv_p = w, c
         if singlets:
-            s_cv= pick_singlets(ev_p, cv_p)[1]
+            s_cv= _pick_singlets(ev_p, cv_p)[1]
             norm = np.dot(s_cv, np.dot(ph.rhs, s_cv.T))
             diag_n = np.diag(norm)
             sqr_n = np.sqrt(np.abs(diag_n))
