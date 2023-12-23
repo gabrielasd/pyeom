@@ -33,12 +33,41 @@ __all__ = [
 
 
 class EOMExc(EOMState):
-    r"""
-    Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a^{\dagger}_i  a_j}`.
+    r"""Electron excitated state.
+
+    :math:`| \Psi^{(N)}_\lambda > = \hat{Q}^{0}_\lambda | \Psi^{(N)}_0 >`
+
+    defined by the single electron transition operator :math:`\hat{Q}^{0}_\lambda = \sum_{ij} { c_{ij;\lambda} a^{\dagger}_i  a_j}`
+
+    where the indices run over all spin-orbitlas.
+
+    The transition energies and wavefunction satisfy:
 
     .. math::
-        \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l, \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_{k} \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a_l, \hat{Q} \right] \Psi^{(N)}_0 \right>
+
+        &\mathbf{A} \mathbf{c} = \Delta_{k} \mathbf{U} \mathbf{c}
+
+        A_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l, \left[\hat{H}, a^{\dagger}_j  a_i \right]\right] \middle| \Psi^{(N)}_0 \right>
+
+        U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a_l, a^{\dagger}_j  a_i \right] \Psi^{(N)}_0 \right>
+
+    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n^2 \times n^2` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n^2` solution if matrix diagonalization is applied.
+
+    This equation depends on the ground state's reduced density matrices only up to second order.
+
+    Example
+    -------
+    >>> import numpy as np
+    >>> h = np.arange(4).reshape((2,2))
+    >>> v = np.arange(16).reshape((2,2,2,2))
+    >>> dm1 = np.array([[1., 0.],
+    ...                 [0., 0.]])
+    >>> dm2 = np.zeros_like(v)
+    >>> ee = eomee.EOMExc(h, v, dm1, dm2)
+    >>> ee.neigs # number of solutions
+    >>> ee.lhs # left-hand-side matrix
+    >>> # solve the generalized eigenvalue problem
+    >>> ee.solve_dense()
 
     """
 

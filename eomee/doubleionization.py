@@ -32,13 +32,35 @@ __all__ = [
 
 
 class EOMDIP(EOMState):
-    r"""
-    Double Ionization EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a_i a_j}`.
+    r"""Doubly Ionized state.
+
+    :math:`| \Psi^{(N-2)}_\lambda > = \hat{Q}^{-2}_\lambda | \Psi^{(N)}_0 >`
+
+    defined by the single electron transition operator :math:`\hat{Q}^{-2}_\lambda = \sum_{ij} { c_{ij;\lambda} a_i  a_j}`
+
+    where the indices run over all spin-orbitlas.
+
+    The transition energies and wavefunction satisfy:
 
     .. math::
 
-        \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a^{\dagger}_l, \left[ \hat{H}, \hat{Q} \right] \right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+
+        A_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a^{\dagger}_l, \left[\hat{H}, a_j  a_i \right]\right] \middle| \Psi^{(N)}_0 \right>
+
+        U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l a_j  a_i \middle| \Psi^{(N)}_0 \right>
+
+    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n^2 \times n^2` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n^2` solution if matrix diagonalization is applied.
+
+    This equation depends on the ground state's reduced density matrices only up to second order.
+
+    Example
+    -------
+    >>> ip2 = eomee.EOMDIP(h, v, dm1, dm2)
+    >>> ip2.neigs # number of solutions
+    >>> ip2.lhs # left-hand-side matrix
+    >>> # solve the generalized eigenvalue problem
+    >>> ip2.solve_dense()
 
     """
 

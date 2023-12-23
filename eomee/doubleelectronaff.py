@@ -28,13 +28,36 @@ __all__ = ["EOMDEA", "EOMDEA2"]
 
 
 class EOMDEA2(EOMState):
-    r"""
-    Double electron  attachment EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a^{\dagger}_i a^{\dagger}_j}`.
+    r"""Doubly electron attached state.
+
+    :math:`| \Psi^{(N+2)}_\lambda > = \hat{Q}^{+2}_\lambda | \Psi^{(N)}_0 >`
+
+    defined by the single electron transition operator :math:`\hat{Q}^{+2}_\lambda = \sum_{ij} { c_{ij;\lambda} a^{\dagger}_i  a^{\dagger}_j}`
+
+    where the indices run over all spin-orbitlas.
+
+    The transition energies and wavefunction satisfy:
 
     .. math::
 
-        \left< \Psi^{(N)}_0 \middle| \left[a_k a_l, \left[ \hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_k \left< \Psi^{(N)}_0 \middle| a_k a_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+
+        A_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a_k  a_l, \left[\hat{H}, a^{\dagger}_j  a^{\dagger}_i \right]\right] \middle| \Psi^{(N)}_0 \right>
+
+        U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| a_k a_l a^{\dagger}_j  a^{\dagger}_i \middle| \Psi^{(N)}_0 \right>
+
+    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n^2 \times n^2` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n^2` solution if matrix diagonalization is applied.
+
+    This equation depends on the ground state's reduced density matrices only up to second order.
+
+    Example
+    -------
+    >>> ea2 = eomee.EOMDEA(h, v, dm1, dm2)
+    >>> ea2.neigs # number of solutions
+    >>> ea2.lhs # left-hand-side matrix
+    >>> # solve the generalized eigenvalue problem
+    >>> ea2.solve_dense()
+
     """
 
     @property

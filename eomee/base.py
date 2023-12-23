@@ -36,28 +36,26 @@ __all__ = [
 
 
 class EOMState(metaclass=ABCMeta):
-    r"""
-    Equations-of-motion state abstract base class.
+    """Equations-of-motion state abstract base class.
 
     Overwrite neigs, _compute_lhs, _compute_rhs.
 
     """
 
     def __init__(self, h, v, dm1, dm2):
-        r"""
-        Initialize an EOMState instance.
+        r"""Initialize an EOMState instance.
 
         Parameters
         ----------
         h : np.ndarray((n, n))
-            1-particle integral array. :math:`n` corresponds to the number of spin-orbitals.
+            One electron integrals in the spin-orbitals basis (:math:`n` spin-orbitals).
         v : np.ndarray((n, n, n, n))
-            2-particle integral array in physicist's notation. :math:`n` corresponds to the number
+            Two electron integrals in physicist's notation. :math:`n` is the number
             of spin-orbitals.
         dm1 : np.ndarray((n, n))
-            1-particle reduced density matrix. A spin resolved 1-RDM is used.
+            One electron reduced density matrix. A spin resolved 1-RDM is used.
         dm2 : np.ndarray((n, n, n, n))
-            2-particle reduced density matrix. A spin resolved 2-RDM is used.
+            Two electron reduced density matrix. A spin resolved 2-RDM is used.
 
         """
         self.verify_integrals(h, v)
@@ -111,12 +109,12 @@ class EOMState(metaclass=ABCMeta):
     @property
     def h(self):
         r"""
-        Return the 1-particle integral array.
+        Return the one electron integrals.
 
         Returns
         -------
         h : np.ndarray((n, n))
-            1-particle integral array.
+            One electron integral array.
 
         """
         return self._h
@@ -124,12 +122,16 @@ class EOMState(metaclass=ABCMeta):
     @property
     def v(self):
         r"""
-        Return the 2-particle integral array.
+        Return the asymmetrized two electron integrals.
+
+        :math:`<pq||rs> = <pq|rs> - <pq|sr>`
+
+        where each index corresponds to a spin-orbital.
 
         Returns
         -------
         v : np.ndarray((n, n, n, n))
-            2-particle integral array.
+            Two electron integrals in physicist's notation.
 
         """
         return self._v
@@ -137,12 +139,14 @@ class EOMState(metaclass=ABCMeta):
     @property
     def dm1(self):
         r"""
-        Return the 1-particle reduced density matrix.
+        Return the one electron reduced density matrix.
+
+        :math:`\gamma_{pq}= <\Psi|a^\dagger_p a_q|\Psi>`
 
         Returns
         -------
         dm1 : np.ndarray((n, n))
-            1-particle reduced density matrix.
+            One electron reduced density matrix.
 
         """
         return self._dm1
@@ -150,12 +154,14 @@ class EOMState(metaclass=ABCMeta):
     @property
     def dm2(self):
         r"""
-        Return the 2-particle reduced density matrix.
+        Return the two electron reduced density matrix.
+
+        :math:`\Gamma_{pqrs}= <\Psi|a^\dagger_p a^\dagger_q a_s a_r|\Psi>`
 
         Returns
         -------
         dm2 : np.ndarray((n, n, n, n))
-            2-particle reduced density matrix.
+            Two electron reduced density matrix.
 
         """
         return self._dm2
