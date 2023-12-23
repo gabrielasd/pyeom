@@ -480,72 +480,6 @@ def _pherpa_linearterms(_n, _dh, _dv, _dm1):
     return _linear
 
 
-def _truncate_dm1dm1_matrix(nspins, ij_d_occs, _dm1dm1, _eigtol):
-    nt = nspins**2
-    truncated = np.zeros_like(_dm1dm1)
-    for pq in range(nt):
-        for rs in range(nt):
-            cond1 = np.abs(ij_d_occs[pq]) > _eigtol
-            cond2 = np.abs(ij_d_occs[rs]) > _eigtol
-            if cond1 and cond2:
-                p = pq//nspins
-                q = pq%nspins
-                r = rs//nspins
-                s = rs%nspins
-                truncated[p,r,q,s] = _dm1dm1[p,r,q,s]
-    return truncated
-
-
-def _truncate_eyedm1_matrix(nspins, ij_d_occs, _eyedm1, _eigtol):
-    nt = nspins**2
-    truncated = np.zeros_like(_eyedm1)
-    for pq in range(nt):
-        for rs in range(nt):
-            cond1 = np.abs(ij_d_occs[pq]) > _eigtol
-            cond2 = np.abs(ij_d_occs[rs]) > _eigtol
-            if cond1 and cond2:
-                p = pq//nspins
-                q = pq%nspins
-                r = rs//nspins
-                s = rs%nspins
-                truncated[p,q,r,s] = _eyedm1[p,q,r,s]
-    return truncated
-
-
-def _truncate_rdm2_matrix(nspins, ij_d_occs, _rdm2, _eigtol):
-    nt = nspins**2
-    truncated = np.zeros_like(_rdm2)
-    for pq in range(nt):
-        for rs in range(nt):
-            cond1 = np.abs(ij_d_occs[pq]) > _eigtol
-            cond2 = np.abs(ij_d_occs[rs]) > _eigtol
-            if cond1 and cond2:
-                p = pq//nspins
-                q = pq%nspins
-                r = rs//nspins
-                s = rs%nspins
-                truncated[p,r,q,s] = _rdm2[p,r,q,s]
-    return truncated
-
-
-def _alpha_independent_terms_rdm2_alpha(_n, _dm1, _rhs, _summall, _eigtol):
-    # (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
-    dm1dm1 = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True)
-    dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
-    if not _summall:
-        d_occs_ij = np.diag(_rhs)
-        dm1dm1  = _truncate_dm1dm1_matrix(_n, d_occs_ij, dm1dm1, _eigtol)
-        dm1_eye  = _truncate_eyedm1_matrix(_n, d_occs_ij, dm1_eye, _eigtol)
-    return (dm1dm1 - dm1_eye)
-
-
-def _rdm2_a0(_n, _rdm2, _rhs, _summall, _eigtol):
-    if not _summall:
-        d_occs_ij = np.diag(_rhs)
-        _rdm2  = _truncate_rdm2_matrix(_n, d_occs_ij, _rdm2, _eigtol)
-    return _rdm2
-
-
 def _get_lhs_spin_blocks(lhs, n, k):
     lhs = lhs.reshape(n, n, n, n)
     A_aaaa = lhs[:k, :k, :k, :k]
@@ -566,7 +500,9 @@ def _get_rhs_spin_blocks(rhs, n, k):
 
 class EOMEE1(EOMExc):
     r"""
-    Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a^{\dagger}_i  a_j + a^{\dagger}_{\bar{i}}  a_{\bar{j}})}`.
+    Spin-adapted particle-hole EOM for the singlet spin symmetry.
+    
+    The excitation operator is given by :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a^{\dagger}_i  a_j + a^{\dagger}_{\bar{i}}  a_{\bar{j}})}`.
 
     .. math::
         \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l + a^{\dagger}_{\bar{k}}  a_{\bar{l}}, \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
@@ -574,19 +510,6 @@ class EOMEE1(EOMExc):
 
     """
     def __init__(self, h, v, dm1, dm2):
-        """_summary_
-
-        Parameters
-        ----------
-        h : _type_
-            _description_
-        v : _type_
-            _description_
-        dm1 : _type_
-            _description_
-        dm2 : _type_
-            _description_
-        """
         super().__init__(h, v, dm1, dm2)
         self._k = self._n // 2
         self._lhs_ab = self._lhs
@@ -635,7 +558,9 @@ class EOMEE1(EOMExc):
 
 class EOMEE3(EOMExc):
     r"""
-    Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a^{\dagger}_i  a_j - a^{\dagger}_{\bar{i}}  a_{\bar{j}})}`.
+    Spin-adapted particle-hole EOM for the triplet spin symmetry.
+    
+    The excitation operator is given by :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a^{\dagger}_i  a_j - a^{\dagger}_{\bar{i}}  a_{\bar{j}})}`.
 
     .. math::
         \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l - a^{\dagger}_{\bar{k}}  a_{\bar{l}}, \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
@@ -689,6 +614,74 @@ class EOMEE3(EOMExc):
         return 0.5 * M.reshape(self._k**2, self._k**2)
 
 
+def _truncate_dm1dm1_matrix(nspins, ij_d_occs, _dm1dm1, _eigtol):
+    nt = nspins**2
+    truncated = np.zeros_like(_dm1dm1)
+    for pq in range(nt):
+        for rs in range(nt):
+            cond1 = np.abs(ij_d_occs[pq]) > _eigtol
+            cond2 = np.abs(ij_d_occs[rs]) > _eigtol
+            if cond1 and cond2:
+                p = pq//nspins
+                q = pq%nspins
+                r = rs//nspins
+                s = rs%nspins
+                truncated[p,r,q,s] = _dm1dm1[p,r,q,s]
+    return truncated
+
+
+def _truncate_eyedm1_matrix(nspins, ij_d_occs, _eyedm1, _eigtol):
+    nt = nspins**2
+    truncated = np.zeros_like(_eyedm1)
+    for pq in range(nt):
+        for rs in range(nt):
+            cond1 = np.abs(ij_d_occs[pq]) > _eigtol
+            cond2 = np.abs(ij_d_occs[rs]) > _eigtol
+            if cond1 and cond2:
+                p = pq//nspins
+                q = pq%nspins
+                r = rs//nspins
+                s = rs%nspins
+                truncated[p,q,r,s] = _eyedm1[p,q,r,s]
+    return truncated
+
+
+def _truncate_rdm2_matrix(nspins, ij_d_occs, _rdm2, _eigtol):
+    nt = nspins**2
+    truncated = np.zeros_like(_rdm2)
+    for pq in range(nt):
+        for rs in range(nt):
+            cond1 = np.abs(ij_d_occs[pq]) > _eigtol
+            cond2 = np.abs(ij_d_occs[rs]) > _eigtol
+            if cond1 and cond2:
+                p = pq//nspins
+                q = pq%nspins
+                r = rs//nspins
+                s = rs%nspins
+                truncated[p,r,q,s] = _rdm2[p,r,q,s]
+    return truncated
+
+
+def _alpha_independent_terms_rdm2_alpha(_dm1, _rhs, _summall, _eigtol):
+    # (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
+    _n = _dm1.shape[0]
+    dm1dm1 = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True)
+    dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
+    if not _summall:
+        d_occs_ij = np.diag(_rhs)
+        dm1dm1  = _truncate_dm1dm1_matrix(_n, d_occs_ij, dm1dm1, _eigtol)
+        dm1_eye  = _truncate_eyedm1_matrix(_n, d_occs_ij, dm1_eye, _eigtol)
+    return (dm1dm1 - dm1_eye)
+
+
+def _rdm2_a0(_rdm2, _rhs, _summall, _eigtol):
+    _n = _rdm2.shape[0]
+    if not _summall:
+        d_occs_ij = np.diag(_rhs)
+        _rdm2  = _truncate_rdm2_matrix(_n, d_occs_ij, _rdm2, _eigtol)
+    return _rdm2
+
+
 def _get_pherpa_metric_matrix(dm1):
     # Compute ph-ERPA metric matrix
     # < |[p^+ q,s^+ r]| > = \delta_qs \gamma_pr - \delta_pr \gamma_sq
@@ -723,34 +716,45 @@ def _eval_tdtd_alpha_mtx_from_erpa(erpa_gevp_type, h_l, v_l, dm1, dm2, invtol, s
 
 
 def _eval_W_alpha_singlets(tdtd_singlets, dv):
-    # Gamma_term = \sum_{n \in Singlets} tdm_0n tdm_n0
     # f(alpha) = 0.5 * \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) Gamma_term^{\alpha}_{pqrs}
+    # Gamma_term = \sum_{n \in Singlets} tdm_0n tdm_n0
     tdtd = spinize(tdtd_singlets)
     energy = np.einsum("pqrs,pqrs", dv, tdtd, optimize=True)
     return 0.5 * energy
 
 
 def _eval_W_alpha_triplets(tdtd_triplets, dv):
-    # Gamma_term = \sum_{n \in Triplets} tdm_0n tdm_n0
     # f(alpha) = 0.5 * \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) Gamma_term^{\alpha}_{pqrs}
+    # Gamma_term = \sum_{n \in Triplets} tdm_0n tdm_n0
     tdtd = from_unrestricted([tdtd_triplets, -tdtd_triplets, tdtd_triplets]) # tdtd_aa, tdtd_ab, tsts_bb
     energy = np.einsum("pqrs,pqrs", dv, tdtd, optimize=True)
     return 0.5 * energy
 
 
 def _eval_W_alpha_constant_terms(dv, rdm1, rdm2, summall, invtol):
+    # 0.5 * \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) Gamma_terms_{pqrs}
     # Gamma_terms = (gamma_{pr} * gamma_{qs} + delta_{qr} * gamma_{ps})
     #             - Gamma_^{\alpha=0}
-    # 0.5 * \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) Gamma_terms_{pqrs}
     n = rdm1.shape[0]
     rhs = _get_pherpa_metric_matrix(rdm1).reshape(n ** 2, n ** 2)
-    temp = _alpha_independent_terms_rdm2_alpha(n, rdm1, rhs, summall, invtol)
-    temp -= _rdm2_a0(n, rdm2, rhs, summall, invtol)
+    temp = _alpha_independent_terms_rdm2_alpha(rdm1, rhs, summall, invtol)
+    temp -= _rdm2_a0(rdm2, rhs, summall, invtol)
     return 0.5 * np.einsum("pqrs,pqrs", dv, temp, optimize=True)
 
 
 def ac_integrand_pherpa(lam, h0, v0, dh, dv, dm1, dm2, summall=True, invtol=1.0e-7, solvertype="nonsymm"):
-    """_summary_
+    """Compute the integrand of the adiabatic connection formulation.
+
+    .. math::
+    W(\alpha) = 0.5 \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) (\Gamma^{\alpha}_{pqrs} - \Gamma^{\alpha=0}_{pqrs})
+
+    where :math:`\Gamma^{\alpha}_{pqrs}` is
+
+    .. math::
+    \Gamma^{\alpha}_{pqrs} = \gamma^{\alpha=0}_{pr} \gamma^{\alpha=0}_{qs} 
+    + \sum_{\nu \in Singlets} \gamma^{\alpha;0 \nu}_{pr} \gamma^{\alpha;\nu 0}_{qs} 
+    + \sum_{\nu \in Triplets} \gamma^{\alpha;0 \nu}_{pr} \gamma^{\alpha;\nu 0}_{qs} 
+    - \delta_{ps} \gamma^{\alpha=0}_{qr}
 
     Parameters
     ----------
@@ -801,28 +805,44 @@ def ac_integrand_pherpa(lam, h0, v0, dh, dv, dm1, dm2, summall=True, invtol=1.0e
 
 
 def eval_ecorr(h_0, v_0, h_1, v_1, dm1, dm2, summ_all=True, inv_tol=1.0e-7, nint=5):
-    """_summary_
+    """Compute the (dynamic) correlation energy from the adiabatic connection formulation and 
+    particle-hole ERPA.
+
+    .. math::
+    E_corr = < \Psi^{\alpha=1}_0 | \hat{H} | \Psi^{\alpha=1}_0 > - < \Psi^{\alpha=0}_0 | \hat{H} | \Psi^{\alpha=0}_0 >
+    = 0.5 \sum_{pqrs} \int_{0}_{1} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) (\Gamma^{\alpha}_{pqrs} - \Gamma^{\alpha=0}_{pqrs}) d \alpha
+
+    where :math:`\Gamma^{\alpha}_{pqrs}` is
+
+    .. math::
+    \Gamma^{\alpha}_{pqrs} = \gamma^{\alpha=0}_{pr} \gamma^{\alpha=0}_{qs} 
+    + \sum_{\nu !=0} \gamma^{\alpha;0 \nu}_{pr} \gamma^{\alpha;\nu 0}_{qs} 
+    - \delta_{ps} \gamma^{\alpha=0}_{qr}
 
     Parameters
     ----------
-    h_0 : _type_
-        _description_
-    v_0 : _type_
-        _description_
-    h_1 : _type_
-        _description_
-    v_1 : _type_
-        _description_
-    dm1 : _type_
-        _description_
-    dm2 : _type_
-        _description_
+    h_0 : np.ndarray((n, n))
+        One-electron integrals for the reference Hamiltonian (at alpha=0).
+    v_0 : np.ndarray((n, n, n, n))
+        Two-electron integrals for the reference Hamiltonian (at alpha=0).
+    h_1 : np.ndarray((n, n))
+        One-electron integrals for the true Hamiltonian (at alpha=1).
+    v_1 : np.ndarray((n, n, n, n))
+        Two-electron integrals for the true Hamiltonian (at alpha=1).
+    dm1 : np.ndarray((n, n))
+        One-electron reduced density matrix for the reference wavefunction (at alpha=0).
+    dm2 : np.ndarray((n, n, n, n))
+        Two-electron reduced density matrix for the reference wavefunction (at alpha=0).
     summ_all : bool, optional
-        _description_, by default True
-    inv_tol : _type_, optional
-        _description_, by default 1.0e-7
+        Whether the sum over the two body terms is carried over all `p,q,r,s` indexes or not.
+        If False, pairs of spin-orbitals that are not involved in any particle-hole excitation
+        are excluded. Which pair to remove is determined by the diagonal elements of the ERPA 
+        metric matrix. By default True.
+    inv_tol : float, optional
+        Tolerance for small singular values when solving the ERPA eigenvalue problem, 
+        by default 1.0e-7.
     nint : int, optional
-        _description_, by default 5
+        Order of quadrature integration, by default 5.
 
     Returns
     -------

@@ -31,7 +31,7 @@ __all__ = [
     "EOMDIP2",
     "EOMExc0",
     "EOMDEA2",
-    "EOMExcSA",
+    # "EOMExcSA",
 ]
 
 
@@ -45,7 +45,7 @@ from .electronaff import EOMEAAntiCommutator
 from .doubleionization import EOMDIP, EOMDIP2
 from .excitation import EOMExc, EOMExc0
 from .doubleelectronaff import EOMDEA, EOMDEA2
-from .spinadapted.particlehole import EOMExcSA
+from .spinadapted.particlehole import EOMEE1, EOMEE3
 
 
 __version__: str = "0.0.1"

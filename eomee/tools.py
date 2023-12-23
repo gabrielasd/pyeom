@@ -198,6 +198,50 @@ def hartreefock_rdms(nbasis, na, nb):
     return dm1, dm2
 
 
+def spinize_rdms(blocks):
+    r"""
+    Return the 1- or 2-RDMs in the spin representation from blocks.
+
+    A two-index array 1-RDM is recontrcuted from blocks (a, b).
+    A four-index array 2-RDM is recontrcuted from blocks (aa, ab, bb).
+
+    Parameters
+    ----------
+    blocks : tuple of np.ndarray of length 2 or 3
+        Blocks from which to reconstruct array.
+
+    Returns
+    -------
+    y : np.ndarray(float(m, m)) or np.ndarray(float(m, m, m, m))
+        Spin representation array.
+    """
+    if len(blocks) == 2:
+        for b in blocks:
+            if b.ndim != 2:
+                raise ValueError("Input must have ndim == 2")
+        n = blocks[0].shape[0]
+        k = 2 * n
+        y = np.zeros((k, k))
+        y[:n, :n] = blocks[0]
+        y[n:, n:] = blocks[1]
+    elif len(blocks) == 3:
+        for b in blocks:
+            if b.ndim != 4:
+                raise ValueError("Input must have ndim == 4")
+        n = blocks[0].shape[0]
+        k = 2 * n
+        y = np.zeros((k, k, k, k))
+        y[:n, :n, :n, :n] = blocks[0]
+        y[:n, n:, :n, n:] = blocks[1]
+        y[n:, :n, n:, :n] = blocks[1]
+        y[n:, n:, n:, n:] = blocks[2]
+        y[:n, n:, n:, :n] = - blocks[1].transpose(0, 1, 3, 2)
+        y[n:, :n, :n, n:] = - blocks[1].transpose(1, 0, 2, 3)
+    else:
+        raise ValueError("Invalid input")
+    return y
+
+
 def make_doci_hamiltonian(one_mo, two_mo):
     """Build seniority zero Hamiltonian
 
