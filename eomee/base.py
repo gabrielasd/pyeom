@@ -105,6 +105,19 @@ class EOMState(metaclass=ABCMeta):
 
         """
         raise NotImplementedError("Subclasses must overwrite this property")
+    
+    @abstractproperty
+    def normalize_eigvect(self):
+        r"""
+        Return the normalized eigenvector.
+
+        Returns
+        -------
+        coeffs : ndarray
+            Normalized eigenvector.
+
+        """
+        raise NotImplementedError("Subclasses must overwrite this property")
 
     @property
     def h(self):
@@ -277,27 +290,30 @@ class EOMState(metaclass=ABCMeta):
                 "2-particle density matrix does not satisfy the asymmetric permutations."
             )
 
-    def solve_dense(self, mode="nonsymm", pick_peigs=True, *args, **kwargs):
+    def solve_dense(self, mode="nonsymm", pick_posw=True, normalize=True, *args, **kwargs):
         r"""
         Solve the EOM eigenvalue system.
 
         Parameters
         ----------
-        tol : float, optional
-            Tolerance for small singular values. Default: 1.0e-10
         mode : str, optional
             Specifies which method is used to solve the GEVP.
             Default is `nonsymm` in which the inverse of the right hand side matrix is taken.
-        err : ("warn" | "ignore" | "raise")
-            What to do if a divide-by-zero floating point error is raised.
-            Default behavior is to ignore divide by zero errors.
+        pick_posw : bool, optional
+            If True, only eigenpairs for positive transition energies are returned, otherwise only those with positive norm. 
+            Default is True.
+        normalize : bool, optional
+            If True, the eigenvectors are normalized. Default is True.
+        tol : float, optional
+            Tolerance for small singular values. Default: 1.0e-10
+
 
         Returns
         -------
         w : np.ndarray((m,))
             Eigenvalue array (m eigenvalues).
         v : np.ndarray((m, n))
-            Eigenvector matrix (m eigenvectors).
+            Eigenvector matrix (m eigenvectors). By default they will not be normalized.
 
         """
         modes = {'nonsymm': eig_pinvb, 'symm': lowdin_svd, 'qtrunc': eig_pruneq_pinvb}
@@ -315,10 +331,10 @@ class EOMState(metaclass=ABCMeta):
         w, v = _solver(self._lhs, self._rhs, tol=self._invtol)
 
         # Filter spectrum
-        if pick_peigs:
+        if pick_posw:
             w, v = pick_positive(w, v, self._eigtol)
         else:
-            # Only remove eigenpairs with negative norm
+            # Only keep eigenpairs with positive norm
             w, v = pick_nonzero(w, v, self._eigtol)
             norm = np.dot(v, np.dot(self._rhs, v.T))
             diag_n = np.diag(norm)
@@ -328,10 +344,14 @@ class EOMState(metaclass=ABCMeta):
 
         # Sort eigenvalues and eigenvectors in ascending order
         idx = np.argsort(w)
-        w = w[idx]
-        v = v[idx]
+        w = np.real(w[idx])
+        v = np.real(v[idx])
+
+        if normalize:
+            # Normalize eigenvectors
+            v = np.array([self.normalize_eigvect(v_n) for v_n in v])
         
-        return np.real(w), np.real(v)
+        return w, v
 
     def solve_sparse(self, eigvals=6, err="ignore", *args, **kwargs):
         r"""

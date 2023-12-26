@@ -143,6 +143,57 @@ class EOMExc(EOMState):
         m = np.einsum("li,kj->klji", I, self.dm1, optimize=True)
         m -= np.einsum("kj,il->klji", I, self.dm1, optimize=True)
         return m.reshape(self._n ** 2, self._n ** 2)
+    
+    def normalize_eigvect(self, coeffs):
+        r"""
+        Normalize coefficients vector.
+
+        Make the solutions orthonormal with respect to the metric matrix U:
+        .. math::
+        \mathbf{c}^T \mathbf{U} \mathbf{c} = 1
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n**2)
+            Coefficients vector for the lambda-th excited state.
+        
+        Returns
+        -------
+        coeffs : np.ndarray(n**2)
+            Normalized coefficients vector for the lambda-th excited state.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
+    
+    def compute_tdm1(self, coeffs):
+        r"""
+        Compute the transition RDMs
+
+        .. math::
+        \gamma^{0 \lambda}_{pq} = < \Psi^{(N)}_0 | a^\dagger_p a_q | \Psi^{(N)}_\lambda >
+
+        The diagonal elements of this matrix are zero.
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n**2)
+            Coefficients vector for the lambda-th excited state.
+        
+        Returns
+        -------
+        tdm1 : np.ndarray(n,n)
+            1-electron reduced transition RDMs.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        coeffs = coeffs.reshape(self._n, self._n)
+        rhs = self.rhs.reshape(self.n,self.n,self.n,self.n)
+        return np.einsum("pqrs,rs->pq", rhs, coeffs)
 
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, singl=True, nint=5):
@@ -437,3 +488,55 @@ class EOMExc0(EOMState):
         m = np.einsum("kj,li->klji", self.dm1, I, optimize=True)
         m -= np.einsum("kijl->klji", self.dm2, optimize=True)
         return m.reshape(self._n ** 2, self._n ** 2)
+    
+    def normalize_eigvect(self, coeffs):
+        r"""
+        Normalize coefficients vector.
+
+        Make the solutions orthonormal with respect to the metric matrix U:
+        .. math::
+        \mathbf{c}^T \mathbf{U} \mathbf{c} = 1
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n**2)
+            Coefficients vector for the lambda-th excited state.
+        
+        Returns
+        -------
+        coeffs : np.ndarray(n**2)
+            Normalized coefficients vector for the lambda-th excited state.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
+    
+    def compute_tdm1(self, coeffs):
+        r"""
+        Compute the transition RDMs
+
+        .. math::
+        \gamma^{0 \lambda}_{pq} = < \Psi^{(N)}_0 | a^\dagger_p a_q | \Psi^{(N)}_\lambda >
+
+        The diagonal elements of this matrix are zero.
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n**2)
+            Coefficients vector for the lambda-th excited state.
+        
+        Returns
+        -------
+        tdm1 : np.ndarray(n,n)
+            1-electron reduced transition RDMs.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        coeffs = coeffs.reshape(self._n, self._n)
+        rhs = self.rhs.reshape(self.n,self.n,self.n,self.n)
+        return np.einsum("pqrs,rs->pq", rhs, coeffs)
+    

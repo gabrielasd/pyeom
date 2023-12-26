@@ -705,11 +705,11 @@ def _eval_tdtd_alpha_mtx_from_erpa(erpa_gevp_type, h_l, v_l, dm1, dm2, invtol, s
     # Solve particle-hole ERPA equations at given perturbation strength alpha
     ph = erpa_gevp_type(h_l, v_l, dm1, dm2)
     ph._invtol = invtol
-    cv = ph.solve_dense(mode=solver_type)[1]
-    norm = np.dot(cv, np.dot(ph.rhs, cv.T))
-    diag_n = np.diag(norm)
-    sqr_n = np.sqrt(np.abs(diag_n))
-    cv = (cv.T / sqr_n).T
+    cv = ph.solve_dense(mode=solver_type, normalize=True)[1]
+    # norm = np.dot(cv, np.dot(ph.rhs, cv.T))
+    # diag_n = np.diag(norm)
+    # sqr_n = np.sqrt(np.abs(diag_n))
+    # cv = (cv.T / sqr_n).T
 
     metric = ph.rhs.reshape(ph.k, ph.k, ph.k, ph.k)
     return 0.5 * _sum_over_nstates_tdtd_matrices(ph.k, dm1, cv, metric) # where is the 0.5 factor coming from?
