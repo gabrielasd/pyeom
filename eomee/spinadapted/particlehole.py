@@ -498,6 +498,14 @@ def _get_rhs_spin_blocks(rhs, n, k):
     return (M_aaaa, M_bbbb, M_aabb, M_bbaa)
 
 
+def _get_transition_rdm1(cv, metric, nabsis):
+    if not cv.shape[0] == nabsis**2:
+        raise ValueError(f"Coefficients vector has the wrong shape, expected {nabsis**2}, got {cv.shape[0]}.")
+    cv = cv.reshape(nabsis, nabsis)
+    rhs = metric.reshape(nabsis, nabsis, nabsis, nabsis)
+    return np.einsum("pqrs,rs->pq", rhs, cv)
+
+
 class EOMEE1(EOMExc):
     r"""
     Spin-adapted particle-hole EOM for the singlet spin symmetry.
@@ -554,6 +562,28 @@ class EOMEE1(EOMExc):
         M_aaaa, M_bbbb, M_aabb, M_bbaa = _get_rhs_spin_blocks(self._rhs, self._n, self._k) 
         M = M_aaaa + M_bbbb + M_aabb + M_bbaa
         return 0.5 * M.reshape(self._k**2, self._k**2)
+    
+    def compute_tdm1(self, coeffs):
+        r"""
+        Compute the transition RDMs for the singlet excitations.
+
+        .. math::
+        \gamma^{0 \lambda}_{pq} = < \Psi^{(N)}_0 | a^\dagger_p a_q | \Psi^{(N)}_\lambda >
+
+        The diagonal elements of this matrix are zero.
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(k**2)
+            Coefficients vector for the lambda-th excited state.
+        
+        Returns
+        -------
+        tdm1 : np.ndarray(k,k)
+            1-electron reduced transition RDMs.
+
+        """
+        return _get_transition_rdm1(coeffs, self.rhs, self._k)
 
 
 class EOMEE3(EOMExc):
@@ -612,6 +642,28 @@ class EOMEE3(EOMExc):
         M_aaaa, M_bbbb, M_aabb, M_bbaa = _get_rhs_spin_blocks(self._rhs, self._n, self._k) 
         M = M_aaaa + M_bbbb - M_aabb - M_bbaa
         return 0.5 * M.reshape(self._k**2, self._k**2)
+    
+    def compute_tdm1(self, coeffs):
+        r"""
+        Compute the transition RDMs for the triplet excitations.
+
+        .. math::
+        \gamma^{0 \lambda}_{pq} = < \Psi^{(N)}_0 | a^\dagger_p a_q | \Psi^{(N)}_\lambda >
+
+        The diagonal elements of this matrix are zero.
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(k**2)
+            Coefficients vector for the lambda-th excited state.
+        
+        Returns
+        -------
+        tdm1 : np.ndarray(k,k)
+            1-electron reduced transition RDMs.
+
+        """
+        return _get_transition_rdm1(coeffs, self.rhs, self._k)
 
 
 def _truncate_dm1dm1_matrix(nspins, ij_d_occs, _dm1dm1, _eigtol):
