@@ -33,7 +33,7 @@ __all__ = [
 
 
 class EOMExc(EOMState):
-    r"""Electron excitated state.
+    r"""Electronic excitated state.
 
     :math:`| \Psi^{(N)}_\lambda > = \hat{Q}^{0}_\lambda | \Psi^{(N)}_0 >`
 
@@ -212,7 +212,7 @@ class EOMExc(EOMState):
 
         # Compute ERPA correction energy
         # Nonlinear term (eq. 19 integrand)        
-        function = IntegrandPh(cls, h_0, v_0, dh, dv, dm1, dm2)
+        function = _IntegrandPh(cls, h_0, v_0, dh, dv, dm1, dm2)
         params = (solver, eigtol, singl)
         nonlinear, abserr = integrate(function.vfunc, 0, 1, args=params, tol=1.49e-04, maxiter=nint, vec_func=True)
         ecorr = linear + 0.5 * nonlinear
@@ -220,50 +220,6 @@ class EOMExc(EOMState):
         output = {}
         output["ecorr"] = ecorr
         output["linear"] = linear
-        output["error"] = abserr
-
-        return output
-    
-    @classmethod
-    def erpa_ecorr(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, summall=True, singl=True, nint=5):
-        r"""
-        Compute the ERPA correlation energy for the operator.
-
-        .. math::
-        E_corr = (E^{\alpha=1} - E^{\alpha=0}) - (< \Psi^{\alpha=0}_0 | \hat{H} | \Psi^{\alpha=0}_0 > - E^{\alpha=0})
-        = \sum_{pq} (h^{\alpha=1}_{pq} - h^{\alpha=0}_{qp}) \gamma^{\alpha=0}_{pq} 
-        + 0.5 \sum_{pqrs} \int_{0}_{1} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) \Gamma^{\alpha}_{pqrs} d \alpha
-        - \sum_{pq} (h^{\alpha=1}_{pq} - h^{\alpha=0}_{qp}) \gamma^{\alpha=0}_{pq} 
-        - 0.5 \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) \Gamma^{\alpha=0}_{pqrs}
-        = 0.5 \sum_{pqrs} \int_{0}_{1} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) \Gamma^{\alpha}_{pqrs} d \alpha
-        - 0.5 \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) \Gamma^{\alpha=0}_{pqrs}
-
-        where :math:`\Gamma^{\alpha}_{pqrs}` is
-
-        .. math::
-        \Gamma^{\alpha}_{pqrs} = \gamma^{\alpha=0}_{pr} \gamma^{\alpha=0}_{qs} 
-        + \sum_{\nu !=0} \gamma^{\alpha;0 \nu}_{pr} \gamma^{\alpha;\nu 0}_{qs} 
-        - \delta_{ps} \gamma^{\alpha=0}_{qr}
-        """
-        # Size of dimensions
-        n = h_0.shape[0]
-        # H_1 - H_0
-        dh = h_1 - h_0
-        # V_1 - V_0
-        dv = v_1 - v_0
-
-        integrand = IntegrandPh(cls, h_0, v_0, dh, dv, dm1, dm2)
-        params = (solver, eigtol, singl)
-        alphadep, abserr =  fixed_quad(integrand.vfunc, 0, 1, args=params, n=nint)
-        rhs = IntegrandPh.eval_dmterms(n, dm1).reshape(n ** 2, n ** 2)
-        temp = _alpha_independent_terms_rdm2_alpha(n, dm1, rhs, summall, eigtol)
-        temp -= _rdm2_a0(n, dm2, rhs, summall, eigtol)
-        alphaindep = 0.5 * np.einsum("pqrs,pqrs", dv, temp, optimize=True)
-        ecorr = alphaindep + 0.5 * alphadep
-
-        output = {}
-        output["ecorr"] = ecorr
-        output["linear"] = alphaindep
         output["error"] = abserr
 
         return output
@@ -284,25 +240,7 @@ def _pherpa_linearterms(_n, _dh, _dv, _dm1):
             return _linear
 
 
-def _alpha_independent_terms_rdm2_alpha(_n, _dm1, _rhs, _summall, _eigtol):
-    # (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
-    dm1dm1 = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True)
-    dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
-    if not _summall:
-        d_occs_ij = np.diag(_rhs)
-        dm1dm1  = truncate_dm1dm1_matrix(_n, d_occs_ij, dm1dm1, _eigtol)
-        dm1_eye  = truncate_eyedm1_matrix(_n, d_occs_ij, dm1_eye, _eigtol)
-    return (dm1dm1 - dm1_eye)
-
-
-def _rdm2_a0(_n, _rdm2, _rhs, _summall, _eigtol):
-    if not _summall:
-        d_occs_ij = np.diag(_rhs)
-        _rdm2  = truncate_rdm2_matrix(_n, d_occs_ij, _rdm2, _eigtol)
-    return _rdm2
-
-
-def truncate_dm1dm1_matrix(nspins, ij_d_occs, _dm1dm1, _eigtol):
+def _truncate_dm1dm1_matrix(nspins, ij_d_occs, _dm1dm1, _eigtol):
     nt = nspins**2
     truncated = np.zeros_like(_dm1dm1)
     for pq in range(nt):
@@ -318,7 +256,7 @@ def truncate_dm1dm1_matrix(nspins, ij_d_occs, _dm1dm1, _eigtol):
     return truncated
 
 
-def truncate_eyedm1_matrix(nspins, ij_d_occs, _eyedm1, _eigtol):
+def _truncate_eyedm1_matrix(nspins, ij_d_occs, _eyedm1, _eigtol):
     nt = nspins**2
     truncated = np.zeros_like(_eyedm1)
     for pq in range(nt):
@@ -334,7 +272,7 @@ def truncate_eyedm1_matrix(nspins, ij_d_occs, _eyedm1, _eigtol):
     return truncated
 
 
-def truncate_rdm2_matrix(nspins, ij_d_occs, _rdm2, _eigtol):
+def _truncate_rdm2_matrix(nspins, ij_d_occs, _rdm2, _eigtol):
     nt = nspins**2
     truncated = np.zeros_like(_rdm2)
     for pq in range(nt):
@@ -350,7 +288,25 @@ def truncate_rdm2_matrix(nspins, ij_d_occs, _rdm2, _eigtol):
     return truncated
 
 
-class IntegrandPh:
+def _alpha_independent_terms_rdm2_alpha(_n, _dm1, _rhs, _summall, _eigtol):
+    # (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
+    dm1dm1 = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True)
+    dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
+    if not _summall:
+        d_occs_ij = np.diag(_rhs)
+        dm1dm1  = _truncate_dm1dm1_matrix(_n, d_occs_ij, dm1dm1, _eigtol)
+        dm1_eye  = _truncate_eyedm1_matrix(_n, d_occs_ij, dm1_eye, _eigtol)
+    return (dm1dm1 - dm1_eye)
+
+
+def _rdm2_a0(_n, _rdm2, _rhs, _summall, _eigtol):
+    if not _summall:
+        d_occs_ij = np.diag(_rhs)
+        _rdm2  = _truncate_rdm2_matrix(_n, d_occs_ij, _rdm2, _eigtol)
+    return _rdm2
+
+
+class _IntegrandPh:
     r"""Compute adiabatic connection integrand."""
     def __init__(self, method, h0, v0, dh, dv, dm1, dm2):
         self.h_0 = h0
@@ -412,12 +368,28 @@ class IntegrandPh:
 
 
 class EOMExc0(EOMState):
-    r"""
-    Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a^{\dagger}_i  a_j}`.
+    r"""Electronic excitated state.
+
+    :math:`| \Psi^{(N)}_\lambda > = \hat{Q}^{0}_\lambda | \Psi^{(N)}_0 >`
+
+    defined by the single electron transition operator :math:`\hat{Q}^{0}_\lambda = \sum_{ij} { c_{ij;\lambda} a^{\dagger}_i  a_j}`
+
+    where the indices run over all spin-orbitlas.
+
+    The transition energies and wavefunction satisfy:
 
     .. math::
-        \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l, \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_{k} \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a_l \hat{Q} \Psi^{(N)}_0 \right>
+
+        &\mathbf{A} \mathbf{c} = \Delta_{k} \mathbf{U} \mathbf{c}
+
+        A_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l, \left[\hat{H}, a^{\dagger}_j  a_i \right]\right] \middle| \Psi^{(N)}_0 \right>
+
+        U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a_l a^{\dagger}_j  a_i  \middle| \Psi^{(N)}_0 \right>
+
+    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n^2 \times n^2` matrices for an :math:`n` spin-orbital basis. 
+    Correspondingly, there will be :math:`n^2` solution if matrix diagonalization is applied.
+
+    This equation depends on the ground state's reduced density matrices only up to second order.
 
     """
 
@@ -539,4 +511,174 @@ class EOMExc0(EOMState):
         coeffs = coeffs.reshape(self._n, self._n)
         rhs = self.rhs.reshape(self.n,self.n,self.n,self.n)
         return np.einsum("pqrs,rs->pq", rhs, coeffs)
-    
+
+
+def _get_pherpa_metric_matrix(dm1):
+    # Compute ph-ERPA metric matrix
+    # < |[p^+ q,s^+ r]| > = \delta_qs \gamma_pr - \delta_pr \gamma_sq
+    _n = dm1.shape[0]
+    _rdm_terms = np.einsum("qs,pr->pqrs", np.eye(_n), dm1, optimize=True)
+    _rdm_terms -= np.einsum("pr,sq->pqrs", np.eye(_n), dm1, optimize=True)
+    return _rdm_terms
+
+
+def _sum_over_nstates_tdtd_matrices(_n, _dm1, coeffs, dmterms):
+    # Compute transition RDMs (eq. 29)
+    tdms = np.einsum("mrs,pqrs->mpq", coeffs.reshape(coeffs.shape[0], _n, _n), dmterms)
+    # Compute nonlinear energy term
+    _tv = np.zeros((_n, _n, _n, _n), dtype=_dm1.dtype)
+    for tdm in tdms:
+        _tv += np.einsum("pr,qs->pqrs", tdm, tdm.T, optimize=True)
+    return _tv
+
+
+def _eval_tdtd_alpha_mtx_from_erpa(erpa_gevp_type, h_l, v_l, dm1, dm2, invtol, solver_type):
+    # (1) Solve particle-hole ERPA equations at given perturbation strength alpha
+    ph = erpa_gevp_type(h_l, v_l, dm1, dm2)
+    ph._invtol = invtol
+    ev, cv = ph.solve_dense(mode=solver_type, normalize=False)
+    # (2) Pick the solutions that correspond to singlet transitions
+    cv_s= _pick_singlets(ev, cv)[1]
+    # (3) Normalize the eigenstates before computing the transition RDMs
+    norm = np.dot(cv_s, np.dot(ph.rhs, cv_s.T))
+    diag_n = np.diag(norm)
+    sqr_n = np.sqrt(np.abs(diag_n))
+    cv = (cv_s.T / sqr_n).T
+
+    metric = ph.rhs.reshape(ph.n, ph.n, ph.n, ph.n)
+    return _sum_over_nstates_tdtd_matrices(ph.n, dm1, cv, metric)
+
+
+def _eval_W_alpha_singlets(tdtd_singlets, dv):
+    # f(alpha) = 0.5 * \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) Gamma_term^{\alpha}_{pqrs}
+    # Gamma_term = \sum_{n \in Singlets} tdm_0n tdm_n0
+    energy = np.einsum("pqrs,pqrs", dv, tdtd_singlets, optimize=True)
+    return 0.5 * energy
+
+
+def _eval_W_alpha_constant_terms(dv, rdm1, rdm2, summall, invtol):
+    # 0.5 * \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) Gamma_terms_{pqrs}
+    # Gamma_terms = (gamma_{pr} * gamma_{qs} + delta_{qr} * gamma_{ps})
+    #             - Gamma_^{\alpha=0}
+    n = rdm1.shape[0]
+    rhs = _get_pherpa_metric_matrix(rdm1).reshape(n ** 2, n ** 2)
+    temp = _alpha_independent_terms_rdm2_alpha(rdm1, rhs, summall, invtol)
+    temp -= _rdm2_a0(rdm2, rhs, summall, invtol)
+    return 0.5 * np.einsum("pqrs,pqrs", dv, temp, optimize=True)
+
+
+def ac_integrand_pherpa(lam, h0, v0, dh, dv, dm1, dm2, summall=True, invtol=1.0e-7, solvertype="nonsymm"):
+    """Compute the integrand of the adiabatic connection formulation.
+
+    .. math::
+    W(\alpha) = 0.5 \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) (\Gamma^{\alpha}_{pqrs} - \Gamma^{\alpha=0}_{pqrs})
+
+    where :math:`\Gamma^{\alpha}_{pqrs}` is
+
+    .. math::
+    \Gamma^{\alpha}_{pqrs} = \gamma^{\alpha=0}_{pr} \gamma^{\alpha=0}_{qs} 
+    + \sum_{\nu \in Singlets} \gamma^{\alpha;0 \nu}_{pr} \gamma^{\alpha;\nu 0}_{qs} 
+    + \sum_{\nu \in Triplets} \gamma^{\alpha;0 \nu}_{pr} \gamma^{\alpha;\nu 0}_{qs} 
+    - \delta_{ps} \gamma^{\alpha=0}_{qr}
+
+    Parameters
+    ----------
+    lam : _type_
+        _description_
+    h0 : _type_
+        _description_
+    v0 : _type_
+        _description_
+    dh : _type_
+        _description_
+    dv : _type_
+        _description_
+    dm1 : _type_
+        _description_
+    dm2 : _type_
+        _description_
+    summall : bool, optional
+        _description_, by default True
+    invtol : _type_, optional
+        _description_, by default 1.0e-7
+    solvertype : str, optional
+        _description_, by default "nonsymm"
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+    # Compute H^alpha
+    h = lam * dh
+    h += h0
+    v = lam * dv
+    v += v0
+
+    # Eval TDMs at alpha from particle-hole singlet transitions and compute energy
+    tdtd = _eval_tdtd_alpha_mtx_from_erpa(EOMExc, h, v, dm1, dm2, invtol, solvertype)
+    energy = _eval_W_alpha_singlets(tdtd, dv)
+
+    # Eval perturbation independent terms
+    energy += _eval_W_alpha_constant_terms(dv, dm1, dm2, summall, invtol)
+
+    return energy
+
+
+def eval_ecorr(h_0, v_0, h_1, v_1, dm1, dm2, summ_all=True, inv_tol=1.0e-7, nint=5):
+    """Compute the (dynamic) correlation energy from the adiabatic connection formulation and 
+    particle-hole ERPA.
+
+    .. math::
+    E_corr = < \Psi^{\alpha=1}_0 | \hat{H} | \Psi^{\alpha=1}_0 > - < \Psi^{\alpha=0}_0 | \hat{H} | \Psi^{\alpha=0}_0 >
+    = 0.5 \sum_{pqrs} \int_{0}_{1} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) (\Gamma^{\alpha}_{pqrs} - \Gamma^{\alpha=0}_{pqrs}) d \alpha
+
+    where :math:`\Gamma^{\alpha}_{pqrs}` is
+
+    .. math::
+    \Gamma^{\alpha}_{pqrs} = \gamma^{\alpha=0}_{pr} \gamma^{\alpha=0}_{qs} 
+    + \sum_{\nu !=0} \gamma^{\alpha;0 \nu}_{pr} \gamma^{\alpha;\nu 0}_{qs} 
+    - \delta_{ps} \gamma^{\alpha=0}_{qr}
+
+    Parameters
+    ----------
+    h_0 : np.ndarray((n, n))
+        One-electron integrals for the reference Hamiltonian (at alpha=0).
+    v_0 : np.ndarray((n, n, n, n))
+        Two-electron integrals for the reference Hamiltonian (at alpha=0).
+    h_1 : np.ndarray((n, n))
+        One-electron integrals for the true Hamiltonian (at alpha=1).
+    v_1 : np.ndarray((n, n, n, n))
+        Two-electron integrals for the true Hamiltonian (at alpha=1).
+    dm1 : np.ndarray((n, n))
+        One-electron reduced density matrix for the reference wavefunction (at alpha=0).
+    dm2 : np.ndarray((n, n, n, n))
+        Two-electron reduced density matrix for the reference wavefunction (at alpha=0).
+    summ_all : bool, optional
+        Whether the sum over the two body terms is carried over all `p,q,r,s` indexes or not.
+        If False, pairs of spin-orbitals that are not involved in any particle-hole excitation
+        are excluded. Which pair to remove is determined by the diagonal elements of the ERPA 
+        metric matrix. By default True.
+    inv_tol : float, optional
+        Tolerance for small singular values when solving the ERPA eigenvalue problem, 
+        by default 1.0e-7.
+    nint : int, optional
+        Order of quadrature integration, by default 5.
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+    # H_1 - H_0
+    dh = h_1 - h_0
+    # V_1 - V_0
+    dv = v_1 - v_0
+
+    # Evaluate integrand function: W(alpha)
+    @np.vectorize
+    def ac_integrand(alpha):        
+        return ac_integrand_pherpa(alpha, h_0, v_0, dh, dv, dm1, dm2, summall=summ_all, invtol=inv_tol)
+
+    # integrate function
+    return fixed_quad(ac_integrand, 0, 1, n=nint)[0]
