@@ -32,6 +32,43 @@ __all__ = [
 ]
 
 
+def _get_lhs_particlehole_erpa(h, v, dm1, dm2):
+    n = h.shape[0]
+    hdm1 = np.dot(h, dm1)
+    I = np.eye(n, dtype=h.dtype)
+
+    # A_klij = h_li \gamma_kj + h_jk \gamma_il
+    b = np.einsum("li,kj->klji", h,  dm1, optimize=True)
+    b += np.einsum("jk,il->klji",  h,  dm1, optimize=True)
+    # A_klij -= ( \delta_il h_jq \gamma_qk + \delta_jk h_iq \gamma_ql )
+    b -= np.einsum("il,jk->klji", I, hdm1, optimize=True)
+    b -= np.einsum("jk,il->klji", I, hdm1, optimize=True)
+    # A_klij += <lq||si> \Gamma_kqsj
+    b += np.einsum("lqsi,kqsj->klji",  v,  dm2, optimize=True)
+    # A_klij += <jq||sk> \Gamma_iqsl
+    b += np.einsum("jqsk,iqsl->klji",  v,  dm2, optimize=True)
+    # A_klij += 0.5 ( <pq||ik> \Gamma_pqlj )
+    b += 0.5 * np.einsum("pqik,pqlj->klji",  v,  dm2, optimize=True)
+    # A_klij -= 0.5 ( <lj||rs> \Gamma_kirs )
+    b -= 0.5 * np.einsum("ljrs,kirs->klji",  v,  dm2, optimize=True)
+    # A_klij -= 0.5 ( \delta_il <jq||rs> \Gamma_kqrs )
+    vdm2 = np.einsum("jqrs,kqrs->jk",  v,  dm2, optimize=True)
+    b -= 0.5 * np.einsum("il,jk->klji", I, vdm2, optimize=True)
+    # A_klij -= 0.5 ( \delta_jk <pq||si> \Gamma_pqsl )
+    vdm2 = np.einsum("pqsi,pqsl->il", v,  dm2, optimize=True)
+    b -= 0.5 * np.einsum("jk,il->klji", I, vdm2, optimize=True)
+    return b
+
+
+def _get_rhs_particlehole_erpa(dm1):
+    # Commutator form
+    n = dm1.shape[0]
+    I = np.eye(n, dtype=dm1.dtype)
+    m = np.einsum("li,kj->klji", I, dm1, optimize=True)
+    m -= np.einsum("kj,il->klji", I, dm1, optimize=True)
+    return m
+
+
 class EOMExc(EOMState):
     r"""Electronic excitated state.
 
@@ -100,49 +137,16 @@ class EOMExc(EOMState):
             + 0.5 \sum_{rs} { \left< jl||rs \right> \Gamma_{kirs} }
 
         """
-        hdm1 = np.dot(self._h, self._dm1)
-        I = np.eye(self._n, dtype=self._h.dtype)
-
-        # A_klij = h_li \gamma_kj + h_jk \gamma_il
-        b = np.einsum("li,kj->klji", self.h, self.dm1, optimize=True)
-        b += np.einsum("jk,il->klji", self.h, self.dm1, optimize=True)
-        # A_klij -= ( \delta_il h_jq \gamma_qk + \delta_jk h_iq \gamma_ql )
-        b -= np.einsum("il,jk->klji", I, hdm1, optimize=True)
-        b -= np.einsum("jk,il->klji", I, hdm1, optimize=True)
-        # A_klij += <v_lqsi> \Gamma_kqsj
-        b += np.einsum("lqsi,kqsj->klji", self.v, self.dm2, optimize=True)
-        # b += 0.5 * np.einsum('lpsi,kpsj->klij', self.v, self.dm2)
-        # A_klij += <v_jqsk> \Gamma_iqsl
-        b += np.einsum("jqsk,iqsl->klji", self.v, self.dm2, optimize=True)
-        # b += 0.5 * np.einsum('jpsk,ipsl->klij', self.v, self.dm2)
-        # A_klij += 0.5 ( <v_pqik> \Gamma_pqlj )
-        b += 0.5 * np.einsum("pqik,pqlj->klji", self.v, self.dm2, optimize=True)
-        # A_klij -= 0.5 ( <v_ljrs> \Gamma_kirs )
-        b -= 0.5 * np.einsum("ljrs,kirs->klji", self.v, self.dm2, optimize=True)
-        # A_klij -= 0.5 ( \delta_il <v_jqrs> \Gamma_kqrs )
-        vdm2 = np.einsum("jqrs,kqrs->jk", self.v, self.dm2, optimize=True)
-        b -= 0.5 * np.einsum("il,jk->klji", I, vdm2, optimize=True)
-        # A_klij -= 0.5 ( \delta_jk <v_pqsi> \Gamma_pqsl )
-        vdm2 = np.einsum("pqsi,pqsl->il", self.v, self.dm2, optimize=True)
-        b -= 0.5 * np.einsum("jk,il->klji", I, vdm2, optimize=True)
-        return b.reshape(self._n ** 2, self._n ** 2)
+        Amtx = _get_lhs_particlehole_erpa(self.h, self.v, self.dm1, self.dm2)
+        return Amtx.reshape(self._n ** 2, self._n ** 2)
 
     def _compute_rhs(self):
         r"""
         Compute :math:`M_{klji} = \gamma_{kj} \delta_{li} - \delta_{kj} \gamma_{li}`.
 
         """
-        I = np.eye(self._n, dtype=self._h.dtype)
-
-        # # M_klij = \gamma_kj \delta_li - \Gamma_kijl
-        # # No commutator form
-        # m = np.einsum("kj,li->klji", self.dm1, I, optimize=True)
-        # m -= np.einsum("kijl->klji", self.dm2, optimize=True)
-
-        # Commutator form
-        m = np.einsum("li,kj->klji", I, self.dm1, optimize=True)
-        m -= np.einsum("kj,il->klji", I, self.dm1, optimize=True)
-        return m.reshape(self._n ** 2, self._n ** 2)
+        Umtx = _get_rhs_particlehole_erpa(self.dm1)
+        return Umtx.reshape(self._n ** 2, self._n ** 2)
     
     def normalize_eigvect(self, coeffs):
         r"""
