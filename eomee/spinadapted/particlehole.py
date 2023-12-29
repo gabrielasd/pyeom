@@ -666,6 +666,76 @@ class EOMEE3(EOMExc):
         return _get_transition_rdm1(coeffs, self.rhs, self._k)
 
 
+class EOMEE03(EOMExc0):
+    def __init__(self, h, v, dm1, dm2):
+        super().__init__(h, v, dm1, dm2)
+        self._k = self._n // 2
+        self._lhs_ab = self._lhs
+        self._rhs_ab = self._rhs
+        self._lhs = self._compute_lhs_30()
+        self._rhs = self._compute_rhs_30()
+    
+
+    @property
+    def k(self):
+        r"""
+        Return the number of spatial orbital basis functions.
+
+        Returns
+        -------
+        k : int
+            Number of spatial orbital basis functions.
+
+        """
+        return self._k
+
+    @property
+    def neigs(self):
+        r"""
+        Return the size of the eigensystem.
+
+        Returns
+        -------
+        neigs : int
+            Size of eigensystem.
+
+        """
+        # Number of q_n terms = n_{\text{basis}} * n_{\text{basis}}
+        return (self._k) ** 2
+    
+    def _compute_lhs_30(self):
+        A_aaaa, A_bbbb, A_aabb, A_bbaa = _get_lhs_spin_blocks(self._lhs, self._n, self._k)
+        A = A_aaaa + A_bbbb - A_aabb - A_bbaa
+        return 0.5 * A.reshape(self._k**2, self._k**2)
+    
+    def _compute_rhs_30(self):
+        M_aaaa, M_bbbb, M_aabb, M_bbaa = _get_rhs_spin_blocks(self._rhs, self._n, self._k) 
+        M = M_aaaa + M_bbbb - M_aabb - M_bbaa
+        return 0.5 * M.reshape(self._k**2, self._k**2)
+    
+    def compute_tdm1(self, coeffs):
+        r"""
+        Compute the transition RDMs for the triplet excitations.
+
+        .. math::
+        \gamma^{0 \lambda}_{pq} = < \Psi^{(N)}_0 | a^\dagger_p a_q | \Psi^{(N)}_\lambda >
+
+        The diagonal elements of this matrix are zero.
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(k**2)
+            Coefficients vector for the lambda-th excited state.
+        
+        Returns
+        -------
+        tdm1 : np.ndarray(k,k)
+            1-electron reduced transition RDMs.
+
+        """
+        return _get_transition_rdm1(coeffs, self.rhs, self._k)
+
+
 def _truncate_dm1dm1_matrix(nspins, ij_d_occs, _dm1dm1, _eigtol):
     nt = nspins**2
     truncated = np.zeros_like(_dm1dm1)
