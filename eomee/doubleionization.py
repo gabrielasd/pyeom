@@ -27,7 +27,7 @@ from .solver import pick_positive, _pick_singlets, _pick_multiplets
 
 __all__ = [
     "EOMDIP",
-    "EOMDIP2",
+    "EOMDIP0",
 ]
 
 
@@ -245,7 +245,7 @@ class WrappNonlinear:
         return np.einsum("pqrs,pqrs", self.dv, tv/2, optimize=True)
 
 
-class EOMDIP2(EOMState):
+class EOMDIP0(EOMState):
     r"""
     Double Ionization EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a_i a_j}`.
 

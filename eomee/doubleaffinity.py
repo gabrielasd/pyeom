@@ -24,10 +24,10 @@ from .base import EOMState
 from .solver import pick_nonzero, _pick_singlets
 
 
-__all__ = ["EOMDEA", "EOMDEA2"]
+__all__ = ["EOMDEA", "EOMDEA0"]
 
 
-class EOMDEA2(EOMState):
+class EOMDEA0(EOMState):
     r"""Doubly electron attached state.
 
     :math:`| \Psi^{(N+2)}_\lambda > = \hat{Q}^{+2}_\lambda | \Psi^{(N)}_0 >`
@@ -52,7 +52,7 @@ class EOMDEA2(EOMState):
 
     Example
     -------
-    >>> ea2 = eomee.EOMDEA(h, v, dm1, dm2)
+    >>> ea2 = eomee.EOMDEA0(h, v, dm1, dm2)
     >>> ea2.neigs # number of solutions
     >>> ea2.lhs # left-hand-side matrix
     >>> # solve the generalized eigenvalue problem

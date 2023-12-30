@@ -42,9 +42,9 @@ from .ionization import EOMIPAntiCommutator
 from .eaffinity import EOMEA
 from .eaffinity import EOMEADoubleCommutator
 from .eaffinity import EOMEAAntiCommutator
-from .doubleionization import EOMDIP, EOMDIP2
+from .doubleionization import EOMDIP, EOMDIP0
 from .excitation import EOMExc, EOMExc0
-from .doubleelectronaff import EOMDEA, EOMDEA2
+from .doubleaffinity import EOMDEA, EOMDEA0
 from .spinadapted.particlehole import EOMEE1, EOMEE3
 
 
