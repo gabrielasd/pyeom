@@ -98,6 +98,36 @@ class EOMIP(EOMState):
         """
         # M_mn = \gamma_mn
         return np.copy(self._dm1)
+    
+    def normalize_eigvect(self, coeffs):
+        r""" Normalize coefficients vector. """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
+    
+    def compute_td(self, coeffs):
+        r"""
+        Compute the transition density matrix.
+
+        .. math::
+        < \Psi^{(N)}_0 | a^\dagger_p | \Psi^{(N - 1)}_\lambda > = \sum_{q} \gamma_{pq} c_{q;\lambda}
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n)
+            Coefficients vector for the lambda-th ionized state.
+        
+        Returns
+        -------
+        tdm : np.ndarray(n)
+            transition DMs.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        return np.einsum("pq,q->p", self.rhs, coeffs)
 
 
 class EOMIPDoubleCommutator(EOMState):
@@ -166,6 +196,36 @@ class EOMIPDoubleCommutator(EOMState):
         m = 2 * np.copy(self._dm1)
         m -= np.eye(self._n, dtype=self._dm1.dtype)
         return m
+    
+    def normalize_eigvect(self, coeffs):
+        r""" Normalize coefficients vector. """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
+    
+    def compute_td(self, coeffs):
+        r"""
+        Compute the transition density matrix.
+
+        .. math::
+        < \Psi^{(N)}_0 | a^\dagger_p | \Psi^{(N - 1)}_\lambda >
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n)
+            Coefficients vector for the lambda-th ionized state.
+        
+        Returns
+        -------
+        tdm : np.ndarray(n)
+            transition DMs.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        return np.einsum("pq,q->p", self.rhs, coeffs)
 
 
 class EOMIPDoubleCommutator0(EOMState):
@@ -218,6 +278,14 @@ class EOMIPDoubleCommutator0(EOMState):
         """
         # M_mn = \gamma_mn
         return self._dm1
+    
+    def normalize_eigvect(self, coeffs):
+        r""" Normalize coefficients vector. """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
 
 
 class EOMIPAntiCommutator(EOMState):
@@ -278,6 +346,36 @@ class EOMIPAntiCommutator(EOMState):
         # M_mn = \delta_mn
         m = np.eye(self._n, dtype=self._dm1.dtype)
         return m
+    
+    def normalize_eigvect(self, coeffs):
+        r""" Normalize coefficients vector. """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
+    
+    def compute_td(self, coeffs):
+        r"""
+        Compute the transition density matrix.
+
+        .. math::
+        < \Psi^{(N)}_0 | a^\dagger_p | \Psi^{(N - 1)}_\lambda >
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n)
+            Coefficients vector for the lambda-th ionized state.
+        
+        Returns
+        -------
+        tdm : np.ndarray(n)
+            transition DMs.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        return np.einsum("pq,q->p", self.rhs, coeffs)
 
 
 class EOMIPAntiCommutator0(EOMState):
@@ -323,3 +421,7 @@ class EOMIPAntiCommutator0(EOMState):
         """
         # M_mn = \gamma_mn
         return self._dm1
+
+
+EOMIPc = EOMIPDoubleCommutator
+EOMIPa = EOMIPAntiCommutator

@@ -39,9 +39,9 @@ from .base import EOMState
 from .ionization import EOMIP
 from .ionization import EOMIPDoubleCommutator
 from .ionization import EOMIPAntiCommutator
-from .electronaff import EOMEA
-from .electronaff import EOMEADoubleCommutator
-from .electronaff import EOMEAAntiCommutator
+from .eaffinity import EOMEA
+from .eaffinity import EOMEADoubleCommutator
+from .eaffinity import EOMEAAntiCommutator
 from .doubleionization import EOMDIP, EOMDIP2
 from .excitation import EOMExc, EOMExc0
 from .doubleelectronaff import EOMDEA, EOMDEA2

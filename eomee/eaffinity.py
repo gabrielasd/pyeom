@@ -104,6 +104,14 @@ class EOMEA(EOMState):
         m = np.eye(self._n)
         m -= self._dm1
         return m
+    
+    def normalize_eigvect(self, coeffs):
+        r""" Normalize coefficients vector. """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
 
 
 class EOMEAAntiCommutator(EOMState):
@@ -163,6 +171,14 @@ class EOMEAAntiCommutator(EOMState):
         # M_mn = \delta_mn
         m = np.eye(self._n)
         return m
+    
+    def normalize_eigvect(self, coeffs):
+        r""" Normalize coefficients vector. """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
 
 
 class EOMEADoubleCommutator(EOMState):
@@ -241,3 +257,15 @@ class EOMEADoubleCommutator(EOMState):
         m = np.eye(self._n)
         m -= 2 * self._dm1
         return m
+    
+    def normalize_eigvect(self, coeffs):
+        r""" Normalize coefficients vector. """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
+
+
+EOMEAc = EOMEADoubleCommutator
+EOMEAa = EOMEAAntiCommutator
