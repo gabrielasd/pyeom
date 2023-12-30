@@ -230,18 +230,18 @@ class EOMExc(EOMState):
 
 
 def _pherpa_linearterms(_n, _dh, _dv, _dm1):
-            # Gamma_pqrs = < | p^+ q^+ s r | > = - < | p^+ q^+ r s | >
-            #            = - \delta_qr * \gamma_ps
-            #            + \gamma_pr * \gamma_qs
-            #            + \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
-            dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
-            # Compute linear term (eq. 19)
-            # dh * \gamma + 0.5 * dv * (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
-            _linear = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True) - dm1_eye
-            _linear = np.einsum("pq,pq", _dh, _dm1, optimize=True) + 0.5 * np.einsum(
-                "pqrs,pqrs", _dv, _linear, optimize=True
-            )
-            return _linear
+    # Gamma_pqrs = < | p^+ q^+ s r | > = - < | p^+ q^+ r s | >
+    #            = - \delta_qr * \gamma_ps
+    #            + \gamma_pr * \gamma_qs
+    #            + \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
+    dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
+    # Compute linear term (eq. 19)
+    # dh * \gamma + 0.5 * dv * (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
+    _linear = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True) - dm1_eye
+    _linear = np.einsum("pq,pq", _dh, _dm1, optimize=True) + 0.5 * np.einsum(
+        "pqrs,pqrs", _dv, _linear, optimize=True
+    )
+    return _linear
 
 
 def _truncate_dm1dm1_matrix(nspins, ij_d_occs, _dm1dm1, _eigtol):
@@ -292,8 +292,9 @@ def _truncate_rdm2_matrix(nspins, ij_d_occs, _rdm2, _eigtol):
     return truncated
 
 
-def _alpha_independent_terms_rdm2_alpha(_n, _dm1, _rhs, _summall, _eigtol):
+def _alpha_independent_terms_rdm2_alpha(_dm1, _rhs, _summall, _eigtol):
     # (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
+    _n = _dm1.shape[0]
     dm1dm1 = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True)
     dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
     if not _summall:
@@ -303,7 +304,8 @@ def _alpha_independent_terms_rdm2_alpha(_n, _dm1, _rhs, _summall, _eigtol):
     return (dm1dm1 - dm1_eye)
 
 
-def _rdm2_a0(_n, _rdm2, _rhs, _summall, _eigtol):
+def _rdm2_a0(_rdm2, _rhs, _summall, _eigtol):
+    _n = _rdm2.shape[0]
     if not _summall:
         d_occs_ij = np.diag(_rhs)
         _rdm2  = _truncate_rdm2_matrix(_n, d_occs_ij, _rdm2, _eigtol)

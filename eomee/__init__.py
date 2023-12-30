@@ -20,28 +20,28 @@ __all__ = [
     "__version__",
     "EOMState",
     "EOMIP",
-    "EOMIPDoubleCommutator",
-    "EOMIPAntiCommutator",
+    "EOMIPc",
+    "EOMIPa",
     "EOMEA",
-    "EOMEADoubleCommutator",
-    "EOMEAAntiCommutator",
+    "EOMEAc",
+    "EOMEAa",
     "EOMDIP",
+    "EOMDIP0",
     "EOMExc",
-    "EOMDEA",
-    "EOMDIP2",
     "EOMExc0",
-    "EOMDEA2",
+    "EOMDEA",        
+    "EOMDEA0",
     # "EOMExcSA",
 ]
 
 
 from .base import EOMState
 from .ionization import EOMIP
-from .ionization import EOMIPDoubleCommutator
-from .ionization import EOMIPAntiCommutator
+from .ionization import EOMIPc
+from .ionization import EOMIPa
 from .eaffinity import EOMEA
-from .eaffinity import EOMEADoubleCommutator
-from .eaffinity import EOMEAAntiCommutator
+from .eaffinity import EOMEAc
+from .eaffinity import EOMEAa
 from .doubleionization import EOMDIP, EOMDIP0
 from .excitation import EOMExc, EOMExc0
 from .doubleaffinity import EOMDEA, EOMDEA0

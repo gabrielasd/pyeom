@@ -16,7 +16,7 @@
 r"""Test eomee.electronaff."""
 
 
-from eomee import EOMEA, EOMEADoubleCommutator, EOMEAAntiCommutator
+from eomee import EOMEA, EOMEAc, EOMEAa
 
 from eomee.tools import (
     find_datafiles,
@@ -70,12 +70,12 @@ def test_eomea_one_body_term():
     # assert abs(sorted(aval1)[0] - ea[1]) < 1e-8
     assert abs(aval1[0] - ea[1]) < 1e-8
 
-    eom = EOMEAAntiCommutator(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EOMEAa(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval2, _ = eom.solve_dense()
     # assert abs(sorted(aval2)[-1] - ea[1]) < 1e-8
     assert abs(aval2[-1] - ea[1]) < 1e-8
 
-    eom = EOMEADoubleCommutator(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EOMEAc(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval3, _ = eom.solve_dense()
     # assert abs(sorted(aval3)[0] - ea[1]) < 1e-8
     assert abs(aval3[0] - ea[1]) < 1e-8
@@ -129,7 +129,7 @@ def test_eadoublecommutator(filename, nbasis, nocc, evidx, hf_vmo, tol):
     nbasis = one_mo.shape[0]
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
-    eom = EOMEADoubleCommutator(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EOMEAc(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval, _ = eom.solve_dense()
     # aval = sorted(aval)
 
@@ -155,7 +155,7 @@ def test_eaanticommutator(filename, nbasis, nocc, evidx, hf_vmo, tol):
     nbasis = one_mo.shape[0]
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
-    eom = EOMEAAntiCommutator(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EOMEAa(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval, _ = eom.solve_dense()
     aval = sorted(aval)
 
@@ -174,11 +174,11 @@ def test_electronaff_b_sto3g():
     nbasis = one_mo.shape[0]
     one_dm, two_dm = hartreefock_rdms(nbasis, 3, 2)
 
-    eom = EOMEADoubleCommutator(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EOMEAc(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval2, _ = eom.solve_dense()
     # aval2 = sorted(aval2)
 
-    eom = EOMEAAntiCommutator(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EOMEAa(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval3, _ = eom.solve_dense()
     # aval3 = sorted(aval3)
 
