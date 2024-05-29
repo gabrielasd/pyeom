@@ -139,6 +139,31 @@ class EOMDEA0(EOMState):
         # M_klji += \Gamma_klji
         m += self._dm2
         return m.reshape(self._n ** 2, self._n ** 2)
+    
+    def normalize_eigvect(self, coeffs):
+        r"""
+        Normalize coefficients vector.
+
+        Make the solutions orthonormal with respect to the metric matrix U:
+        .. math::
+        \mathbf{c}^T \mathbf{U} \mathbf{c} = 1
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n**2)
+            Coefficients vector for the lambda-th excited state.
+        
+        Returns
+        -------
+        coeffs : np.ndarray(n**2)
+            Normalized coefficients vector for the lambda-th excited state.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
 
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
@@ -300,6 +325,31 @@ class EOMDEA(EOMState):
 
         return m.reshape(self._n ** 2, self._n ** 2)
 
+    def normalize_eigvect(self, coeffs):
+        r"""
+        Normalize coefficients vector.
+
+        Make the solutions orthonormal with respect to the metric matrix U:
+        .. math::
+        \mathbf{c}^T \mathbf{U} \mathbf{c} = 1
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n**2)
+            Coefficients vector for the lambda-th excited state.
+        
+        Returns
+        -------
+        coeffs : np.ndarray(n**2)
+            Normalized coefficients vector for the lambda-th excited state.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
+    
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, singl=True, nint=5):
         r"""

@@ -16,7 +16,7 @@
 r"""Test eomee.doubleelectronaff."""
 
 
-from eomee import EOMDEA
+from eomee import EOMDEA0
 
 from eomee.tools import (
     find_datafiles,
@@ -42,7 +42,7 @@ def test_eomdea_neigs():
     two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
     two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
 
-    eom = EOMDEA(one_mo, two_mo, one_dm, two_dm)
+    eom = EOMDEA0(one_mo, two_mo, one_dm, two_dm)
     assert eom.neigs == nspino ** 2
 
 
@@ -60,9 +60,13 @@ def test_eomdea_one_body_term():
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
-    eom = EOMDEA(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
-    avalea, _ = eom.solve_dense()
-    avalea = np.sort(avalea)
+    # Because I am neglecting the e-e repulsion integrals is likely that "effective" virtual MOs
+    # of the fictitious H2 system have negative energies causing the DEA transition to appear
+    # in the negative side of the RPA eigenvalue problem. The parameter `pick_posw=False` will identify
+    # the DEA transition based on the eigenvector norm.
+    eom = EOMDEA0(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    avalea, _ = eom.solve_dense(pick_posw=False)
+    # avalea = np.sort(avalea)
 
     # Hartree-Fock eigenvalues ignoring two-electron terms
     w, v = eig(one_mo)
@@ -93,7 +97,7 @@ def test_eomdea_righthandside_2particle_4spin():
     one_dm, two_dm = hartreefock_rdms(nspatial, 1, 1)
 
     # EOM solution
-    eomea = EOMDEA(one_mo, two_mo, one_dm, two_dm)
+    eomea = EOMDEA0(one_mo, two_mo, one_dm, two_dm)
     # Expected value
     temp = np.diag([0.0, 1.0])
     one_dm = np.zeros((nspin, nspin))
@@ -129,7 +133,7 @@ def test_eomdea_righthandside_4particle_6spin():
     one_dm, two_dm = hartreefock_rdms(nspatial, 1, 1)
 
     # EOM solution
-    eomea = EOMDEA(one_mo, two_mo, one_dm, two_dm)
+    eomea = EOMDEA0(one_mo, two_mo, one_dm, two_dm)
     # Expected value
     temp = np.diag([0.0, 0.0, 1.0])
     one_dm = np.zeros((nspin, nspin))
@@ -155,6 +159,10 @@ def test_eomdea_beIV_sto6g():
     on top of the vacuum state.
 
     """
+    # The energy for the process of adding two electron to the vacuum state (Be^+4):
+    # Be^+4 + 2e --> Be^+2   DEA < 0
+    # using the MOs from neutral Be SCF calculation will give a negative DEA 
+    # (i.e. the eigenvalue appears on the negative side of the RPA spectrum)
     one_mo = spinize(np.load(find_datafiles("beII_sto6g_oneint.npy")))
     two_mo = spinize(np.load(find_datafiles("beII_sto6g_twoint.npy")))
     one_dm = np.zeros((one_mo.shape[0],) * 2, dtype=one_mo.dtype)
@@ -163,9 +171,9 @@ def test_eomdea_beIV_sto6g():
     npart = 0
     nhole = nspin - npart
 
-    eomea = EOMDEA(one_mo, two_mo, one_dm, two_dm)
-    avalea, _ = eomea.solve_dense()
-    avalea = np.sort(avalea)
+    eomea = EOMDEA0(one_mo, two_mo, one_dm, two_dm)
+    avalea, _ = eomea.solve_dense(pick_posw=False)
+    # avalea = np.sort(avalea)
 
     # Double-electron attachment EOM on vacuum satate
     # LHS = < | k l H m+ n+ | >
@@ -215,9 +223,9 @@ def test_eomdea_beII_sto6g():
     nhole = nspin - npart
     one_dm, two_dm = hartreefock_rdms(nspatial, 1, 1)
 
-    eom = EOMDEA(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
-    avalea, _ = eom.solve_dense()
-    avalea = np.sort(avalea)
+    eom = EOMDEA0(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    avalea, _ = eom.solve_dense(pick_posw=False)
+    # avalea = np.sort(avalea)
 
     # Be(+2) RHF/sto-6g energy and
     # Be FrozenCore CCD energy

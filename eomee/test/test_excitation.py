@@ -269,9 +269,9 @@ def test_eomexc_gvb_h2_631g():
     1.6211, 1.6211, 2.2159, 2.2159, 2.2159, 2.2159, 2.4551, 2.4551, 2.4551, 2.4551]
     erpa = EOMExc(h0, v0, rdm1, rdm2)
     ev, cv = erpa.solve_dense(orthog="nonsymm")
-    ev_p, cv_p, _ = pickpositiveeig(ev, cv)
-    singlets_ev = pick_singlets(ev_p, cv_p)[0]
-    triplets_ev = pick_multiplets(ev_p, cv_p)[0]
+    # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
+    singlets_ev = _pick_singlets(ev, cv)[0]
+    triplets_ev = _pick_multiplets(ev, cv)[0]
 
     assert np.allclose(singlets, singlets_ev, atol=1e-4)
     assert np.allclose(triplets, triplets_ev, atol=1e-4)
@@ -282,9 +282,9 @@ def test_eomexc_gvb_h2_631g():
     1.3622, 1.467,  1.467,  1.467, 1.9592, 1.9592, 1.9592]
     erpa = EOMExc(h1, v1, rdm1, rdm2)
     ev, cv = erpa.solve_dense(orthog="nonsymm")
-    ev_p, cv_p, _ = pickpositiveeig(ev, cv)
-    singlets_ev = pick_singlets(ev_p, cv_p)[0]
-    triplets_ev = pick_multiplets(ev_p, cv_p)[0]
+    # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
+    singlets_ev = _pick_singlets(ev, cv)[0]
+    triplets_ev = _pick_multiplets(ev, cv)[0]
 
     assert np.allclose(singlets, singlets_ev, atol=1e-4)
     assert np.allclose(triplets, triplets_ev, atol=1e-4)
@@ -311,11 +311,11 @@ def test_eomexc_gvb_h2o_631g():
     triplets = [0.30006822, 0.36716561, 0.38073963]
     erpa = EOMExc(h1, v1, rdm1, rdm2)
     ev, cv = erpa.solve_dense(orthog="nonsymm")
-    ev_p, cv_p, _ = pickpositiveeig(ev, cv)
-    singlets_ev = pick_singlets(ev_p, cv_p)[0]
-    singlets_ev = pickeig(singlets_ev, tol=0.001)[:3]
-    triplets_ev = pick_multiplets(ev_p, cv_p)[0]
-    triplets_ev = pickeig(triplets_ev, tol=0.001)[:3]
+    # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
+    singlets_ev = _pick_singlets(ev, cv)[0]
+    singlets_ev = _pickeig(singlets_ev, tol=0.001)[:3]
+    triplets_ev = _pick_multiplets(ev, cv)[0]
+    triplets_ev = _pickeig(triplets_ev, tol=0.001)[:3]
 
     assert np.allclose(singlets, singlets_ev, atol=1e-2)
     assert np.allclose(triplets, triplets_ev, atol=1e-2)
