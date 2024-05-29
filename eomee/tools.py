@@ -887,3 +887,88 @@ def brute_hherpa_lhs(h, v, dm1, dm2):
     vdm2 = np.einsum("pjrs,pkrs->jk", v, dm2)
     a -= 0.5 * np.einsum("li,jk->klji", I, vdm2)
     return a.reshape(n**2, n**2)
+
+
+def eval_cation_dm2(eigvec, rdm1, rdm2):
+    """Compute the 2RDM (spin-resolved) from the eigenstates of hole-hole ERPA.
+
+    Parameters
+    ----------
+    eigvec : ndarray(n**2, n**2)
+        coefficients of an eigenstate of the hole-hole ERPA equation.
+    rdm1 : ndarray(n, n)
+        one-electron reduced density matrix for the N-electron system (usually the neutral ground state).
+    rdm2 : ndarray(n, n, n, n)
+        two-electron reduced density matrix for the N-electron system (usually the neutral ground state).
+    """
+    cv = eigvec.reshape(rdm1.shape)
+    temp = -np.einsum("pq,rs->pqrs", cv, cv) + np.einsum("pq,sr->pqrs", cv, cv)
+    temp += (np.einsum("qp,rs->pqrs", cv, cv) - np.einsum("qp,sr->pqrs", cv, cv))
+    
+    cvdm1 = np.einsum("ru,us->rs", cv, rdm1)
+    temp += (np.einsum("pq,rs->pqrs", cv, cvdm1) - np.einsum("pq,sr->pqrs", cv, cvdm1)) 
+    
+    cvdm1 = np.einsum("tr,ts->sr", cv, rdm1)
+    temp -= (np.einsum("pq,sr->pqrs", cv, cvdm1) - np.einsum("pq,rs->pqrs", cv, cvdm1)) # -d_pq * d_tr * g_ts
+    temp += (np.einsum("qp,sr->pqrs", cv, cvdm1) - np.einsum("qp,rs->pqrs", cv, cvdm1)) # d_qp * d_tr * g_ts
+
+    cvcv = np.einsum("pt,tr->pr", cv, cv)
+    temp += (np.einsum("pr,qs->pqrs", cvcv, rdm1) - np.einsum("ps,qr->pqrs", cvcv, rdm1))
+    # cvcv = np.einsum("qt,tr->qr", cv, cv)
+    temp -= (np.einsum("qr,ps->pqrs", cvcv, rdm1) - np.einsum("qs,pr->pqrs", cvcv, rdm1))
+    temp += (np.einsum("rp,qs->pqrs", cvcv, rdm1) - np.einsum("rq,ps->pqrs", cvcv, rdm1)) # d_ru * d_up * g_qs
+    temp -= (np.einsum("sp,qr->pqrs", cvcv, rdm1) - np.einsum("sq,pr->pqrs", cvcv, rdm1)) # -d_su * d_up * g_qr
+    
+    cvdm2 = np.einsum("tu,qusr->qtsr", cv, rdm2)
+    temp -= np.einsum("pt,qtsr->pqrs", cv, cvdm2) # -d_pt * d_tu * G_qusr
+    temp -= np.einsum("pv,qrvs->pqrs", cv, cvdm2) # -d_pv * d_ru * G_quvs
+    temp += np.einsum("pv,qsvr->pqrs", cv, cvdm2) # d_pv * d_su * G_quvr
+    temp += np.einsum("qt,ptsr->pqrs", cv, cvdm2) # d_qt * d_tu * G_pusr
+    temp += np.einsum("qv,prvs->pqrs", cv, cvdm2) # d_qv * d_ru * G_puvs
+    temp -= np.einsum("qv,psvr->pqrs", cv, cvdm2) # d_qv * d_su * G_puvr
+    temp += np.einsum("tp,qtsr->pqrs", cv, cvdm2) # d_tp * d_tu * G_qusr
+    temp -= np.einsum("tq,ptsr->pqrs", cv, cvdm2) # -d_tq * d_tu * G_pusr
+
+    cvcv = np.einsum("pu,ru->pr", cv, cv)
+    temp -= (np.einsum("pr,qs->pqrs", cvcv, rdm1) - np.einsum("ps,qr->pqrs", cv, cvdm1))
+    # cvcv = np.einsum("qu,ru->qr", cv, cv)
+    temp += (np.einsum("qr,ps->pqrs", cvcv, rdm1) - np.einsum("qs,pr->pqrs", cvcv, rdm1))
+    
+    cvdm2 = np.einsum("tu,qtsr->qusr", cv, rdm2)
+    temp += np.einsum("pu,qusr->pqrs", cv, cvdm2) # d_pu * d_tu * G_qtsr
+    temp += np.einsum("pv,qrvs->pqrs", cv, cvdm2) # d_pv * d_tr * G_qtvs
+    temp -= np.einsum("pv,qsvr->pqrs", cv, cvdm2) # -d_pv * d_ts * G_qtvr
+    temp -= np.einsum("qu,pusr->pqrs", cv, cvdm2) # -d_qu * d_tu * G_ptsr
+    temp -= np.einsum("qv,prvs->pqrs", cv, cvdm2) # -d_qv * d_tr * G_ptvs
+    temp += np.einsum("qv,psvr->pqrs", cv, cvdm2) # d_qv * d_ts * G_ptvr
+    temp -= np.einsum("up,qusr->pqrs", cv, cvdm2) # -d_tu * d_up * G_qtsr
+    temp += np.einsum("uq,pusr->pqrs", cv, cvdm2) #  d_tu * d_uq * G_ptsr
+
+    cvdm1 = np.einsum("pv,qv->pq", cv, rdm1)
+    temp += (np.einsum("pq,rs->pqrs", cvdm1, cv) - np.einsum("pq,sr->pqrs", cvdm1, cv)) # d_pv * d_rs * g_qv
+    temp -= (np.einsum("qp,rs->pqrs", cvdm1, cv) - np.einsum("qp,sr->pqrs", cvdm1, cv)) # -d_qv * d_rs * g_pv
+    
+    cvdm1 = np.einsum("ru,us->rs", cv, rdm1)
+    temp -= (np.einsum("qp,rs->pqrs", cv, cvdm1) - np.einsum("qp,sr->pqrs", cv, cvdm1)) # -d_qp * d_ru * g_us
+
+    cvdm1 = np.einsum("wp,qw->pq", cv, rdm1)
+    temp -= (np.einsum("rs,pq->pqrs", cv, cvdm1) - np.einsum("rs,qp->pqrs", cv, cvdm1)) # -d_rs * d_wp * g_qw
+    temp += (np.einsum("sr,pq->pqrs", cv, cvdm1) - np.einsum("sr,qp->pqrs", cv, cvdm1)) #  d_sr * d_wp * g_qw
+
+    cvdm2 = np.einsum("wp,quws->qups", cv, rdm2)
+    temp += np.einsum("ru,qups->pqrs", cv, cvdm2) # d_ru * d_wp * G_quws
+    temp -= np.einsum("ru,puqs->pqrs", cv, cvdm2) # -d_ru * d_wq * G_puws
+    temp -= np.einsum("su,qupr->pqrs", cv, cvdm2) # -d_su * d_wp * G_quwr
+    temp += np.einsum("su,puqr->pqrs", cv, cvdm2) #  d_su * d_wq * G_puwr
+    temp -= np.einsum("tr,qtps->pqrs", cv, cvdm2) # -d_tr * d_wp * G_qtws
+    temp += np.einsum("tr,ptqs->pqrs", cv, cvdm2) #  d_tr * d_wq * G_ptws
+    temp += np.einsum("ts,qtpr->pqrs", cv, cvdm2) #  d_ts * d_wp * G_qtwr
+    temp -= np.einsum("ts,ptqr->pqrs", cv, cvdm2) # -d_ts * d_wq * G_ptwr
+
+    cvcv = np.einsum("tp,tr->pr", cv, cv)
+    temp -= (np.einsum("pr,qs->pqrs", cvcv, rdm1) - np.einsum("ps,qr->pqrs", cv, cvdm1)) # -d_tp * d_tr * g_qs
+    temp += (np.einsum("qr,ps->pqrs", cvcv, rdm1) - np.einsum("qs,pr->pqrs", cv, cvdm1)) #  d_tq * d_tr * g_ps
+
+    return temp
+    
+    
