@@ -21,20 +21,43 @@ import numpy as np
 from scipy.integrate import quad as integrate
 
 from .base import EOMState
-from .tools import picknonzeroeigs, pick_singlets
+from .solver import pick_nonzero, _pick_singlets
 
 
-__all__ = ["EOMDEA", "EOMDEA2"]
+__all__ = ["EOMDEA", "EOMDEA0"]
 
 
-class EOMDEA2(EOMState):
-    r"""
-    Double electron  attachment EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a^{\dagger}_i a^{\dagger}_j}`.
+class EOMDEA0(EOMState):
+    r"""Doubly electron attached state.
+
+    :math:`| \Psi^{(N+2)}_\lambda > = \hat{Q}^{+2}_\lambda | \Psi^{(N)}_0 >`
+
+    defined by the single electron transition operator :math:`\hat{Q}^{+2}_\lambda = \sum_{ij} { c_{ij;\lambda} a^{\dagger}_i  a^{\dagger}_j}`
+
+    where the indices run over all spin-orbitlas.
+
+    The transition energies and wavefunction satisfy:
 
     .. math::
 
-        \left< \Psi^{(N)}_0 \middle| \left[a_k a_l, \left[ \hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_k \left< \Psi^{(N)}_0 \middle| a_k a_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+
+        A_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a_k  a_l, \left[\hat{H}, a^{\dagger}_j  a^{\dagger}_i \right]\right] \middle| \Psi^{(N)}_0 \right>
+
+        U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| a_k a_l a^{\dagger}_j  a^{\dagger}_i \middle| \Psi^{(N)}_0 \right>
+
+    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n^2 \times n^2` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n^2` solution if matrix diagonalization is applied.
+
+    This equation depends on the ground state's reduced density matrices only up to second order.
+
+    Example
+    -------
+    >>> ea2 = eomee.EOMDEA0(h, v, dm1, dm2)
+    >>> ea2.neigs # number of solutions
+    >>> ea2.lhs # left-hand-side matrix
+    >>> # solve the generalized eigenvalue problem
+    >>> ea2.solve_dense()
+
     """
 
     @property
@@ -400,9 +423,9 @@ class IntegrandPP:
         # Solve EOM equations
         pp = self.method(h, v, self.dm1, self.dm2)
         w, c = pp.solve_dense(tol=tol, mode=gevps)
-        w, c, _ = picknonzeroeigs(w, c)
+        w, c, _ = pick_nonzero(w, c)
         if singlet:
-            s_cv= pick_singlets(w, c)[1]
+            s_cv= _pick_singlets(w, c)[1]
             norm = np.dot(s_cv, np.dot(pp.rhs, s_cv.T))
             diag_n = np.diag(norm)
             idx = np.where(diag_n > 0)[0]  # Remove eigenvalues with negative norm

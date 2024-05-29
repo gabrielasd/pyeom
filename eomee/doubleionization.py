@@ -22,23 +22,45 @@ from scipy.integrate import quad as integrate
 from scipy.integrate import quadrature as fixed_quad
 
 from .base import EOMState
-from .tools import pickpositiveeig, pick_singlets, pick_multiplets
+from .solver import pick_positive, _pick_singlets, _pick_multiplets
 
 
 __all__ = [
     "EOMDIP",
-    "EOMDIP2",
+    "EOMDIP0",
 ]
 
 
 class EOMDIP(EOMState):
-    r"""
-    Double Ionization EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a_i a_j}`.
+    r"""Doubly Ionized state.
+
+    :math:`| \Psi^{(N-2)}_\lambda > = \hat{Q}^{-2}_\lambda | \Psi^{(N)}_0 >`
+
+    defined by the single electron transition operator :math:`\hat{Q}^{-2}_\lambda = \sum_{ij} { c_{ij;\lambda} a_i  a_j}`
+
+    where the indices run over all spin-orbitlas.
+
+    The transition energies and wavefunction satisfy:
 
     .. math::
 
-        \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a^{\dagger}_l, \left[ \hat{H}, \hat{Q} \right] \right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+
+        A_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a^{\dagger}_l, \left[\hat{H}, a_j  a_i \right]\right] \middle| \Psi^{(N)}_0 \right>
+
+        U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a^{\dagger}_l a_j  a_i \middle| \Psi^{(N)}_0 \right>
+
+    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n^2 \times n^2` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n^2` solution if matrix diagonalization is applied.
+
+    This equation depends on the ground state's reduced density matrices only up to second order.
+
+    Example
+    -------
+    >>> ip2 = eomee.EOMDIP(h, v, dm1, dm2)
+    >>> ip2.neigs # number of solutions
+    >>> ip2.lhs # left-hand-side matrix
+    >>> # solve the generalized eigenvalue problem
+    >>> ip2.solve_dense()
 
     """
 
@@ -205,9 +227,9 @@ class WrappNonlinear:
         # Solve EOM equations
         hh = self.method(h, v, self.dm1, self.dm2)
         w, c = hh.solve_dense(*args, **kwargs)
-        ev_p, cv_p, _ = pickpositiveeig(w, c)
+        ev_p, cv_p, _ = pick_positive(w, c)
         if singlet:
-            s_cv= pick_singlets(ev_p, cv_p)[1]
+            s_cv= _pick_singlets(ev_p, cv_p)[1]
             norm = np.dot(s_cv, np.dot(hh.rhs, s_cv.T))
             diag_n = np.diag(norm)
             idx = np.where(diag_n > 0)[0]  # Remove eigenvalues with negative norm
@@ -215,14 +237,6 @@ class WrappNonlinear:
             c = (s_cv[idx].T / sqr_n).T
         else:
             raise NotImplementedError("Only singlets are implemented")
-            # s_cv= pick_singlets(ev_p, cv_p)[1]
-            # norm = np.dot(s_cv, np.dot(hh.rhs, s_cv.T))
-            # diag_n = np.diag(norm)
-            # idx = np.where(diag_n > 0)[0]
-            # sqr_n = np.sqrt(diag_n[idx])
-            # s_cv = (s_cv[idx].T / sqr_n).T
-            # t_cv = pick_multiplets(ev_p, cv_p)[1]
-            # c = np.append(s_cv, t_cv, axis=0)
         # Compute transition RDMs (eq. 32)
         rdm_terms = WrappNonlinear.eval_tdmterms(n, self.dm1)
         tv = WrappNonlinear.eval_nonlinearterms(n, self.dm1, c, rdm_terms)
@@ -231,7 +245,7 @@ class WrappNonlinear:
         return np.einsum("pqrs,pqrs", self.dv, tv/2, optimize=True)
 
 
-class EOMDIP2(EOMState):
+class EOMDIP0(EOMState):
     r"""
     Double Ionization EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a_i a_j}`.
 

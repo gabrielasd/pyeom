@@ -29,13 +29,35 @@ __all__ = [
 
 
 class EOMIP(EOMState):
-    r"""
-    Ionization EOM state for operator :math:`\hat{Q}_k = \sum_n { c_n a_n }`.
+    r"""Ionized state.
+
+    :math:`| \Psi^{(N+1)}_\lambda > = \hat{Q}^{+1}_\lambda | \Psi^{(N)}_0 >`
+
+    defined by the single electron removal operator :math:`\hat{Q}^{+1}_\lambda = \sum_n { c_{n;\lambda} a_n}`
+
+    where the index runs over all spin-orbitlas.
+
+    The transition energies and wavefunction satisfy:
 
     .. math::
 
-        \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m \left[ \hat{H}, \hat{Q} \right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+
+        A_{m,n} &= \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m \left[\hat{H}, a_n \right] \middle| \Psi^{(N)}_0 \right>
+
+        U_{m,n} &= \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m a_n \middle| \Psi^{(N)}_0 \right>
+
+    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n \times n` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n` solutions if matrix diagonalization is applied.
+
+    This equation depends on the ground state's reduced density matrices only up to second order.
+
+    Example
+    -------
+    >>> ip = eomee.EOMIP(h, v, dm1, dm2)
+    >>> ip.neigs # number of solutions
+    >>> ip.lhs # left-hand-side matrix
+    >>> # solve the generalized eigenvalue problem
+    >>> ip.solve_dense()
 
     """
 
@@ -76,16 +98,60 @@ class EOMIP(EOMState):
         """
         # M_mn = \gamma_mn
         return np.copy(self._dm1)
+    
+    def normalize_eigvect(self, coeffs):
+        r""" Normalize coefficients vector. """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
+    
+    def compute_td(self, coeffs):
+        r"""
+        Compute the transition density matrix.
+
+        .. math::
+        < \Psi^{(N)}_0 | a^\dagger_p | \Psi^{(N - 1)}_\lambda > = \sum_{q} \gamma_{pq} c_{q;\lambda}
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n)
+            Coefficients vector for the lambda-th ionized state.
+        
+        Returns
+        -------
+        tdm : np.ndarray(n)
+            transition DMs.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        return np.einsum("pq,q->p", self.rhs, coeffs)
 
 
 class EOMIPDoubleCommutator(EOMState):
-    r"""
-    Ionization EOM state for operator :math:`\hat{Q}_k = \sum_n { c_n a_n }`.
+    r"""Ionized state.
+
+    :math:`| \Psi^{(N+1)}_\lambda > = \hat{Q}^{+1}_\lambda | \Psi^{(N)}_0 >`
+
+    defined by the single electron removal operator :math:`\hat{Q}^{+1}_\lambda = \sum_n { c_{n;\lambda} a_n}`
+
+    where the index runs over all spin-orbitlas.
+
+    The transition energies and wavefunction satisfy:
 
     .. math::
 
-        \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_m, \left[ \hat{H}, \hat{Q} \right] \right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_k \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_m, \hat{Q} \right] \middle| \Psi^{(N)}_0 \right>
+        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+
+        A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_m, \left[\hat{H}, a_n \right]\right]\middle| \Psi^{(N)}_0 \right>
+
+        U_{m,n} &= \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_m, a_n \right] \middle| \Psi^{(N)}_0 \right>
+
+    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n \times n` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n` solutions if matrix diagonalization is applied.
+
+    This equation depends on the ground state's reduced density matrices only up to second order.
 
     """
 
@@ -130,6 +196,36 @@ class EOMIPDoubleCommutator(EOMState):
         m = 2 * np.copy(self._dm1)
         m -= np.eye(self._n, dtype=self._dm1.dtype)
         return m
+    
+    def normalize_eigvect(self, coeffs):
+        r""" Normalize coefficients vector. """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
+    
+    def compute_td(self, coeffs):
+        r"""
+        Compute the transition density matrix.
+
+        .. math::
+        < \Psi^{(N)}_0 | a^\dagger_p | \Psi^{(N - 1)}_\lambda >
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n)
+            Coefficients vector for the lambda-th ionized state.
+        
+        Returns
+        -------
+        tdm : np.ndarray(n)
+            transition DMs.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        return np.einsum("pq,q->p", self.rhs, coeffs)
 
 
 class EOMIPDoubleCommutator0(EOMState):
@@ -182,16 +278,38 @@ class EOMIPDoubleCommutator0(EOMState):
         """
         # M_mn = \gamma_mn
         return self._dm1
+    
+    def normalize_eigvect(self, coeffs):
+        r""" Normalize coefficients vector. """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
 
 
 class EOMIPAntiCommutator(EOMState):
-    r"""
-    Ionization EOM state for operator :math:`\hat{Q}_k = \sum_n { c_n a_n }`.
+    r"""Ionized state.
+
+    :math:`| \Psi^{(N+1)}_\lambda > = \hat{Q}^{+1}_\lambda | \Psi^{(N)}_0 >`
+
+    defined by the single electron removal operator :math:`\hat{Q}^{+1}_\lambda = \sum_n { c_{n;\lambda} a_n}`
+
+    where the index runs over all spin-orbitlas.
+
+    The transition energies and wavefunction satisfy:
 
     .. math::
 
-        \left< \Psi^{(N)}_0 \middle| \Big\{ a^{\dagger}_m, \left[ \hat{H}, \hat{Q} \right] \Big\} \middle| \Psi^{(N)}_0 \right>
-        = \Delta_k \left< \Psi^{(N)}_0 \middle| \Big\{a^{\dagger}_m, \hat{Q} \Big\} \middle| \Psi^{(N)}_0 \right>
+        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+
+        A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \Big\{ a^{\dagger}_m, \left[\hat{H}, a_n \right]\Big\} \middle| \Psi^{(N)}_0 \right>
+
+        U_{m,n} &= \left< \Psi^{(N)}_0 \middle| \Big\{a^{\dagger}_m, a_n \Big\} \middle| \Psi^{(N)}_0 \right>
+
+    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n \times n` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n` solutions if matrix diagonalization is applied.
+
+    This equation just requires the ground state's one-electron reduced density matrix.
 
     """
 
@@ -228,6 +346,36 @@ class EOMIPAntiCommutator(EOMState):
         # M_mn = \delta_mn
         m = np.eye(self._n, dtype=self._dm1.dtype)
         return m
+    
+    def normalize_eigvect(self, coeffs):
+        r""" Normalize coefficients vector. """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
+        sqr_n = np.sqrt(np.abs(norm_factor))
+        return (coeffs.T / sqr_n).T
+    
+    def compute_td(self, coeffs):
+        r"""
+        Compute the transition density matrix.
+
+        .. math::
+        < \Psi^{(N)}_0 | a^\dagger_p | \Psi^{(N - 1)}_\lambda >
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n)
+            Coefficients vector for the lambda-th ionized state.
+        
+        Returns
+        -------
+        tdm : np.ndarray(n)
+            transition DMs.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        return np.einsum("pq,q->p", self.rhs, coeffs)
 
 
 class EOMIPAntiCommutator0(EOMState):
@@ -273,3 +421,7 @@ class EOMIPAntiCommutator0(EOMState):
         """
         # M_mn = \gamma_mn
         return self._dm1
+
+
+EOMIPc = EOMIPDoubleCommutator
+EOMIPa = EOMIPAntiCommutator

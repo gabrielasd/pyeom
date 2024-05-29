@@ -20,32 +20,36 @@ __all__ = [
     "__version__",
     "EOMState",
     "EOMIP",
-    "EOMIPDoubleCommutator",
-    "EOMIPAntiCommutator",
+    "EOMIPc",
+    "EOMIPa",
     "EOMEA",
-    "EOMEADoubleCommutator",
-    "EOMEAAntiCommutator",
+    "EOMEAc",
+    "EOMEAa",
     "EOMDIP",
+    "EOMDIP0",
     "EOMExc",
-    "EOMDEA",
-    "EOMDIP2",
     "EOMExc0",
     "EOMDEA2",
     "EOMExcSA",
+    "EOMDEA",        
+    "EOMDEA0",
+    # "EOMExcSA",
 ]
 
 
 from .base import EOMState
 from .ionization import EOMIP
-from .ionization import EOMIPDoubleCommutator
-from .ionization import EOMIPAntiCommutator
-from .electronaff import EOMEA
-from .electronaff import EOMEADoubleCommutator
-from .electronaff import EOMEAAntiCommutator
-from .doubleionization import EOMDIP, EOMDIP2
+from .ionization import EOMIPc
+from .ionization import EOMIPa
+from .eaffinity import EOMEA
+from .eaffinity import EOMEAc
+from .eaffinity import EOMEAa
+from .doubleionization import EOMDIP, EOMDIP0
 from .excitation import EOMExc, EOMExc0
 from .doubleelectronaff import EOMDEA, EOMDEA2
 from .spinadapted.particlehole import EOMExcSA
+from .doubleaffinity import EOMDEA, EOMDEA0
+from .spinadapted.particlehole import EOMEE1, EOMEE3
 
 
 __version__: str = "0.0.1"

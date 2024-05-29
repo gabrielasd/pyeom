@@ -21,7 +21,7 @@ from scipy.linalg import eig, svd
 
 import pytest
 
-from eomee import EOMDIP
+from eomee import EOMDIP, EOMDIP2
 from eomee.tools import (
     find_datafiles,
     spinize,
@@ -245,13 +245,13 @@ def test_eomdip(filename, nparts, ehomo, nbasis, idx):
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
     # Evaluate hole-hole EOM
-    eom = EOMDIP(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
-    aval, _ = eom.solve_dense()
-    result = np.sort(aval)
+    eom = EOMDIP2(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eval, _ = eom.solve_dense()
+    # result = np.sort(aval)
     # Expected value
     dip = -2 * (ehomo) + antisymmetrize(spinize(two_mo))[0, nbasis, 0, nbasis]
 
-    assert np.allclose(result[idx], dip)
+    assert np.allclose(eval[idx], dip)
 
 
 @pytest.mark.skip(reason="need to update v integrals format")

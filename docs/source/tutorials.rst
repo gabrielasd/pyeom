@@ -14,7 +14,13 @@
     : You should have received a copy of the GNU General Public License
     : along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
-Input Formats
-#############
+Getting Started
+###############
 
-To be completed.
+EOMEE computes excited states energies though the implementation of the equations-of-motion
+formalism. 
+
+Some example scripts showcasing the supported features can be found inside the project's *examples* folder.
+These assume the package has been installed following the instructions in :ref:`Installation
+<installation>`.
+    

@@ -16,21 +16,18 @@
 r"""Test eomee.ionization."""
 
 
-from eomee import EOMExc
+from eomee.excitation import EOMExc, eval_ecorr, _eval_W_alpha_constant_terms
 
 from eomee.tools import (
     find_datafiles,
     spinize,
-    symmetrize,
     antisymmetrize,
     hartreefock_rdms,
-    pickpositiveeig,
-    pickeig,
-    pick_singlets,
-    pick_multiplets,
     make_gvbpp_hamiltonian,
     from_unrestricted,
 )
+
+from eomee.solver import pick_positive, _pick_singlets, _pick_multiplets, _pickeig
 
 import numpy as np
 
@@ -156,10 +153,92 @@ def test_eomexc(filename, nparts, answer):
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
     # Evaluate particle-hole EOM
     phrpa = EOMExc(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
-    ev, _ = phrpa.solve_dense(orthog="asymmetric")
-    result = pickeig(ev)
+    ev, _ = phrpa.solve_dense(mode="nonsymm")
+    idx = 3 # 1st singlet
+    assert np.allclose(ev[idx], answer)
 
-    assert np.allclose(result[1], answer)
+
+def test_eomexc_gvb_h2_631g():
+    filename = 'h2_0.70_gvbpp_631g'
+    ham = np.load(find_datafiles("{}.ham.npz".format(filename)))
+    dms = np.load(find_datafiles("{}.dms.npz".format(filename)))
+    gem_m = np.load(find_datafiles("{}.geminals.npy".format(filename)))
+    one_mo = ham['onemo']
+    two_mo = ham["twomo"]
+    dm1_a = dms['dm1'][0]
+    dm2_aa, dm2_ab = dms['dm2']
+    
+    one_mo_0, two_mo_0, two_mo_0_inter = make_gvbpp_hamiltonian(one_mo, two_mo, gem_m, dm1_a)
+    h0 = spinize(one_mo_0) 
+    h0 += spinize(two_mo_0_inter)
+    v0 = spinize(two_mo_0)
+    h1 = spinize(one_mo)
+    v1 = spinize(two_mo)
+    rdm1 = from_unrestricted([dm1_a, dm1_a])
+    rdm2 = from_unrestricted([dm2_aa, dm2_ab, dm2_aa])
+    n = one_mo.shape[0]
+    rdm2[:n, n:, n:, :n] = -dm2_ab.transpose((0,1,3,2))
+    rdm2[n:, :n, :n, n:] = -dm2_ab.transpose((1,0,2,3))
+
+    # Evaluate particle-hole EOM
+    singlets = [1.0297]
+    triplets = [0.6729, 0.6729, 0.6729, 1.3819, 1.3819, 1.3819, 1.3819, 1.6211, 1.6211,
+    1.6211, 1.6211, 2.2159, 2.2159, 2.2159, 2.2159, 2.4551, 2.4551, 2.4551, 2.4551]
+    erpa = EOMExc(h0, v0, rdm1, rdm2)
+    ev, cv = erpa.solve_dense(mode="nonsymm")
+    # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
+    ev_p, cv_p = ev, cv
+    singlets_ev = _pick_singlets(ev_p, cv_p)[0]
+    triplets_ev = _pick_multiplets(ev_p, cv_p)[0]
+
+    assert np.allclose(singlets, singlets_ev, atol=1e-4)
+    assert np.allclose(triplets, triplets_ev, atol=1e-4)
+
+    # Evaluate particle-hole EOM
+    singlets = [0.5879, 1.0384, 1.395, 1.8613, 2.1643]
+    triplets = [0.4182, 0.4182, 0.4182, 0.8364, 0.8364, 0.8364, 1.3622, 1.3622,
+    1.3622, 1.467,  1.467,  1.467, 1.9592, 1.9592, 1.9592]
+    erpa = EOMExc(h1, v1, rdm1, rdm2)
+    ev, cv = erpa.solve_dense(mode="nonsymm")
+    # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
+    ev_p, cv_p = ev, cv
+    singlets_ev = _pick_singlets(ev_p, cv_p)[0]
+    triplets_ev = _pick_multiplets(ev_p, cv_p)[0]
+
+    assert np.allclose(singlets, singlets_ev, atol=1e-4)
+    assert np.allclose(triplets, triplets_ev, atol=1e-4)
+
+
+def test_eomexc_gvb_h2o_631g():
+    filename = 'h2o_1.00_gvbpp_631g'
+    ham = np.load(find_datafiles("{}.ham.npz".format(filename)))
+    dms = np.load(find_datafiles("{}.dms.npz".format(filename)))
+    one_mo = ham['onemo']
+    two_mo = ham["twomo"]
+    dm1_a = dms['rdm1'][0]
+    dm2_aa, dm2_ab = dms['rdm2']
+    h1 = spinize(one_mo)
+    v1 = spinize(two_mo)
+    rdm1 = from_unrestricted([dm1_a, dm1_a])
+    rdm2 = from_unrestricted([dm2_aa, dm2_ab, dm2_aa])
+    n = one_mo.shape[0]
+    rdm2[:n, n:, n:, :n] = -dm2_ab.transpose((0,1,3,2))
+    rdm2[n:, :n, :n, n:] = -dm2_ab.transpose((1,0,2,3))
+
+    # Evaluate particle-hole EOM
+    singlets = [0.33050385, 0.39671774, 0.43111097]
+    triplets = [0.30006822, 0.36716561, 0.38073963]
+    erpa = EOMExc(h1, v1, rdm1, rdm2)
+    ev, cv = erpa.solve_dense(mode="nonsymm")
+    # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
+    ev_p, cv_p = ev, cv
+    singlets_ev = _pick_singlets(ev_p, cv_p)[0]
+    singlets_ev = _pickeig(singlets_ev, tol=0.001)[:3]
+    triplets_ev = _pick_multiplets(ev_p, cv_p)[0]
+    triplets_ev = _pickeig(triplets_ev, tol=0.001)[:3]
+
+    assert np.allclose(singlets, singlets_ev, atol=1e-2)
+    assert np.allclose(triplets, triplets_ev, atol=1e-2)
 
 
 def test_eomexc_gvb_h2_631g():
@@ -269,8 +348,11 @@ def test_reconstructed_2rdm_phrpa(filename, nparts, ehf):
     one_mo = spinize(one_mo)
     two_mo = spinize(two_mo)
     phrpa = EOMExc(one_mo, two_mo, one_dm, two_dm)
-    w, cv = phrpa.solve_dense(orthog="asymmetric")
-    _, pcv, _ = pickpositiveeig(w, cv)
+    w, cv = phrpa.solve_dense(mode="nonsymm")
+    # _, pcv, _ = pickpositiveeig(w, cv)
+    pcv = cv
+    
+    # Check that that the reconstructed 2RDM has the right normalization
     rdm2 = get_dm2_from_tdms(pcv, one_dm, two_dm, comm=True)
     assert np.allclose(np.einsum("ijij", rdm2), ((na + nb) * ((na + nb) - 1)))
 
@@ -313,14 +395,23 @@ def test_phrpa_adiabaticconection(filename, nparts, ehf):
     # Evaluate ERPA
     one_mo_0 = Fk
     two_mo_0 = np.zeros_like(two_mo)
-    solution = EOMExc.erpa(
-        one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm, orthog="nonsymm"
-    )
+    solution = eval_ecorr(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
     print("E_HF", ehf)
-    print("E_erpa", np.einsum("pq, pq", Fk, one_dm) + solution['ecorr'])
+    print("E_erpa", np.einsum("pq, pq", Fk, one_dm) + solution)
 
 
 def test_ac_gvb_h2_631g():
+    """Test adiabatic connection for GVBPP H2 at 0.7 A.
+
+    Numericla result for comparison generated with GAMCOR:
+    E_geminal = -1.900367259303
+    E_gvb = -1.14439982
+    E_gvb_ac = -1.14877553
+    alpha_indep_term = -0.151183973855072
+    int_W_alpha = 0.142987997959857
+    E_corr = -0.00437571
+
+    """
     E_geminal = -1.900367259303
     E_gvb = -1.14439982
     E_gvb_ac = -1.14877553
@@ -351,17 +442,18 @@ def test_ac_gvb_h2_631g():
     rdm2[n:, :n, :n, n:] = -dm2_ab.transpose((1,0,2,3))
 
     # Evaluate particle-hole EOM
-    out = EOMExc.erpa(h0, v0, h1, v1, rdm1, rdm2, nint=5)
-    E1_E0 = out["ecorr"]
-    linear = out["linear"]
-    result = E_geminal + E1_E0 + nuc
+    solution = eval_ecorr(h0, v0, h1, v1, rdm1, rdm2)
+    E1 = E_gvb + solution
 
-    assert np.allclose(result, E_gvb_ac, atol=1e-5)
-    assert np.allclose(result - E_gvb, E_corr, atol=1e-5)
+    assert np.allclose(E1, E_gvb_ac, atol=1e-5)
+    assert np.allclose(solution, E_corr, atol=1e-5)
 
     # result = E1_E0 - linear
     # assert np.allclose(result, int_W_alpha, atol=1e-5)
 
+    linear = _eval_W_alpha_constant_terms(v1-v0, rdm1, rdm2, True, 1e-7)
+    linear += np.einsum("ij,ij", h1-h0, rdm1) # add one-body term
+    linear += 0.5 * np.einsum("pqrs,pqrs", v1-v0, rdm2) # remove term from <GVB|H^0|GVB>
     shift = 0.5 * np.einsum("ij,ij", spinize(two_mo_0_inter), rdm1)
     result = linear - shift
     assert np.allclose(result, alpha_indep_term, atol=1e-3)
@@ -398,14 +490,15 @@ def test_ac_gvb_h2o_631g():
     rdm2[n:, :n, :n, n:] = -dm2_ab.transpose((1,0,2,3))
 
     # Evaluate particle-hole EOM
-    out = EOMExc.erpa(h0, v0, h1, v1, rdm1, rdm2, nint=5)
-    E1_E0 = out["ecorr"]
-    linear = out["linear"]
-    result = E_geminal + E1_E0 + nuc
+    solution = eval_ecorr(h0, v0, h1, v1, rdm1, rdm2)
+    E1 = E_gvb + solution
 
-    assert np.allclose(result, E_gvb_ac, atol=1e-2)
-    assert np.allclose(result - E_gvb, E_corr, atol=1e-2)
+    assert np.allclose(E1, E_gvb_ac, atol=1e-2)
+    assert np.allclose(solution, E_corr, atol=1e-2)
 
+    linear = _eval_W_alpha_constant_terms(v1-v0, rdm1, rdm2, True, 1e-7)
+    linear += np.einsum("ij,ij", h1-h0, rdm1) # add one-body term
+    linear += 0.5 * np.einsum("pqrs,pqrs", v1-v0, rdm2) # remove term from <GVB|H^0|GVB>
     shift = 0.5 * np.einsum("ij,ij", spinize(two_mo_0_inter), rdm1)
     result = linear + shift
     assert np.allclose(result, alpha_indep_term, atol=1e-2)
