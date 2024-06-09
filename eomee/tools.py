@@ -203,7 +203,7 @@ def spinize_rdms(blocks):
     Return the 1- or 2-RDMs in the spin representation from blocks.
 
     A two-index array 1-RDM is recontrcuted from blocks (a, b).
-    A four-index array 2-RDM is recontrcuted from blocks (aa, ab, bb).
+    A four-index array 2-RDM is recontrcuted from blocks (aa, bb, ab).
 
     Parameters
     ----------
@@ -232,11 +232,11 @@ def spinize_rdms(blocks):
         k = 2 * n
         y = np.zeros((k, k, k, k))
         y[:n, :n, :n, :n] = blocks[0]
-        y[:n, n:, :n, n:] = blocks[1]
-        y[n:, :n, n:, :n] = blocks[1]
-        y[n:, n:, n:, n:] = blocks[2]
-        y[:n, n:, n:, :n] = - blocks[1].transpose(0, 1, 3, 2)
-        y[n:, :n, :n, n:] = - blocks[1].transpose(1, 0, 2, 3)
+        y[:n, n:, :n, n:] = blocks[2]
+        y[n:, :n, n:, :n] = blocks[2]
+        y[n:, n:, n:, n:] = blocks[1]
+        y[:n, n:, n:, :n] = - blocks[2].transpose(0, 1, 3, 2)
+        y[n:, :n, :n, n:] = - blocks[2].transpose(1, 0, 2, 3)
     else:
         raise ValueError("Invalid input")
     return y
