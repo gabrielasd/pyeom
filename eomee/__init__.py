@@ -19,9 +19,11 @@ r"""Equations-of-Motion and Extended RPA package."""
 __all__ = [
     "__version__",
     "EOMState",
-    "EOMIP",
-    "EOMIPc",
-    "EOMIPa",
+    "IP",
+    "IPc",
+    "IPa",
+    "IPcm",
+    "IPam",
     "EOMEA",
     "EOMEAc",
     "EOMEAa",
@@ -38,9 +40,7 @@ __all__ = [
 
 
 from .base import EOMState
-from .ionization import EOMIP
-from .ionization import EOMIPc
-from .ionization import EOMIPa
+from .eomip import IP, IPc, IPa, IPcm, IPam
 from .eaffinity import EOMEA
 from .eaffinity import EOMEAc
 from .eaffinity import EOMEAa
