@@ -16,7 +16,7 @@
 r"""Test eomee.electronaff."""
 
 
-from eomee import EOMEA, EOMEAc, EOMEAa
+from eomee import EA, EAc, EAa
 
 from eomee.tools import (
     find_datafiles,
@@ -42,7 +42,7 @@ def test_eomea_neigs():
     two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
     two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
 
-    eom = EOMEA(one_mo, two_mo, one_dm, two_dm)
+    eom = EA(one_mo, two_mo, one_dm, two_dm)
     assert eom.neigs == 4
 
 
@@ -65,17 +65,17 @@ def test_eomea_one_body_term():
     w, _ = eig(one_mo)
     ea = np.real(w)
     # EOM solution
-    eom = EOMEA(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EA(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval1, _ = eom.solve_dense()
     # assert abs(sorted(aval1)[0] - ea[1]) < 1e-8
     assert abs(aval1[0] - ea[1]) < 1e-8
 
-    eom = EOMEAa(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EAa(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval2, _ = eom.solve_dense()
     # assert abs(sorted(aval2)[-1] - ea[1]) < 1e-8
     assert abs(aval2[-1] - ea[1]) < 1e-8
 
-    eom = EOMEAc(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EAc(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval3, _ = eom.solve_dense()
     # assert abs(sorted(aval3)[0] - ea[1]) < 1e-8
     assert abs(aval3[0] - ea[1]) < 1e-8
@@ -94,7 +94,7 @@ def test_eomea_one_body_term():
     ],
 )
 def test_eomea(filename, nbasis, nocc, evidx, hf_vmo, tol):
-    """Test EOMEA against Hartree-Fock canonical orbital energy.
+    """Test EA class against Hartree-Fock canonical orbital energy.
 
     """
     na, nb = nocc
@@ -103,7 +103,7 @@ def test_eomea(filename, nbasis, nocc, evidx, hf_vmo, tol):
     nbasis = one_mo.shape[0]
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
-    eom = EOMEA(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EA(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval, _ = eom.solve_dense()
     aval = sorted(aval)
 
@@ -129,7 +129,7 @@ def test_eadoublecommutator(filename, nbasis, nocc, evidx, hf_vmo, tol):
     nbasis = one_mo.shape[0]
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
-    eom = EOMEAc(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EAc(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval, _ = eom.solve_dense()
     # aval = sorted(aval)
 
@@ -155,7 +155,7 @@ def test_eaanticommutator(filename, nbasis, nocc, evidx, hf_vmo, tol):
     nbasis = one_mo.shape[0]
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
-    eom = EOMEAa(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EAa(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval, _ = eom.solve_dense()
     aval = sorted(aval)
 
@@ -174,11 +174,11 @@ def test_electronaff_b_sto3g():
     nbasis = one_mo.shape[0]
     one_dm, two_dm = hartreefock_rdms(nbasis, 3, 2)
 
-    eom = EOMEAc(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EAc(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval2, _ = eom.solve_dense()
     # aval2 = sorted(aval2)
 
-    eom = EOMEAa(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = EAa(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     aval3, _ = eom.solve_dense()
     # aval3 = sorted(aval3)
 
