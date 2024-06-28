@@ -29,8 +29,8 @@ __all__ = [
     "EAa",
     "EOMDIP",
     "EOMDIP0",
-    "EOMExc",
-    "EOMExc0",
+    "EE",
+    "EEm",
     "EOMExc0SA",
     "EOMEE1",
     "EOMEE3",
@@ -43,7 +43,7 @@ from .base import EOMState
 from .eomip import IP, IPc, IPa, IPcm, IPam
 from .eomea import EA, EAc, EAa
 from .doubleionization import EOMDIP, EOMDIP0
-from .excitation import EOMExc, EOMExc0
+from .excitation import EE, EEm
 from .spinadapted.particlehole import EOMExc0SA
 from .doubleaffinity import EOMDEA, EOMDEA0
 from .spinadapted.particlehole import EOMEE1, EOMEE3

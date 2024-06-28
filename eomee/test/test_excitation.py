@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
-r"""Test eomee.ionization."""
+r"""Test eomee.excitation."""
 
 
-from eomee.excitation import EOMExc, eval_ecorr, _eval_W_alpha_constant_terms
+from eomee.excitation import EE, eval_ecorr, _eval_W_alpha_constant_terms
 
 from eomee.tools import (
     find_datafiles,
@@ -126,7 +126,7 @@ def test_eomexc_neigs():
     two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
     two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
 
-    eom = EOMExc(one_mo, two_mo, one_dm, two_dm)
+    eom = EE(one_mo, two_mo, one_dm, two_dm)
     assert eom.neigs == 4 ** 2
 
 
@@ -152,7 +152,7 @@ def test_eomexc(filename, nparts, answer):
     na, nb = nparts
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
     # Evaluate particle-hole EOM
-    phrpa = EOMExc(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    phrpa = EE(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     ev, _ = phrpa.solve_dense(mode="nonsymm")
     idx = 3 # 1st singlet
     assert np.allclose(ev[idx], answer)
@@ -184,7 +184,7 @@ def test_eomexc_gvb_h2_631g():
     singlets = [1.0297]
     triplets = [0.6729, 0.6729, 0.6729, 1.3819, 1.3819, 1.3819, 1.3819, 1.6211, 1.6211,
     1.6211, 1.6211, 2.2159, 2.2159, 2.2159, 2.2159, 2.4551, 2.4551, 2.4551, 2.4551]
-    erpa = EOMExc(h0, v0, rdm1, rdm2)
+    erpa = EE(h0, v0, rdm1, rdm2)
     ev, cv = erpa.solve_dense(mode="nonsymm")
     # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
     ev_p, cv_p = ev, cv
@@ -198,7 +198,7 @@ def test_eomexc_gvb_h2_631g():
     singlets = [0.5879, 1.0384, 1.395, 1.8613, 2.1643]
     triplets = [0.4182, 0.4182, 0.4182, 0.8364, 0.8364, 0.8364, 1.3622, 1.3622,
     1.3622, 1.467,  1.467,  1.467, 1.9592, 1.9592, 1.9592]
-    erpa = EOMExc(h1, v1, rdm1, rdm2)
+    erpa = EE(h1, v1, rdm1, rdm2)
     ev, cv = erpa.solve_dense(mode="nonsymm")
     # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
     ev_p, cv_p = ev, cv
@@ -228,7 +228,7 @@ def test_eomexc_gvb_h2o_631g():
     # Evaluate particle-hole EOM
     singlets = [0.33050385, 0.39671774, 0.43111097]
     triplets = [0.30006822, 0.36716561, 0.38073963]
-    erpa = EOMExc(h1, v1, rdm1, rdm2)
+    erpa = EE(h1, v1, rdm1, rdm2)
     ev, cv = erpa.solve_dense(mode="nonsymm")
     # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
     ev_p, cv_p = ev, cv
@@ -267,7 +267,7 @@ def test_eomexc_gvb_h2_631g():
     singlets = [1.0297]
     triplets = [0.6729, 0.6729, 0.6729, 1.3819, 1.3819, 1.3819, 1.3819, 1.6211, 1.6211,
     1.6211, 1.6211, 2.2159, 2.2159, 2.2159, 2.2159, 2.4551, 2.4551, 2.4551, 2.4551]
-    erpa = EOMExc(h0, v0, rdm1, rdm2)
+    erpa = EE(h0, v0, rdm1, rdm2)
     ev, cv = erpa.solve_dense(orthog="nonsymm")
     # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
     singlets_ev = _pick_singlets(ev, cv)[0]
@@ -280,7 +280,7 @@ def test_eomexc_gvb_h2_631g():
     singlets = [0.5879, 1.0384, 1.395, 1.8613, 2.1643]
     triplets = [0.4182, 0.4182, 0.4182, 0.8364, 0.8364, 0.8364, 1.3622, 1.3622,
     1.3622, 1.467,  1.467,  1.467, 1.9592, 1.9592, 1.9592]
-    erpa = EOMExc(h1, v1, rdm1, rdm2)
+    erpa = EE(h1, v1, rdm1, rdm2)
     ev, cv = erpa.solve_dense(orthog="nonsymm")
     # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
     singlets_ev = _pick_singlets(ev, cv)[0]
@@ -309,7 +309,7 @@ def test_eomexc_gvb_h2o_631g():
     # Evaluate particle-hole EOM
     singlets = [0.33050385, 0.39671774, 0.43111097]
     triplets = [0.30006822, 0.36716561, 0.38073963]
-    erpa = EOMExc(h1, v1, rdm1, rdm2)
+    erpa = EE(h1, v1, rdm1, rdm2)
     ev, cv = erpa.solve_dense(orthog="nonsymm")
     # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
     singlets_ev = _pick_singlets(ev, cv)[0]
@@ -347,7 +347,7 @@ def test_reconstructed_2rdm_phrpa(filename, nparts, ehf):
     # of electron pairs (normalization condition).
     one_mo = spinize(one_mo)
     two_mo = spinize(two_mo)
-    phrpa = EOMExc(one_mo, two_mo, one_dm, two_dm)
+    phrpa = EE(one_mo, two_mo, one_dm, two_dm)
     w, cv = phrpa.solve_dense(mode="nonsymm")
     # _, pcv, _ = pickpositiveeig(w, cv)
     pcv = cv

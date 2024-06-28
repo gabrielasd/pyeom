@@ -20,7 +20,7 @@ import numpy as np
 
 from scipy.integrate import fixed_quad
 
-from eomee.excitation import EOMExc, EOMExc0
+from eomee.excitation import EE, EEm
 from eomee.tools import spinize, from_unrestricted
 from eomee.solver import eig_pinvb, lowdin_svd, eig_pruneq_pinvb, pick_positive, eig_invb
 
@@ -336,7 +336,7 @@ __all__ = [
 #         return np.einsum("pqrs,pqrs", self.dv, tdtd, optimize=True)
 
 
-class EOMExc0SA(EOMExc0):
+class EOMExc0SA(EEm):
     r"""
     Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a^{\dagger}_i  a_j \pm a^{\dagger}_{\bar{i}}  a_{\bar{j}})}`.
 
@@ -506,7 +506,7 @@ def _get_transition_rdm1(cv, metric, nabsis):
     return np.einsum("pqrs,rs->pq", rhs, cv)
 
 
-class EOMEE1(EOMExc):
+class EOMEE1(EE):
     r"""
     Spin-adapted particle-hole EOM for the singlet spin symmetry.
     
@@ -586,7 +586,7 @@ class EOMEE1(EOMExc):
         return _get_transition_rdm1(coeffs, self.rhs, self._k)
 
 
-class EOMEE3(EOMExc):
+class EOMEE3(EE):
     r"""
     Spin-adapted particle-hole EOM for the triplet spin symmetry.
     
@@ -666,7 +666,7 @@ class EOMEE3(EOMExc):
         return _get_transition_rdm1(coeffs, self.rhs, self._k)
 
 
-class EOMEE03(EOMExc0):
+class EOMEE03(EEm):
     def __init__(self, h, v, dm1, dm2):
         super().__init__(h, v, dm1, dm2)
         self._k = self._n // 2
