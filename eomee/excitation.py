@@ -27,8 +27,8 @@ from .solver import pick_positive, _pick_singlets
 
 
 __all__ = [
-    "EOMExc",
-    "EOMExc0",
+    "EE",
+    "EEm",
 ]
 
 
@@ -69,42 +69,47 @@ def _get_rhs_particlehole_erpa(dm1):
     return m
 
 
-class EOMExc(EOMState):
-    r"""Electronic excitated state.
+class EE(EOMState):
+    r"""Electron excitated state class.
 
-    :math:`| \Psi^{(N)}_\lambda > = \hat{Q}^{0}_\lambda | \Psi^{(N)}_0 >`
-
-    defined by the single electron transition operator :math:`\hat{Q}^{0}_\lambda = \sum_{ij} { c_{ij;\lambda} a^{\dagger}_i  a_j}`
-
-    where the indices run over all spin-orbitlas.
-
-    The transition energies and wavefunction satisfy:
+    This class implements the extended random phase approximation method ([ERPA]_).
+    The wavefunction of the :math:`\lambda`th excited state can be approximated as linear combination
+    of single electron excited configurations produced from the ground state wavefunction:
+    state wavefunction appliying a linear combination of single electron excitation operators, :math:`\hat{Q}^{0}_\lambda`:
 
     .. math::
 
-        &\mathbf{A} \mathbf{c} = \Delta_{k} \mathbf{U} \mathbf{c}
+        \Psi^{(N)}_\lambda > = \sum_{ij} c_{ij;\lambda} a^{\dagger}_i  a_j | \Psi^{(N)}_0 >
+
+    where :math:`a^{\dagger}_i` and :math:`a_i` are the creation and annihilation operators, respectively
+    and the indices :math:`ij` denote arbitrary spin-orbitals.
+
+    The excitation energies (:math:`\Delta_\lambda = E^{(N)}_\lambda - E^(N)_0`) and wavefunction are
+    determined by the following eigenvalue problem:
+
+    .. math::
+
+        &\mathbf{A} \mathbf{C}_{k} = \Delta_{k} \mathbf{U} \mathbf{C}_{k}
 
         A_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l, \left[\hat{H}, a^{\dagger}_j  a_i \right]\right] \middle| \Psi^{(N)}_0 \right>
 
         U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a_l, a^{\dagger}_j  a_i \right] \Psi^{(N)}_0 \right>
 
-    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n^2 \times n^2` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n^2` solution if matrix diagonalization is applied.
+    where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` can be defined in terms of the ground state's
+    one- and two-electron density matrices. The matrices are :math:`n^2 \times n^2` matrices for an :math:`n`
+    spin-orbital basis. Correspondingly, there will be :math:`n^2` solution if matrix diagonalization is applied.
+    The eigenvalues obtained come in (mirrored) pairs; positive transition correspond to excitation
+    energies :math:`\Delta_\lambda > 0` and negative ones to de-excitations :math:`\Delta_\lambda < 0`.
 
-    This equation depends on the ground state's reduced density matrices only up to second order.
+    .. [EKT] Chatterjee, K., & Pernal, K. (2012). The Journal of Chemical Physics, 137(20), 204109.
 
     Example
     -------
-    >>> import numpy as np
-    >>> h = np.arange(4).reshape((2,2))
-    >>> v = np.arange(16).reshape((2,2,2,2))
-    >>> dm1 = np.array([[1., 0.],
-    ...                 [0., 0.]])
-    >>> dm2 = np.zeros_like(v)
-    >>> ee = eomee.EOMExc(h, v, dm1, dm2)
-    >>> ee.neigs # number of solutions
-    >>> ee.lhs # left-hand-side matrix
-    >>> # solve the generalized eigenvalue problem
-    >>> ee.solve_dense()
+    >>> erpa = eomee.EE(h, v, dm1, dm2)
+    >>> erpa.neigs # number of solutions
+    >>> erpa.lhs # left-hand-side matrix
+    >>> # Solve the ERPA matrix equation
+    >>> erpa.solve_dense()
 
     """
 
@@ -373,29 +378,24 @@ class _IntegrandPh:
         return np.einsum("pqrs,pqrs", self.dv, tdtd, optimize=True)
 
 
-class EOMExc0(EOMState):
-    r"""Electronic excitated state.
+class EEm(EE):
+    r"""Electron excitated state class.
 
-    :math:`| \Psi^{(N)}_\lambda > = \hat{Q}^{0}_\lambda | \Psi^{(N)}_0 >`
-
-    defined by the single electron transition operator :math:`\hat{Q}^{0}_\lambda = \sum_{ij} { c_{ij;\lambda} a^{\dagger}_i  a_j}`
-
-    where the indices run over all spin-orbitlas.
-
-    The transition energies and wavefunction satisfy:
+    The excitation energies (:math:`\Delta_\lambda = E^{(N)}_\lambda - E^(N)_0`) and :math:`\lambda`th
+    state of the :math:`(N)`-electron wavefunction are determined by the following eigenvalue problem:
 
     .. math::
 
-        &\mathbf{A} \mathbf{c} = \Delta_{k} \mathbf{U} \mathbf{c}
+        &\mathbf{A} \mathbf{C}_{k} = \Delta_{k} \mathbf{U} \mathbf{C}_{k}
 
         A_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l, \left[\hat{H}, a^{\dagger}_j  a_i \right]\right] \middle| \Psi^{(N)}_0 \right>
 
         U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| a^{\dagger}_k a_l a^{\dagger}_j  a_i  \middle| \Psi^{(N)}_0 \right>
 
-    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n^2 \times n^2` matrices for an :math:`n` spin-orbital basis. 
-    Correspondingly, there will be :math:`n^2` solution if matrix diagonalization is applied.
-
-    This equation depends on the ground state's reduced density matrices only up to second order.
+    This is the matrix form of the double commutator EOM equation for the single electron excitation
+    operator (same one as in the :class:`EE` class) but without a commutator on the right-hand side matrix
+    :math:`\mathbf{U}` (mixed doublecommutator EOM form, EEm). The spectra of the eigenvalues obtained
+    only contain positive values.
 
     """
 
@@ -413,48 +413,6 @@ class EOMExc0(EOMState):
         # Number of q_n terms = n_{\text{basis}} * n_{\text{basis}}
         return self._n ** 2
 
-    def _compute_lhs(self):
-        r"""
-        Compute
-
-        .. math::
-
-            A_{klji} = h_{li} \gamma_{kj} + h_{jk} \gamma_{il} - \sum_q { h_{jq} \delta_{il} \gamma_{kq}}
-            - \sum_q { h_{qi} \delta_{jk} \gamma_{ql}} + \sum_{qs} { \left< lq||si \right> \Gamma_{kqsj} }
-            + \sum_{qs} { \left< jq||sk \right>  \Gamma_{iqsl} }
-            - 0.5 \sum_{qrs} { \delta_{il} \left< jq||rs \right> \Gamma_{kqrs} }
-            - 0.5 \sum_{pqs} { \delta_{jk} \left< pq||si \right> \Gamma_{pqsl} }
-            + 0.5 \sum_{pq} { \left< pq||ik\right>  \Gamma_{pqlj} }
-            + 0.5 \sum_{rs} { \left< jl||rs \right> \Gamma_{kirs} }
-
-        """
-        hdm1 = np.dot(self._h, self._dm1)
-        I = np.eye(self._n, dtype=self._h.dtype)
-
-        # A_klij = h_li \gamma_kj + h_jk \gamma_il
-        b = np.einsum("li,kj->klji", self.h, self.dm1, optimize=True)
-        b += np.einsum("jk,il->klji", self.h, self.dm1, optimize=True)
-        # A_klij -= ( \delta_il h_jq \gamma_qk + \delta_jk h_iq \gamma_ql )
-        b -= np.einsum("il,jk->klji", I, hdm1, optimize=True)
-        b -= np.einsum("jk,il->klji", I, hdm1, optimize=True)
-        # A_klij += <v_lqsi> \Gamma_kqsj
-        b += np.einsum("lqsi,kqsj->klji", self.v, self.dm2, optimize=True)
-        # b += 0.5 * np.einsum('lpsi,kpsj->klij', self.v, self.dm2)
-        # A_klij += <v_jqsk> \Gamma_iqsl
-        b += np.einsum("jqsk,iqsl->klji", self.v, self.dm2, optimize=True)
-        # b += 0.5 * np.einsum('jpsk,ipsl->klij', self.v, self.dm2)
-        # A_klij += 0.5 ( <v_pqik> \Gamma_pqlj )
-        b += 0.5 * np.einsum("pqik,pqlj->klji", self.v, self.dm2, optimize=True)
-        # A_klij -= 0.5 ( <v_ljrs> \Gamma_kirs )
-        b -= 0.5 * np.einsum("ljrs,kirs->klji", self.v, self.dm2, optimize=True)
-        # A_klij -= 0.5 ( \delta_il <v_jqrs> \Gamma_kqrs )
-        vdm2 = np.einsum("jqrs,kqrs->jk", self.v, self.dm2, optimize=True)
-        b -= 0.5 * np.einsum("il,jk->klji", I, vdm2, optimize=True)
-        # A_klij -= 0.5 ( \delta_jk <v_pqsi> \Gamma_pqsl )
-        vdm2 = np.einsum("pqsi,pqsl->il", self.v, self.dm2, optimize=True)
-        b -= 0.5 * np.einsum("jk,il->klji", I, vdm2, optimize=True)
-        return b.reshape(self._n ** 2, self._n ** 2)
-
     def _compute_rhs(self):
         r"""
         Compute :math:`M_{klji} = \gamma_kj \delta_li - \Gamma_kijl`.
@@ -466,57 +424,6 @@ class EOMExc0(EOMState):
         m = np.einsum("kj,li->klji", self.dm1, I, optimize=True)
         m -= np.einsum("kijl->klji", self.dm2, optimize=True)
         return m.reshape(self._n ** 2, self._n ** 2)
-    
-    def normalize_eigvect(self, coeffs):
-        r"""
-        Normalize coefficients vector.
-
-        Make the solutions orthonormal with respect to the metric matrix U:
-        .. math::
-        \mathbf{c}^T \mathbf{U} \mathbf{c} = 1
-
-        Parameters
-        ----------
-        coeffs : np.ndarray(n**2)
-            Coefficients vector for the lambda-th excited state.
-        
-        Returns
-        -------
-        coeffs : np.ndarray(n**2)
-            Normalized coefficients vector for the lambda-th excited state.
-
-        """
-        if not coeffs.shape[0] == self.neigs:
-            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
-        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
-        sqr_n = np.sqrt(np.abs(norm_factor))
-        return (coeffs.T / sqr_n).T
-    
-    def compute_tdm1(self, coeffs):
-        r"""
-        Compute the transition RDMs
-
-        .. math::
-        \gamma^{0 \lambda}_{pq} = < \Psi^{(N)}_0 | a^\dagger_p a_q | \Psi^{(N)}_\lambda >
-
-        The diagonal elements of this matrix are zero.
-
-        Parameters
-        ----------
-        coeffs : np.ndarray(n**2)
-            Coefficients vector for the lambda-th excited state.
-        
-        Returns
-        -------
-        tdm1 : np.ndarray(n,n)
-            1-electron reduced transition RDMs.
-
-        """
-        if not coeffs.shape[0] == self.neigs:
-            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
-        coeffs = coeffs.reshape(self._n, self._n)
-        rhs = self.rhs.reshape(self.n,self.n,self.n,self.n)
-        return np.einsum("pqrs,rs->pq", rhs, coeffs)
 
 
 def _get_pherpa_metric_matrix(dm1):
@@ -688,3 +595,6 @@ def eval_ecorr(h_0, v_0, h_1, v_1, dm1, dm2, summ_all=True, inv_tol=1.0e-7, nint
 
     # integrate function
     return fixed_quad(ac_integrand, 0, 1, n=nint)[0]
+
+# Alias for the particle-hole EOM equation
+ERPA = EE
