@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
-r"""Test eomee.electronaff."""
+r"""Test eomee.eomea."""
 
 
 from eomee import EA, EAc, EAa
@@ -146,7 +146,7 @@ def test_eadoublecommutator(filename, nbasis, nocc, evidx, hf_vmo, tol):
     ],
 )
 def test_eaanticommutator(filename, nbasis, nocc, evidx, hf_vmo, tol):
-    """Test EOMEAAntiCommutator against Hartree-Fock canonical orbital energy.
+    """Test EAa against Hartree-Fock canonical orbital energy.
 
     """
     na, nb = nocc

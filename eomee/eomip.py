@@ -341,7 +341,7 @@ class IPa(EOMState):
 
 class IPam(IPa):
     r"""
-    Ionizatio npotential class with anticommutator on the left-hand side of the EOM equation
+    Ionization potential class with anticommutator on the left-hand side of the EOM equation
     and none on the right-hand side (mixed anticommutator EOM form, IPam).
 
     The elements of the left-hand and right-hand side matrices are given by:
