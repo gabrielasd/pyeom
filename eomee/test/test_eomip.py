@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
-r"""Test eomee.ionization."""
+r"""Test eomee.eomip."""
 
 
 # import eomee
