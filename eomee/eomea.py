@@ -22,42 +22,47 @@ from .base import EOMState
 
 
 __all__ = [
-    "EOMEA",
-    "EOMEADoubleCommutator",
-    "EOMEAAntiCommutator",
+    "EA",
+    "EAc",
+    "EAa",
 ]
 
 
-class EOMEA(EOMState):
-    r"""Electron attached state.
+class EA(EOMState):
+    r"""Electron affinity EOM or Extended Koopman's Theorem class ([EKT]_).
 
-    :math:`| \Psi^{(N-1)}_\lambda > = \hat{Q}^{-1}_\lambda | \Psi^{(N)}_0 >`
-
-    defined by the single electron attachment operator :math:`\hat{Q}^{-1}_\lambda = \sum_n { c_{n;\lambda} a^\dagger_n}`
-
-    where the index runs over all spin-orbitlas.
-
-    The transition energies and wavefunction satisfy:
+    The electron addition energies (:math:`\Delta_\lambda = E^{(N+1)}_\lambda - E^(N)_0`) and
+    :math:`(N+1)`-electron wavefunction are obtained by solving the matrix equation:
 
     .. math::
 
-        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
+
+    where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
+
+    .. math::
 
         A_{m,n} &= \left< \Psi^{(N)}_0 \middle| a_m \left[\hat{H}, a^{\dagger}_n \right] \middle| \Psi^{(N)}_0 \right>
 
         U_{m,n} &= \left< \Psi^{(N)}_0 \middle| a_m a^{\dagger}_n \middle| \Psi^{(N)}_0 \right>
 
-    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n \times n` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n` solutions if matrix diagonalization is applied.
+    These matrices can be built from the ground state's, :math:`\Psi^{(N)}_0`, one- and two-electron
+    reduced density matrices. Their dimensions correspond to the number of spin-orbitals in the basis
+    set :math:`n`.
 
-    This equation depends on the ground state's reduced density matrices only up to second order.
+    The eigenvectors, :math:`\mathbf{C}_\lambda` determine the best linear combination of creation
+    operators `a^{\dagger}_n` that produce the :math:`\lambda`th state of the :math:`(N+1)`-electron
+    system from the ground state:
+
+    :math:`| \Psi^{(N+1)}_\lambda > = \sum_n { c_{n;\lambda} a^{\dagger}_n} | \Psi^{(N)}_0 >`
 
     Example
     -------
-    >>> ea = eomee.EOMEA(h, v, dm1, dm2)
-    >>> ea.neigs # number of solutions
-    >>> ea.lhs # left-hand-side matrix
-    >>> # solve the generalized eigenvalue problem
-    >>> ea.solve_dense()
+    >>> ektea = eomee.EA(h, v, dm1, dm2)
+    >>> ektea.neigs # number of solutions
+    >>> ektea.lhs   # left-hand-side matrix
+    >>> # Solve the EA generalized eigenvalue problem
+    >>> ektea.solve_dense()
 
     """
 
@@ -81,14 +86,12 @@ class EOMEA(EOMState):
 
         .. math::
 
-            A_{mn} = h_{mn} - \sum_p { h_{pn} \gamma_{pm} } - 0.5 \sum_{pqs} { \left< pq||sn \right> \Gamma_{pqsm} }
+            A_{mn} = h_{mn} - \sum_p { h_{pn} \gamma_{pm} }
+            - 0.5 \sum_{pqs} { \left< pq||sn \right> \Gamma_{pqsm} }
             + \sum_{qs} { \left< mq||ns \right> \gamma_{qs} }
 
         """
-        # A_mn = h_mn - h_pn \gamma_pm - 0.5 v_pqsn \Gamma_pqsm
-        #      + v_mqns \gamma_qs
-        # A_mn = h_mn + v_mqns \gamma_qs
-        #      - ( h_pn \gamma_pm + 0.5 * v_pqsn \Gamma_pqsm )
+        # A_mn = h_mn + v_mqns \gamma_qs - ( h_pn \gamma_pm + 0.5 * v_pqsn \Gamma_pqsm )
         a = np.copy(self._h)
         a += np.tensordot(self._v, self._dm1, axes=((1, 3), (0, 1)))
         a -= np.dot(self._dm1, self._h)
@@ -97,10 +100,9 @@ class EOMEA(EOMState):
 
     def _compute_rhs(self):
         r"""
-        Compute :math:`M = \sum_n { \delta_{mn} - \gamma_{nm} }`.
+        Compute :math:`M_{mn} = { \delta_{mn} - \gamma_{nm} }`.
 
         """
-        # M_mn = \delta_mn - \gamma_mn
         m = np.eye(self._n)
         m -= self._dm1
         return m
@@ -114,28 +116,24 @@ class EOMEA(EOMState):
         return (coeffs.T / sqr_n).T
 
 
-class EOMEAAntiCommutator(EOMState):
-    r"""Electron attached state.
+class EAa(EOMState):
+    r"""
+    Electron affinity class with anticommutator EOM equation.
 
-    :math:`| \Psi^{(N+1)}_\lambda > = \hat{Q}^{+1}_\lambda | \Psi^{(N)}_0 >`
-
-    defined by the single electron removal operator :math:`\hat{Q}^{+1}_\lambda = \sum_n { c_{n;\lambda} a^{\dagger}_n}`
-
-    where the index runs over all spin-orbitlas.
-
-    The transition energies and wavefunction satisfy:
+    The electron affinities and :math:`(N+1)`-electron wavefunction coefficients are found solving
+    the matrix equation:
 
     .. math::
 
-        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
+
+    where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
 
         A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \Big\{ a_m, \left[\hat{H}, a^{\dagger}_n \right]\Big\}\middle| \Psi^{(N)}_0 \right>
 
         U_{m,n} &= \left< \Psi^{(N)}_0 \middle| \Big\{ a_m, a^{\dagger}_n \Big\} \middle| \Psi^{(N)}_0 \right>
 
-    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n \times n` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n` solutions if matrix diagonalization is applied.
-
-     This equation just requires the ground state's one-electron reduced density matrix.
+    These matrices can be built from the ground state's one-electron reduced density matrix.
 
     """
 
@@ -168,9 +166,7 @@ class EOMEAAntiCommutator(EOMState):
         Compute :math:`M_{mn} = \delta_{mn}`.
 
         """
-        # M_mn = \delta_mn
-        m = np.eye(self._n)
-        return m
+        return np.eye(self._n)
     
     def normalize_eigvect(self, coeffs):
         r""" Normalize coefficients vector. """
@@ -181,28 +177,24 @@ class EOMEAAntiCommutator(EOMState):
         return (coeffs.T / sqr_n).T
 
 
-class EOMEADoubleCommutator(EOMState):
-    r"""Electron attached state.
+class EAc(EOMState):
+    r"""
+    Electron affinity class with double commutator EOM equation (EAc).
 
-    :math:`| \Psi^{(N+1)}_\lambda > = \hat{Q}^{+1}_\lambda | \Psi^{(N)}_0 >`
-
-    defined by the single electron removal operator :math:`\hat{Q}^{+1}_\lambda = \sum_n { c_{n;\lambda} a^{\dagger}_n}`
-
-    where the index runs over all spin-orbitlas.
-
-    The transition energies and wavefunction satisfy:
+    The electron affinities and wavefunction coefficients are found solving the eigenvalue equation:
 
     .. math::
 
-        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
+
+    where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
 
         A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \left[ a_m, \left[\hat{H}, a^{\dagger}_n \right]\right]\middle| \Psi^{(N)}_0 \right>
 
         U_{m,n} &= \left< \Psi^{(N)}_0 \middle| \left[a_m, a^{\dagger}_n \right] \middle| \Psi^{(N)}_0 \right>
 
-    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n \times n` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n` solutions if matrix diagonalization is applied.
-
-    This equation depends on the ground state's reduced density matrices only up to second order.
+    Thiese matrix elements are functions of the one- and two-electron density matrices from the :math:`(N)`-electron
+    ground state.
 
     """
 
@@ -265,7 +257,3 @@ class EOMEADoubleCommutator(EOMState):
         norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
         sqr_n = np.sqrt(np.abs(norm_factor))
         return (coeffs.T / sqr_n).T
-
-
-EOMEAc = EOMEADoubleCommutator
-EOMEAa = EOMEAAntiCommutator
