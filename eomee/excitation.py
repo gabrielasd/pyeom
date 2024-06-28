@@ -324,7 +324,7 @@ class _IntegrandPh:
         self.v_0 = v0
         self.dh = dh
         self.dv = dv
-        # TODO: Check that method is EOMExc
+        # TODO: Check that method is EE
         self.dm1 = dm1
         self.dm2 = dm2
         self.method = method
@@ -529,7 +529,7 @@ def ac_integrand_pherpa(lam, h0, v0, dh, dv, dm1, dm2, summall=True, invtol=1.0e
     v += v0
 
     # Eval TDMs at alpha from particle-hole singlet transitions and compute energy
-    tdtd = _eval_tdtd_alpha_mtx_from_erpa(EOMExc, h, v, dm1, dm2, invtol, solvertype)
+    tdtd = _eval_tdtd_alpha_mtx_from_erpa(EE, h, v, dm1, dm2, invtol, solvertype)
     energy = _eval_W_alpha_singlets(tdtd, dv)
 
     # Eval perturbation independent terms
