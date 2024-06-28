@@ -31,7 +31,7 @@ __all__ = [
 
 
 class IP(EOMState):
-    r"""EOM ionization potential or Extended Koopman's Theorem class ([EKT]_).
+    r"""Ionization potential EOM or Extended Koopman's Theorem class ([EKT]_).
 
     The :math:`(N-1)`-electron wavefunction and ionization energies are obtained by solving the generalized
     eigenvalue problem:
@@ -105,7 +105,6 @@ class IP(EOMState):
         Compute :math:`M_{mn} = \gamma_{mn}`.
 
         """
-        # M_mn = \gamma_mn
         return np.copy(self._dm1)
     
     def normalize_eigvect(self, coeffs):
@@ -199,7 +198,6 @@ class IPc(EOMState):
         Compute :math:`M_{mn} = 2 \gamma_{mn} - \delta_{nm}`.
 
         """
-        # M_mn = 2 * \gamma_mn - \delta_mn
         m = 2 * np.copy(self._dm1)
         m -= np.eye(self._n, dtype=self._dm1.dtype)
         return m
@@ -238,7 +236,7 @@ class IPc(EOMState):
 class IPcm(IPc):
     r"""
     Ionizatio npotential class with double commutator on the left-hand side of the EOM equation
-    and none on the right-hand side.
+    and none on the right-hand side (mixed double commutator EOM form, IPcm).
 
     The elements of the left-hand and right-hand side matrices are given by:
 
@@ -255,12 +253,11 @@ class IPcm(IPc):
         Compute :math:`M_{mn} = \gamma_{mn}`.
 
         """
-        # M_mn = \gamma_mn
         return self._dm1
 
 
 class IPa(EOMState):
-    r"""Ionizatio npotential class with anticommutator EOM equation.
+    r"""Ionization potential class with anticommutator EOM equation.
 
     The ionization energies and wavefunction coefficients are found solving the matrix equation:
 
@@ -308,7 +305,6 @@ class IPa(EOMState):
         Compute :math:`M_{mn} = \delta_{mn}`.
 
         """
-        # M_mn = \delta_mn
         m = np.eye(self._n, dtype=self._dm1.dtype)
         return m
     
@@ -346,7 +342,7 @@ class IPa(EOMState):
 class IPam(IPa):
     r"""
     Ionizatio npotential class with anticommutator on the left-hand side of the EOM equation
-    and none on the right-hand side.
+    and none on the right-hand side (mixed anticommutator EOM form, IPam).
 
     The elements of the left-hand and right-hand side matrices are given by:
 
@@ -377,7 +373,6 @@ class IPam(IPa):
         Compute :math:`M_{mn} = \gamma_{mn}`.
 
         """
-        # M_mn = \gamma_mn
         return self._dm1
 
 
