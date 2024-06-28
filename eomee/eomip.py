@@ -22,42 +22,51 @@ from .base import EOMState
 
 
 __all__ = [
-    "EOMIP",
-    "EOMIPDoubleCommutator",
-    "EOMIPAntiCommutator",
+    "IP",
+    "IPc",
+    "IPa",
+    "IPcm",
+    "IPam",
 ]
 
 
-class EOMIP(EOMState):
-    r"""Ionized state.
+class IP(EOMState):
+    r"""EOM ionization potential or Extended Koopman's Theorem class ([EKT]_).
 
-    :math:`| \Psi^{(N+1)}_\lambda > = \hat{Q}^{+1}_\lambda | \Psi^{(N)}_0 >`
-
-    defined by the single electron removal operator :math:`\hat{Q}^{+1}_\lambda = \sum_n { c_{n;\lambda} a_n}`
-
-    where the index runs over all spin-orbitlas.
-
-    The transition energies and wavefunction satisfy:
+    The :math:`(N-1)`-electron wavefunction and ionization energies are obtained by solving the generalized
+    eigenvalue problem:
 
     .. math::
 
-        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
+
+    where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
+
+    .. math::
 
         A_{m,n} &= \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m \left[\hat{H}, a_n \right] \middle| \Psi^{(N)}_0 \right>
 
         U_{m,n} &= \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m a_n \middle| \Psi^{(N)}_0 \right>
 
-    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n \times n` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n` solutions if matrix diagonalization is applied.
+    These matrices can be built from the ground state's, :math:`\Psi^{(N)}_0`, one- and two-electron
+    reduced density matrices. The negative of :math:`\mathbf{A}` gives the generalized Fock matrix and
+    :math:`\mathbf{U}` is the one-electron density matrix. Their dimensions correspond to the number 
+    of spin-orbitals in the basis set :math:`n`.
 
-    This equation depends on the ground state's reduced density matrices only up to second order.
+    The eigenvectors, :math:`\mathbf{C}_\lambda` determine the best linear combination of anihilation
+    operators `a_n` that produce the :math:`\lambda`th ionized state from the ground state:
+
+    :math:`| \Psi^{(N-1)}_\lambda > = \sum_n { c_{n;\lambda} a_n} | \Psi^{(N)}_0 >`
+
+    .. [EKT] O. W. Day, D. W. Smith, and C. Garrod, Int. J. Quantum Chem., Symp. 8, 501 (1974).
 
     Example
     -------
-    >>> ip = eomee.EOMIP(h, v, dm1, dm2)
-    >>> ip.neigs # number of solutions
-    >>> ip.lhs # left-hand-side matrix
+    >>> ekt = eomee.IP(h, v, dm1, dm2)
+    >>> ekt.neigs # number of solutions
+    >>> ekt.lhs # left-hand-side matrix
     >>> # solve the generalized eigenvalue problem
-    >>> ip.solve_dense()
+    >>> ekt.solve_dense()
 
     """
 
@@ -130,28 +139,26 @@ class EOMIP(EOMState):
         return np.einsum("pq,q->p", self.rhs, coeffs)
 
 
-class EOMIPDoubleCommutator(EOMState):
-    r"""Ionized state.
+class IPc(EOMState):
+    r"""Ionizatio npotential class with double commutator EOM equation.
 
-    :math:`| \Psi^{(N+1)}_\lambda > = \hat{Q}^{+1}_\lambda | \Psi^{(N)}_0 >`
+    The :math:`(N-1)`-electron wavefunction is given by:
 
-    defined by the single electron removal operator :math:`\hat{Q}^{+1}_\lambda = \sum_n { c_{n;\lambda} a_n}`
+    :math:`| \Psi^{(N-1)}_\lambda > = \sum_n { c_{n;\lambda} a_n} | \Psi^{(N)}_0 >`
 
-    where the index runs over all spin-orbitlas.
-
-    The transition energies and wavefunction satisfy:
+    The ionization energies and wavefunction coefficients are found solving the matrix equation:
 
     .. math::
 
-        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
+
+    where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
 
         A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_m, \left[\hat{H}, a_n \right]\right]\middle| \Psi^{(N)}_0 \right>
 
         U_{m,n} &= \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_m, a_n \right] \middle| \Psi^{(N)}_0 \right>
 
-    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n \times n` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n` solutions if matrix diagonalization is applied.
-
-    This equation depends on the ground state's reduced density matrices only up to second order.
+    and can be built from the ground state's, :math:`\Psi^{(N)}_0`, one- and two-electron reduced density matrices.
 
     """
 
@@ -228,48 +235,20 @@ class EOMIPDoubleCommutator(EOMState):
         return np.einsum("pq,q->p", self.rhs, coeffs)
 
 
-class EOMIPDoubleCommutator0(EOMState):
+class IPcm(IPc):
     r"""
-    Ionization EOM state for operator :math:`\hat{Q}_k = \sum_n { c_n a_n }`.
+    Ionizatio npotential class with double commutator on the left-hand side of the EOM equation
+    and none on the right-hand side.
+
+    The elements of the left-hand and right-hand side matrices are given by:
 
     .. math::
 
-        \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_m, \left[ \hat{H}, \hat{Q} \right] \right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_m, \left[\hat{H}, a_n \right]\right]\middle| \Psi^{(N)}_0 \right>
+
+        U_{m,n} &= \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m a_n \middle| \Psi^{(N)}_0 \right>
 
     """
-
-    @property
-    def neigs(self):
-        r"""
-        Return the size of the eigensystem.
-
-        Returns
-        -------
-        neigs : int
-            Size of eigensystem.
-
-        """
-        # Number of q_n terms = n_{\text{basis}}
-        return self._n
-
-    def _compute_lhs(self):
-        r"""
-        Compute
-
-        .. math::
-
-            A_{mn} = h_{nm} -2 \sum_q { h_{nq} \gamma_{mq} } + \sum_{qs} { \left< nq||ms \right> \gamma_{qs} }
-            + \sum_{qrs} { \left< nq||rs \right> \Gamma_{mqsr} }.
-
-        """
-        # A_mn = h_mn - 2 * \gamma_mq * h_qn
-        a = np.copy(self._h)
-        a -= 2 * np.dot(self._dm1, self._h)
-        # A_mn += <v_msnq> \gamma_sq - \Gamma_mqrs <v_nqrs>
-        a += np.einsum("msnq,sq", self._v, self._dm1, optimize=True)
-        a -= np.einsum("mqrs,nqrs", self._dm2, self._v, optimize=True)
-        return a
 
     def _compute_rhs(self):
         r"""
@@ -278,38 +257,24 @@ class EOMIPDoubleCommutator0(EOMState):
         """
         # M_mn = \gamma_mn
         return self._dm1
-    
-    def normalize_eigvect(self, coeffs):
-        r""" Normalize coefficients vector. """
-        if not coeffs.shape[0] == self.neigs:
-            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
-        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
-        sqr_n = np.sqrt(np.abs(norm_factor))
-        return (coeffs.T / sqr_n).T
 
 
-class EOMIPAntiCommutator(EOMState):
-    r"""Ionized state.
+class IPa(EOMState):
+    r"""Ionizatio npotential class with anticommutator EOM equation.
 
-    :math:`| \Psi^{(N+1)}_\lambda > = \hat{Q}^{+1}_\lambda | \Psi^{(N)}_0 >`
-
-    defined by the single electron removal operator :math:`\hat{Q}^{+1}_\lambda = \sum_n { c_{n;\lambda} a_n}`
-
-    where the index runs over all spin-orbitlas.
-
-    The transition energies and wavefunction satisfy:
+    The ionization energies and wavefunction coefficients are found solving the matrix equation:
 
     .. math::
 
-        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
+
+    where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
 
         A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \Big\{ a^{\dagger}_m, \left[\hat{H}, a_n \right]\Big\} \middle| \Psi^{(N)}_0 \right>
 
         U_{m,n} &= \left< \Psi^{(N)}_0 \middle| \Big\{a^{\dagger}_m, a_n \Big\} \middle| \Psi^{(N)}_0 \right>
 
-    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n \times n` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n` solutions if matrix diagonalization is applied.
-
-    This equation just requires the ground state's one-electron reduced density matrix.
+    These matrices only require the one-electron reduced density matrix of the ground state, :math:`\Psi^{(N)}_0`.
 
     """
 
@@ -378,14 +343,18 @@ class EOMIPAntiCommutator(EOMState):
         return np.einsum("pq,q->p", self.rhs, coeffs)
 
 
-class EOMIPAntiCommutator0(EOMState):
+class IPam(IPa):
     r"""
-    Ionization EOM state for operator :math:`\hat{Q}_k = \sum_n { c_n a_n }`.
+    Ionizatio npotential class with anticommutator on the left-hand side of the EOM equation
+    and none on the right-hand side.
+
+    The elements of the left-hand and right-hand side matrices are given by:
 
     .. math::
 
-        \left< \Psi^{(N)}_0 \middle| \Big\{ a^{\dagger}_m, \left[ \hat{H}, \hat{Q} \right] \Big\} \middle| \Psi^{(N)}_0 \right>
-        = \Delta_k \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \Big\{ a^{\dagger}_m, \left[\hat{H}, a_n \right]\Big\} \middle| \Psi^{(N)}_0 \right>
+
+        U_{m,n} &= \left< \Psi^{(N)}_0 \middle| a^{\dagger}_m a_n \middle| \Psi^{(N)}_0 \right>
 
     """
 
@@ -403,17 +372,6 @@ class EOMIPAntiCommutator0(EOMState):
         # Number of q_n terms = n_{\text{basis}}
         return self._n
 
-    def _compute_lhs(self):
-        r"""
-        Compute :math:`A_{mn} = -h_{nm} + \sum_{qr} { \left< qn||mr \right> \gamma_{qr} }`.
-
-        """
-        # A_mn = -h_mn
-        a = -np.copy(self._h)
-        # A_mn += <v_qnmr> \gamma_qr
-        a += np.einsum("qnmr,qr", self._v, self._dm1, optimize=True)
-        return a
-
     def _compute_rhs(self):
         r"""
         Compute :math:`M_{mn} = \gamma_{mn}`.
@@ -423,5 +381,4 @@ class EOMIPAntiCommutator0(EOMState):
         return self._dm1
 
 
-EOMIPc = EOMIPDoubleCommutator
-EOMIPa = EOMIPAntiCommutator
+EKT = IP
