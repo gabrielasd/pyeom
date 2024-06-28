@@ -18,9 +18,9 @@ r"""Test eomee.ionization."""
 
 # import eomee
 from eomee import (
-    EOMIP,
-    EOMIPc,
-    EOMIPa,
+    IP,
+    IPc,
+    IPa,
 )
 
 from eomee.tools import (
@@ -74,7 +74,7 @@ def test_load_invalid_integrals(one_mo, two_mo, one_dm, two_dm, errortype):
     """
 
     with pytest.raises(errortype):
-        EOMIP(one_mo, two_mo, one_dm, two_dm)
+        IP(one_mo, two_mo, one_dm, two_dm)
 
 
 def test_eomip_neigs():
@@ -89,7 +89,7 @@ def test_eomip_neigs():
     two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
     two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
 
-    eom = EOMIP(one_mo, two_mo, one_dm, two_dm)
+    eom = IP(one_mo, two_mo, one_dm, two_dm)
     assert eom.n == nspino
     assert eom.neigs == nspino
 
@@ -114,17 +114,17 @@ def test_eomip_one_body_term():
     ip = -np.real(w)
     ip = np.sort(ip)
     # EOM solution
-    eom = EOMIP(one_mo, two_mo, one_dm, two_dm)
+    eom = IP(one_mo, two_mo, one_dm, two_dm)
     aval1, _ = eom.solve_dense()
     # aval1 = np.sort(aval1)
     assert abs(aval1[-1] - ip[-1]) < 1e-8
 
-    eom = EOMIPc(one_mo, two_mo, one_dm, two_dm)
+    eom = IPc(one_mo, two_mo, one_dm, two_dm)
     aval2, _ = eom.solve_dense()
     # aval2 = np.sort(aval2)
     assert abs(aval2[-1] - ip[-1]) < 1e-8
 
-    eom = EOMIPa(one_mo, two_mo, one_dm, two_dm)
+    eom = IPa(one_mo, two_mo, one_dm, two_dm)
     aval3, _ = eom.solve_dense()
     # aval3 = np.sort(aval3)
     assert abs(aval3[-1] - ip[-1]) < 1e-8
@@ -133,19 +133,19 @@ def test_eomip_one_body_term():
 @pytest.mark.parametrize(
     "filename, nbasis, nocc, evidx, expected, tol, eom_type",
     [
-        ("heh+_sto3g", 2, (1, 1), 0, 1.52378328, 1e-6, EOMIP),
-        ("he_ccpvdz", 5, (1, 1), 0, 0.91414765, 1e-6, EOMIP),
-        ("he_ccpvdz", 5, (1, 1), 0, 0.91414765, 1e-6, EOMIPc),
-        ("he_ccpvdz", 5, (1, 1), 0, 0.91414765, 1e-6, EOMIPa),
-        ("ne_321g", 9, (5, 5), 4, 0.79034293, 1e-5, EOMIP),
-        ("ne_321g", 9, (5, 5), 4, 0.79034293, 1e-5, EOMIPc),
-        ("ne_321g", 9, (5, 5), 3, 0.79034293, 1e-5, EOMIPa),
-        ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, EOMIP),
-        ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, EOMIPc),
-        ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, EOMIPa),
-        ("b_sto3g", 5, (3, 2), 0, 0.20051823, 1e-8, EOMIP),
-        ("b_sto3g", 5, (3, 2), 0, 0.20051823, 1e-8, EOMIPc),
-        ("b_sto3g", 5, (3, 2), 0, 0.20051823, 1e-8, EOMIPa),
+        ("heh+_sto3g", 2, (1, 1), 0, 1.52378328, 1e-6, IP),
+        ("he_ccpvdz", 5, (1, 1), 0, 0.91414765, 1e-6, IP),
+        ("he_ccpvdz", 5, (1, 1), 0, 0.91414765, 1e-6, IPc),
+        ("he_ccpvdz", 5, (1, 1), 0, 0.91414765, 1e-6, IPa),
+        ("ne_321g", 9, (5, 5), 4, 0.79034293, 1e-5, IP),
+        ("ne_321g", 9, (5, 5), 4, 0.79034293, 1e-5, IPc),
+        ("ne_321g", 9, (5, 5), 3, 0.79034293, 1e-5, IPa),
+        ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, IP),
+        ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, IPc),
+        ("be_sto3g", 5, (2, 2), 1, 0.25403769, 1e-8, IPa),
+        ("b_sto3g", 5, (3, 2), 0, 0.20051823, 1e-8, IP),
+        ("b_sto3g", 5, (3, 2), 0, 0.20051823, 1e-8, IPc),
+        ("b_sto3g", 5, (3, 2), 0, 0.20051823, 1e-8, IPa),
     ],
 )
 def test_ionization_eom_methods(filename, nbasis, nocc, evidx, expected, tol, eom_type):
