@@ -20,7 +20,7 @@ import numpy as np
 
 from scipy.integrate import fixed_quad
 
-from eomee.doubleionization import EOMDIP, EOMDIP2
+from eomee.eomdip import DIP, DIPm
 from eomee.tools import pickpositiveeig, spinize, from_unrestricted
 from eomee.solver import nonsymmetric, svd_lowdin, eig_pinv
 
@@ -30,7 +30,7 @@ __all__ = [
 ]
 
 
-class DIPSA(EOMDIP):
+class DIPSA(DIP):
     r"""
     Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a_i  a_{\bar{j}} \mp a_{\bar{i}} a_j)}`.
 
@@ -377,7 +377,7 @@ class Integrandhh:
         return result     
 
 
-class DIP2SA(EOMDIP2):
+class DIP2SA(DIPm):
     r"""
     Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a_i  a_{\bar{j}} \mp a_{\bar{i}} a_j)}`.
 
