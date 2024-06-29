@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
-r"""Test eomee.doubleionization."""
+r"""Test eomee.eomdip."""
 
 import numpy as np
 
@@ -21,7 +21,7 @@ from scipy.linalg import eig, svd
 
 import pytest
 
-from eomee import EOMDIP, EOMDIP0
+from eomee import DIP, DIPm
 from eomee.tools import (
     find_datafiles,
     spinize,
@@ -43,7 +43,7 @@ def test_eomdip_neigs():
     two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
     two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
 
-    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
+    eom = DIP(one_mo, two_mo, one_dm, two_dm)
     assert eom.neigs == nspino ** 2
 
 def test_eomdip_one_body_term():
@@ -65,7 +65,7 @@ def test_eomdip_one_body_term():
     w, _ = eig(one_mo)
     dip = -2 * np.real(w[0])
     # EOM solution
-    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
+    eom = DIP(one_mo, two_mo, one_dm, two_dm)
     aval, _ = eom.solve_dense()
     aval = np.sort(aval)
 
@@ -88,7 +88,7 @@ def test_eomdip_two_body_terms():
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
-    eom = EOMDIP(one_mo, two_mo, one_dm, two_dm)
+    eom = DIP(one_mo, two_mo, one_dm, two_dm)
     aval, _ = eom.solve_dense()
     aval = np.sort(aval)
 
@@ -233,7 +233,7 @@ def test_eomdip_two_body_terms():
     ],
 )
 def test_eomdip(filename, nparts, ehomo, nbasis, idx):
-    """Test EOMDIP against Hartree-Fock canonical orbitals energy difference.
+    """Test DIP against Hartree-Fock canonical orbitals energy difference.
 
     case 1: H-H bond 0.742 A
 
@@ -245,7 +245,7 @@ def test_eomdip(filename, nparts, ehomo, nbasis, idx):
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
     # Evaluate hole-hole EOM
-    eom = EOMDIP0(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = DIPm(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     eval, _ = eom.solve_dense()
     # result = np.sort(aval)
     # Expected value
@@ -294,7 +294,7 @@ def test_doubleionization_erpa_HeHcation_sto3g():
         n // 2 : (n // 2 + 1),
     ] = bbbb
 
-    ecorr = EOMDIP.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
+    ecorr = DIP.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
 
 
 @pytest.mark.skip(reason="need to update v integrals format")
@@ -337,4 +337,4 @@ def test_doubleionization_erpa_Ne_321g():
         n // 2 : (n // 2 + 5),
     ] = bbbb
 
-    ecorr = EOMDIP.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
+    ecorr = DIP.erpa(one_mo_0, two_mo_0, one_mo, two_mo, one_dm, two_dm)
