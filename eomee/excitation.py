@@ -93,7 +93,7 @@ class EE(EOMState):
 
         A_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l, \left[\hat{H}, a^{\dagger}_j  a_i \right]\right] \middle| \Psi^{(N)}_0 \right>
 
-        U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a_l, a^{\dagger}_j  a_i \right] \Psi^{(N)}_0 \right>
+        U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_k a_l, a^{\dagger}_j  a_i \right] \middle| \Psi^{(N)}_0 \right>
 
     where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` can be defined in terms of the ground state's
     one- and two-electron density matrices. The matrices are :math:`n^2 \times n^2` matrices for an :math:`n`
