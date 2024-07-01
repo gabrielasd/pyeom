@@ -295,11 +295,6 @@ class DIPm(DIP):
 
     """
 
-    @property
-    def neigs(self):
-        r""" """
-        return self._n ** 2
-
     def _compute_rhs(self):
         r"""
         Compute :math:`M_{klji} = \Gamma_{klji}`

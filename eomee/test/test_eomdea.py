@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
-r"""Test eomee.doubleelectronaff."""
+r"""Test eomee.eomdea."""
 
 
-from eomee import EOMDEA0
+from eomee import DEAm
 
 from eomee.tools import (
     find_datafiles,
@@ -42,7 +42,7 @@ def test_eomdea_neigs():
     two_dm = np.einsum("pr,qs->pqrs", one_dm, one_dm)
     two_dm -= np.einsum("ps,qr->pqrs", one_dm, one_dm)
 
-    eom = EOMDEA0(one_mo, two_mo, one_dm, two_dm)
+    eom = DEAm(one_mo, two_mo, one_dm, two_dm)
     assert eom.neigs == nspino ** 2
 
 
@@ -64,7 +64,7 @@ def test_eomdea_one_body_term():
     # of the fictitious H2 system have negative energies causing the DEA transition to appear
     # in the negative side of the RPA eigenvalue problem. The parameter `pick_posw=False` will identify
     # the DEA transition based on the eigenvector norm.
-    eom = EOMDEA0(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = DEAm(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     avalea, _ = eom.solve_dense(pick_posw=False)
     # avalea = np.sort(avalea)
 
@@ -97,7 +97,7 @@ def test_eomdea_righthandside_2particle_4spin():
     one_dm, two_dm = hartreefock_rdms(nspatial, 1, 1)
 
     # EOM solution
-    eomea = EOMDEA0(one_mo, two_mo, one_dm, two_dm)
+    eomea = DEAm(one_mo, two_mo, one_dm, two_dm)
     # Expected value
     temp = np.diag([0.0, 1.0])
     one_dm = np.zeros((nspin, nspin))
@@ -133,7 +133,7 @@ def test_eomdea_righthandside_4particle_6spin():
     one_dm, two_dm = hartreefock_rdms(nspatial, 1, 1)
 
     # EOM solution
-    eomea = EOMDEA0(one_mo, two_mo, one_dm, two_dm)
+    eomea = DEAm(one_mo, two_mo, one_dm, two_dm)
     # Expected value
     temp = np.diag([0.0, 0.0, 1.0])
     one_dm = np.zeros((nspin, nspin))
@@ -155,7 +155,7 @@ def test_eomdea_righthandside_4particle_6spin():
 
 def test_eomdea_beIV_sto6g():
     """
-    Test DoubleElectronAttachmentEOM on Be+4 (STO-6G). Model system for double electron attachment
+    Test DEAm on Be+4 (STO-6G). Model system for double electron attachment
     on top of the vacuum state.
 
     """
@@ -171,7 +171,7 @@ def test_eomdea_beIV_sto6g():
     npart = 0
     nhole = nspin - npart
 
-    eomea = EOMDEA0(one_mo, two_mo, one_dm, two_dm)
+    eomea = DEAm(one_mo, two_mo, one_dm, two_dm)
     avalea, _ = eomea.solve_dense(pick_posw=False)
     # avalea = np.sort(avalea)
 
@@ -212,7 +212,7 @@ def test_eomdea_beIV_sto6g():
 
 def test_eomdea_beII_sto6g():
     """
-    Test EOMDEA on Be+2 (STO-6G).
+    Test DEAm on Be+2 (STO-6G).
 
     """
     one_mo = np.load(find_datafiles("beII_sto6g_oneint.npy"))
@@ -223,7 +223,7 @@ def test_eomdea_beII_sto6g():
     nhole = nspin - npart
     one_dm, two_dm = hartreefock_rdms(nspatial, 1, 1)
 
-    eom = EOMDEA0(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
+    eom = DEAm(spinize(one_mo), spinize(two_mo), one_dm, two_dm)
     avalea, _ = eom.solve_dense(pick_posw=False)
     # avalea = np.sort(avalea)
 

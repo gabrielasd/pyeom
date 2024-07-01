@@ -24,35 +24,38 @@ from .base import EOMState
 from .solver import pick_nonzero, _pick_singlets
 
 
-__all__ = ["EOMDEA", "EOMDEA0"]
+__all__ = ["DEA", "DEAm"]
 
 
-class EOMDEA0(EOMState):
-    r"""Doubly electron attached state.
+class DEA(EOMState):
+    r"""
+    Doubly electron attached state.
 
     :math:`| \Psi^{(N+2)}_\lambda > = \hat{Q}^{+2}_\lambda | \Psi^{(N)}_0 >`
-
     defined by the single electron transition operator :math:`\hat{Q}^{+2}_\lambda = \sum_{ij} { c_{ij;\lambda} a^{\dagger}_i  a^{\dagger}_j}`
-
     where the indices run over all spin-orbitlas.
 
-    The transition energies and wavefunction satisfy:
+    This class implements the extended random phase approximation method for the two-electron addition
+    process (particle-particle ERPA). The :math:`(N+2)`-electron wavefunction is defined as:
+
+    :math:`| \Psi^{(N+2)}_\lambda > = \sum_{ij} c_{ij;\lambda} a^\dagger_i  a^\dagger_j | \Psi^{(N)}_0 >`
+
+    where the operators :math:`a^\dagger_i  a^\dagger_j` generate two-electron added configurations from
+    the ground state :math:`| \Psi^{(N)}_0 >`.
+
+    The double electron effinities (:math:`\Delta_\lambda = E^{(N+2)}_\lambda - E^(N)_0`) and wavefunction satisfy:
 
     .. math::
 
-        &\mathbf{A} \mathbf{c} = \Delta_\lambda \mathbf{U} \mathbf{c}
+        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
 
         A_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a_k  a_l, \left[\hat{H}, a^{\dagger}_j  a^{\dagger}_i \right]\right] \middle| \Psi^{(N)}_0 \right>
 
-        U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| a_k a_l a^{\dagger}_j  a^{\dagger}_i \middle| \Psi^{(N)}_0 \right>
-
-    :math:`\mathbf{A}` and :math:`\mathbf{U}` will be :math:`n^2 \times n^2` matrices for an :math:`n` spin-orbital basis. Correspondingly, there will be :math:`n^2` solution if matrix diagonalization is applied.
-
-    This equation depends on the ground state's reduced density matrices only up to second order.
+        U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a_k a_l, a^{\dagger}_j  a^{\dagger}_i \right] \middle| \Psi^{(N)}_0 \right>
 
     Example
     -------
-    >>> ea2 = eomee.EOMDEA0(h, v, dm1, dm2)
+    >>> ea2 = eomee.DEA(h, v, dm1, dm2)
     >>> ea2.neigs # number of solutions
     >>> ea2.lhs # left-hand-side matrix
     >>> # solve the generalized eigenvalue problem
@@ -82,36 +85,33 @@ class EOMDEA0(EOMState):
 
         I = np.eye(self._n, dtype=self._h.dtype)
 
-        # A_klji = 2 (h_li \delta_kj - h_ki \delta_lj)
-        #       += 2 (h_ki \gamma_lj - h_li \gamma_kj)
-        a = np.einsum("kj,li->klji", I, self._h)
-        a -= np.einsum("ki,lj->klji", self._h, I)
-        a += np.einsum("ki,lj->klji", self._h, self._dm1)
-        a -= np.einsum("kj,li->klji", self._dm1, self._h)
-        # A_klji += 2 (h_ip \gamma_pk \delta_lj + h_jp \gamma_pl \delta_ki)
-        hdm1 = np.einsum("ab,bc->ac", self._h, self._dm1)
-        a += np.einsum("ik,lj->klji", hdm1, I)
-        a += np.einsum("jl,ki->klji", hdm1, I)
-        # A_klji += 2 <v_lkjr> \gamma_ir
-        a += np.einsum("lkjr,ir->klji", self._v, self._dm1)
-        # A_klji += 2 (<v_qljr> \gamma_qr \delta_ki - <v_qkjr> \gamma_qr \delta_li)
-        vdm1 = np.einsum("abcd,ad->bc", self._v, self._dm1)
-        a += np.einsum("lj,ki->klji", vdm1, I)
-        a -= np.einsum("kj,li->klji", vdm1, I)
-        # A_klji += 2 (<v_qlir> \Gamma_qjrk - <v_qkir> \Gamma_qjrl)
-        a += np.einsum("qlir,qjrk->klji", self._v, self._dm2)
-        a -= np.einsum("qkir,qjrl->klji", self._v, self._dm2)
+        # A_klji = 2 h_il \delta_jk - 2 h_il \gamma_jk + 2 h_ik \gamma_jl - 2 h_ik \delta_jl
+        a = np.einsum("il,jk->klji", self._h, I, optimize=True)
+        a -= np.einsum("il,jk->klji", self._h, self._dm1, optimize=True)
+        a += np.einsum("ik,jl->klji", self._h, self._dm1, optimize=True)
+        a -= np.einsum("ik,jl->klji", self._h, I, optimize=True)
+        # A_klji += 2 \gamma_lq h_qj \delta_ki - 2 \gamma_kq h_qj \delta_li
+        dm1h = np.einsum("ab,bc->ac", self._dm1, self._h, optimize=True)
+        a += np.einsum("lj,ki->klji", dm1h, I, optimize=True)
+        a -= np.einsum("kj,li->klji", dm1h, I, optimize=True)
         a *= 2
         # A_klji += <v_klji>
         a += self._v
-        # A_klji += <v_qlij> \gamma_qk - <v_qkij> \gamma_ql
-        a += np.einsum("qlij,qk->klji", self._v, self._dm1)
-        a -= np.einsum("qkij,ql->klji", self._v, self._dm1)
-        # A_klji += <v_pqjr> \Gamma_pqrk \delta_li - <v_pqjr> \Gamma_pqrl \delta_ki
-        #         = -<v_pqrj> \Gamma_pqrk \delta_li + <v_pqrj> \Gamma_pqrl \delta_ki
-        vdm2 = np.einsum("abcd,abce->de", self._v, self._dm2)
-        a -= np.einsum("jk,li->klji", vdm2, I)
-        a += np.einsum("jl,ki->klji", vdm2, I)
+        # A_klji += <v_jilr> \gamma_kr - <v_jikr> \gamma_lr + 2 <v_qjkl> \gamma_qi
+        a += np.einsum("jilr,kr->klji", self._v, self._dm1, optimize=True)
+        a -= np.einsum("jikr,lr->klji", self._v, self._dm1, optimize=True)
+        a += 2 * np.einsum("qjkl,qi->klji", self._v, self._dm1, optimize=True)
+        # A_klji += 2 ( <v_iqrk> \gamma_qr \delta_lj - <v_iqrl> \gamma_qr \delta_kj )
+        vdm1 = np.einsum("abcd,bc->ad", self._v, self._dm1, optimize=True)
+        a += 2 * np.einsum("ik,lj->klji", vdm1, I, optimize=True)
+        a -= 2 * np.einsum("il,kj->klji", vdm1, I, optimize=True)
+        # A_klji += 2 ( <v_jqrk> \Gamma_qlri + <v_jqlr> \Gamma_qkri )
+        a += 2 * np.einsum("jqrk,qlri->klji", self._v, self._dm2, optimize=True)
+        a += 2 * np.einsum("jqlr,qkri->klji", self._v, self._dm2, optimize=True)
+        # A_klji += <v_qjrs> \Gamma_qlrs \delta_ki - <v_qjrs> \Gamma_qkrs \delta_li
+        vdm2 = np.einsum("abcd,aecd->be", self._v, self._dm2, optimize=True)
+        a += np.einsum("jl,ki->klji", vdm2, I, optimize=True)
+        a -= np.einsum("jk,li->klji", vdm2, I, optimize=True)
         # FIX: Missing symmetric permutation terms
         a = a + a.transpose(1, 0, 3, 2)
         return 0.5 * a.reshape(self._n ** 2, self._n ** 2)
@@ -122,24 +122,21 @@ class EOMDEA0(EOMState):
 
         .. math::
 
-            M_{klji} = \Gamma_{ijlk} + \delta_{li} \delta_{kj} - \delta_{ki} \delta_{lj} + \delta_{ki} \gamma_{jl}
-            - \delta_{kj} \gamma_{li} + \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
+            M_{klji} = 2\delta_{li} \delta_{kj} - 2\delta_{li} \gamma_{jk} - 2\delta_{kj} \gamma_{li}
 
         """
         I = np.eye(self._n, dtype=self._h.dtype)
-        # M_klji = \delta_li \delta_kj - \delta_ki \delta_lj
-        m = np.einsum("li,kj->klji", I, I)
-        m -= np.einsum("ki,lj->klji", I, I)
-        # M_klji += \delta_{ki} \gamma_{jl} - \delta_{kj} \gamma_{li}
-        #        += \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
-        m += np.einsum("ki,lj->klji", I, self._dm1)
-        m -= np.einsum("kj,li->klji", I, self._dm1)
-        m -= np.einsum("li,kj->klji", I, self._dm1)
-        m += np.einsum("lj,ki->klji", I, self._dm1)
-        # M_klji += \Gamma_klji
-        m += self._dm2
-        return m.reshape(self._n ** 2, self._n ** 2)
-    
+
+        # M_klji = \delta_{i l} \delta_{j k} -\delta_{i k} \delta_{j l}
+        m = np.einsum("il,jk->klji", I, I, optimize=True) - np.einsum("ik,jl->klji", I, I, optimize=True)
+        # M_klji = + \delta_{i k} \gamma_{j l} - \delta_{i l} \gamma_{j k}
+        m += np.einsum("ik,jl->klji", I, self._dm1, optimize=True) - np.einsum("il,jk->klji", I, self._dm1, optimize=True)
+        # M_klji = + \delta_{j l} \gamma_{i k} - \delta_{j k} \gamma_{i l}
+        m += np.einsum("jl,ik->klji", I, self._dm1, optimize=True) - np.einsum("jk,il->klji", I, self._dm1, optimize=True)
+        # FIX: Missing symmetric permutation terms
+        m = m + m.transpose(1, 0, 3, 2)
+        return 0.5 * m.reshape(self._n ** 2, self._n ** 2)
+
     def normalize_eigvect(self, coeffs):
         r"""
         Normalize coefficients vector.
@@ -164,6 +161,82 @@ class EOMDEA0(EOMState):
         norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
         sqr_n = np.sqrt(np.abs(norm_factor))
         return (coeffs.T / sqr_n).T
+    
+    @classmethod
+    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, singl=True, nint=5):
+        r"""
+        Compute the ERPA correlation energy for the operator.
+
+        """
+        # Size of dimensions
+        n = h_0.shape[0]
+        # H_1 - H_0
+        dh = h_1 - h_0
+        # V_1 - V_0
+        dv = v_1 - v_0
+        # # \delta_pr * \gamma_qs
+        # eye_dm1 = np.einsum("pr,qs->pqrs", np.eye(n), dm1, optimize=True)
+        # # \delta_qs * \gamma_pr
+        # dm1_eye = np.einsum("pr,qs->pqrs", dm1, np.eye(n), optimize=True)
+
+        linear = _pperpa_linearterms(dh, dv, dm1)
+
+        # Compute ERPA correlation energy (eq. 19)
+        # return (
+        #     linear
+        #     + 0.5 * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.)[0]
+        # )
+        function = IntegrandPP(cls, h_0, v_0, dh, dv, dm1, dm2)
+        params = (solver, eigtol, singl)
+        nonlinear, abserr = integrate(function.vfunc, 0, 1, args=params, tol=1.49e-04, maxiter=nint, vec_func=True)
+        ecorr = linear + 0.5 * nonlinear        
+        
+        output = {}
+        output["ecorr"] = ecorr
+        output["linear"] = linear
+        output["error"] = abserr
+        return output
+
+
+class DEAm(DEA):
+    r"""Two electron added EOM class without commutator in the right-hand side of the equation.
+
+    The double electron effinities (:math:`\Delta_\lambda = E^{(N+2)}_\lambda - E^(N)_0`) and :math:`\lambda`th
+    state of the :math:`(N+2)`-electron system are determined by solving the matrix equation:
+
+    .. math::
+
+        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
+
+        A_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| \left[a_k  a_l, \left[\hat{H}, a^{\dagger}_j  a^{\dagger}_i \right]\right] \middle| \Psi^{(N)}_0 \right>
+
+        U_{kl,ij} &= \left< \Psi^{(N)}_0 \middle| a_k a_l a^{\dagger}_j  a^{\dagger}_i \middle| \Psi^{(N)}_0 \right>
+
+    """
+
+    def _compute_rhs(self):
+        r"""
+        Compute
+
+        .. math::
+
+            M_{klji} = \Gamma_{ijlk} + \delta_{li} \delta_{kj} - \delta_{ki} \delta_{lj} + \delta_{ki} \gamma_{jl}
+            - \delta_{kj} \gamma_{li} + \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
+
+        """
+        I = np.eye(self._n, dtype=self._h.dtype)
+        # M_klji = \delta_li \delta_kj - \delta_ki \delta_lj
+        m = np.einsum("li,kj->klji", I, I)
+        m -= np.einsum("ki,lj->klji", I, I)
+        # M_klji += \delta_{ki} \gamma_{jl} - \delta_{kj} \gamma_{li}
+        #        += \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
+        m += np.einsum("ki,lj->klji", I, self._dm1)
+        m -= np.einsum("kj,li->klji", I, self._dm1)
+        m -= np.einsum("li,kj->klji", I, self._dm1)
+        m += np.einsum("lj,ki->klji", I, self._dm1)
+        # M_klji += \Gamma_klji
+        m += self._dm2
+        return m.reshape(self._n ** 2, self._n ** 2)
 
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
@@ -240,150 +313,6 @@ class EOMDEA0(EOMState):
             linear
             - 0.5 * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.49e-04)[0]
         )
-
-
-class EOMDEA(EOMState):
-    r"""
-    Double electron  attachment EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} a^{\dagger}_i a^{\dagger}_j}`.
-
-    .. math::
-
-        \left< \Psi^{(N)}_0 \middle| \left[a_k a_l, \left[ \hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_k \left< \Psi^{(N)}_0 \middle| [a_k a_l, \hat{Q}] \middle| \Psi^{(N)}_0 \right>
-    """
-
-    @property
-    def neigs(self):
-        r""" """
-        return self._n ** 2
-
-    def _compute_lhs(self):
-        r"""
-        Compute
-
-        .. math::
-            A_{klji} = 2 (h_{li} \delta_{kj} - h_{ki} \delta_{lj}) + 2 (h_{ki} \gamma_{jl} - h_{li} \gamma_{jk})
-            + 2 \sum_{p} (h_{pi} \gamma_{pk} \delta_{lj} + h_{pj} \gamma_{pl} \delta_{ki}) + \left< lk||ij \right>
-            + \sum_{q} (\left< ql||ij \right> \gamma_{qk} - \left< qk||ij \right> \gamma_{ql})
-            + 2 \sum_{qr} \gamma_{qr}(\left< ql||jr \right> \delta_{ki} - \left< qk||jr \right> \delta_{li})
-            + 2 \sum_{qr} (\left< ql||ir \right> \Gamma_{qjrk} - \left< qk||ir \right> \Gamma_{qjrl})
-            + \sum_{pqr} \left< pq||jr \right> (\Gamma_{pqrk} \delta_{li} - \Gamma_{pqrl} \delta_{ki})
-            + 2 \sum_{r} \left< lk||jr \right> \gamma_{ir}s
-
-        """
-
-        I = np.eye(self._n, dtype=self._h.dtype)
-
-        # A_klji = 2 h_il \delta_jk - 2 h_il \gamma_jk + 2 h_ik \gamma_jl - 2 h_ik \delta_jl
-        a = np.einsum("il,jk->klji", self._h, I, optimize=True)
-        a -= np.einsum("il,jk->klji", self._h, self._dm1, optimize=True)
-        a += np.einsum("ik,jl->klji", self._h, self._dm1, optimize=True)
-        a -= np.einsum("ik,jl->klji", self._h, I, optimize=True)
-        # A_klji += 2 \gamma_lq h_qj \delta_ki - 2 \gamma_kq h_qj \delta_li
-        dm1h = np.einsum("ab,bc->ac", self._dm1, self._h, optimize=True)
-        a += np.einsum("lj,ki->klji", dm1h, I, optimize=True)
-        a -= np.einsum("kj,li->klji", dm1h, I, optimize=True)
-        a *= 2
-        # A_klji += <v_klji>
-        a += self._v
-        # A_klji += <v_jilr> \gamma_kr - <v_jikr> \gamma_lr + 2 <v_qjkl> \gamma_qi
-        a += np.einsum("jilr,kr->klji", self._v, self._dm1, optimize=True)
-        a -= np.einsum("jikr,lr->klji", self._v, self._dm1, optimize=True)
-        a += 2 * np.einsum("qjkl,qi->klji", self._v, self._dm1, optimize=True)
-        # A_klji += 2 ( <v_iqrk> \gamma_qr \delta_lj - <v_iqrl> \gamma_qr \delta_kj )
-        vdm1 = np.einsum("abcd,bc->ad", self._v, self._dm1, optimize=True)
-        a += 2 * np.einsum("ik,lj->klji", vdm1, I, optimize=True)
-        a -= 2 * np.einsum("il,kj->klji", vdm1, I, optimize=True)
-        # A_klji += 2 ( <v_jqrk> \Gamma_qlri + <v_jqlr> \Gamma_qkri )
-        a += 2 * np.einsum("jqrk,qlri->klji", self._v, self._dm2, optimize=True)
-        a += 2 * np.einsum("jqlr,qkri->klji", self._v, self._dm2, optimize=True)
-        # A_klji += <v_qjrs> \Gamma_qlrs \delta_ki - <v_qjrs> \Gamma_qkrs \delta_li
-        vdm2 = np.einsum("abcd,aecd->be", self._v, self._dm2, optimize=True)
-        a += np.einsum("jl,ki->klji", vdm2, I, optimize=True)
-        a -= np.einsum("jk,li->klji", vdm2, I, optimize=True)
-        # FIX: Missing symmetric permutation terms
-        a = a + a.transpose(1, 0, 3, 2)
-        return 0.5 * a.reshape(self._n ** 2, self._n ** 2)
-
-    def _compute_rhs(self):
-        r"""
-        Compute
-
-        .. math::
-
-            M_{klji} = 2\delta_{li} \delta_{kj} - 2\delta_{li} \gamma_{jk} - 2\delta_{kj} \gamma_{li}
-
-        """
-        I = np.eye(self._n, dtype=self._h.dtype)
-
-        # M_klji = \delta_{i l} \delta_{j k} -\delta_{i k} \delta_{j l}
-        m = np.einsum("il,jk->klji", I, I, optimize=True) - np.einsum("ik,jl->klji", I, I, optimize=True)
-        # M_klji = + \delta_{i k} \gamma_{j l} - \delta_{i l} \gamma_{j k}
-        m += np.einsum("ik,jl->klji", I, self._dm1, optimize=True) - np.einsum("il,jk->klji", I, self._dm1, optimize=True)
-        # M_klji = + \delta_{j l} \gamma_{i k} - \delta_{j k} \gamma_{i l}
-        m += np.einsum("jl,ik->klji", I, self._dm1, optimize=True) - np.einsum("jk,il->klji", I, self._dm1, optimize=True)
-
-        return m.reshape(self._n ** 2, self._n ** 2)
-
-    def normalize_eigvect(self, coeffs):
-        r"""
-        Normalize coefficients vector.
-
-        Make the solutions orthonormal with respect to the metric matrix U:
-        .. math::
-        \mathbf{c}^T \mathbf{U} \mathbf{c} = 1
-
-        Parameters
-        ----------
-        coeffs : np.ndarray(n**2)
-            Coefficients vector for the lambda-th excited state.
-        
-        Returns
-        -------
-        coeffs : np.ndarray(n**2)
-            Normalized coefficients vector for the lambda-th excited state.
-
-        """
-        if not coeffs.shape[0] == self.neigs:
-            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
-        norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
-        sqr_n = np.sqrt(np.abs(norm_factor))
-        return (coeffs.T / sqr_n).T
-    
-    @classmethod
-    def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, singl=True, nint=5):
-        r"""
-        Compute the ERPA correlation energy for the operator.
-
-        """
-        # Size of dimensions
-        n = h_0.shape[0]
-        # H_1 - H_0
-        dh = h_1 - h_0
-        # V_1 - V_0
-        dv = v_1 - v_0
-        # # \delta_pr * \gamma_qs
-        # eye_dm1 = np.einsum("pr,qs->pqrs", np.eye(n), dm1, optimize=True)
-        # # \delta_qs * \gamma_pr
-        # dm1_eye = np.einsum("pr,qs->pqrs", dm1, np.eye(n), optimize=True)
-
-        linear = _pperpa_linearterms(dh, dv, dm1)
-
-        # Compute ERPA correlation energy (eq. 19)
-        # return (
-        #     linear
-        #     + 0.5 * integrate(nonlinear, 0, 1, limit=nint, epsabs=1.49e-04, epsrel=1.)[0]
-        # )
-        function = IntegrandPP(cls, h_0, v_0, dh, dv, dm1, dm2)
-        params = (solver, eigtol, singl)
-        nonlinear, abserr = integrate(function.vfunc, 0, 1, args=params, tol=1.49e-04, maxiter=nint, vec_func=True)
-        ecorr = linear + 0.5 * nonlinear        
-        
-        output = {}
-        output["ecorr"] = ecorr
-        output["linear"] = linear
-        output["error"] = abserr
-        return output
 
 
 def _pperpa_linearterms(_dh, _dv, _dm1):
@@ -487,3 +416,7 @@ class IntegrandPP:
         # Compute transition RDMs energy term
         tdtd = eval_alphadependent_terms(self.dm1, c, pp.rhs)
         return np.einsum("pqrs,pqrs", self.dv, tdtd/2, optimize=True)
+
+
+# Alias for the particle-particle EOM equation
+ERPApp = DEA
