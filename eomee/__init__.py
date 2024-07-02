@@ -27,13 +27,16 @@ __all__ = [
     "EA",
     "EAc",
     "EAa",
-    "DIP",
-    "DIPm",
     "EE",
     "EEm",
-    "EOMExc0SA",
-    "EOMEE1",
-    "EOMEE3",
+    "EES",
+    "EET",
+    "EESm",
+    "EETm",
+    "DIP",
+    "DIPm",
+    "DIPS",
+    "DIPT",
     "DEA",        
     "DEAm",
 ]
@@ -42,11 +45,11 @@ __all__ = [
 from .base import EOMState
 from .eomip import IP, IPc, IPa, IPcm, IPam
 from .eomea import EA, EAc, EAa
-from .eomdip import DIP, DIPm
 from .excitation import EE, EEm
-from .spinadapted.particlehole import EOMExc0SA
+from .eomdip import DIP, DIPm
 from .eomdea import DEA, DEAm
-from .spinadapted.particlehole import EOMEE1, EOMEE3
+from .spinadapted.excitation import EES, EESm, EET, EETm
+from .spinadapted.eomdip import DIPS, DIPT
 
 
 __version__: str = "0.0.1"
