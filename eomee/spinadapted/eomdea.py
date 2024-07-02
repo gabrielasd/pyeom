@@ -20,23 +20,23 @@ import numpy as np
 
 from scipy.integrate import fixed_quad
 
-from eomee.eomdip import DIP, DIPm
-from eomee.tools import pickpositiveeig, spinize, from_unrestricted
+from eomee.eomdea import DEA, DEAm
+from eomee.tools import picknonzeroeigs
 from eomee.solver import nonsymmetric, svd_lowdin, eig_pinv
 
 
 __all__ = [
-    "DIPSA",
+    "DEASA",
 ]
 
 
-class DIPSA(DIP):
+class DEASA(DEA):
     r"""
-    Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a_i  a_{\bar{j}} \mp a_{\bar{i}} a_j)}`.
+    EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a^\dagger_i  a^\dagger_{\bar{j}} \mp a^\dagger_{\bar{i}} a^\dagger_j)}`.
 
     .. math::
-        \left< \Psi^{(N)}_0 \middle| \left[a^\dagger_k  a^\dagger_{\bar{l}} \mp a^\dagger_{\bar{k}} a^\dagger_l , \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_{k} \left< \Psi^{(N)}_0 \middle| \left[a^\dagger_k  a^\dagger_{\bar{l}} \mp a^\dagger_{\bar{k}} a^\dagger_l, \hat{Q} \right] \Psi^{(N)}_0 \right>
+        \left< \Psi^{(N)}_0 \middle| \left[a_k  a_{\bar{l}} \mp a_{\bar{k}} a_l , \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
+        = \Delta_{k} \left< \Psi^{(N)}_0 \middle| \left[a_k  a_{\bar{l}} \mp a_{\bar{k}} a_l, \hat{Q} \right] \Psi^{(N)}_0 \right>
 
     """
     def __init__(self, h, v, dm1, dm2):
@@ -156,9 +156,8 @@ class DIPSA(DIP):
         else:
             raise ValueError("Invalid state multiplicity. Valid options are 1 or 3.")
         w, v = _solver(lhs, rhs, tol=tol, err=err)
-        return np.real(w), np.real(v)
+        return np.real(w), np.real(v) 
     
-
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, mult=1, nint=5, dm1ac=True):
         r"""
@@ -172,9 +171,13 @@ class DIPSA(DIP):
         # V_1 - V_0
         dv = v_1 - v_0
         
-        # Compute ERPA correction energy
-        # Nonlinear term (eq. 19 integrand)        
-        function = Integrandhh(cls, h_0, v_0, dh, dv, dm1, dm2)
+        if not dm1ac:
+            raise NotImplementedError("dm1ac=False not implemented yet.")
+        else:
+            linear = _pperpa_linearterms(dh, dv, dm1)
+
+        # Compute ERPA correction energy (eq. 19 integrand) 
+        function = IntegrandPP(cls, h_0, v_0, dh, dv, dm1, dm2)
         if mult == 1:
             params = (solver, eigtol, True, dm1ac)
             alphadep=  fixed_quad(function.vfunc, 0, 1, args=params, n=nint)[0]
@@ -187,12 +190,8 @@ class DIPSA(DIP):
             params = (solver, eigtol, False, dm1ac)
             alphadep += fixed_quad(function.vfunc, 0, 1, args=params, n=nint)[0]
         else:
-            raise ValueError("Invalid mult parameter. Valid options are 1, 3 or 13.")
-        if not dm1ac:
-            linear = 0.
-        else:
-            linear = _hherpa_linearterms(dh, dm1)
-        ecorr = linear + alphadep
+            raise ValueError("Invalid mult parameter. Valid options are 1, 3 or 13.")  
+        ecorr = linear + alphadep    
 
         output = {}
         output["ecorr"] = ecorr
@@ -200,128 +199,85 @@ class DIPSA(DIP):
         output["error"] = None
 
         return output
-    
-    @classmethod
-    def erpa_ecorr(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, summall=True, mult=1, nint=5, dm1ac=True):
-        r"""
-        Compute the ERPA correlation energy for the operator.
-
-        .. math::
-        E_corr = (E^{\alpha=1} - E^{\alpha=0}) - (< \Psi^{\alpha=0}_0 | \hat{H} | \Psi^{\alpha=0}_0 > - E^{\alpha=0})
-        = 0.5 \sum_{pqrs} \int_{0}_{1} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) \Gamma^{\alpha}_{pqrs} d \alpha
-        - 0.5 \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) \Gamma^{\alpha=0}_{pqrs}
-
-        where :math:`\Gamma^{\alpha}_{pqrs}` is
-
-        .. math::
-        \Gamma^{\alpha}_{pqrs} = \sum_{\nu =0} \gamma^{\alpha;0 \nu}_{pq} \gamma^{\alpha;\nu 0}_{rs}
-        """
-        # Size of dimensions
-        n = h_0.shape[0]
-        # H_1 - H_0
-        dh = h_1 - h_0
-        # V_1 - V_0
-        dv = v_1 - v_0
-
-        integrand = Integrandhh(cls, h_0, v_0, dh, dv, dm1, dm2)
-        if mult == 1:
-            params = (solver, eigtol, True, dm1ac)
-            alphadep=  fixed_quad(integrand.vfunc, 0, 1, args=params, n=nint)[0]
-        elif mult == 3:
-            params = (solver, eigtol, False, dm1ac)
-            alphadep =  fixed_quad(integrand.vfunc, 0, 1, args=params, n=nint)[0]
-        elif mult == 13:
-            params = (solver, eigtol, True, dm1ac)
-            alphadep =  fixed_quad(integrand.vfunc, 0, 1, args=params, n=nint)[0]
-            params = (solver, eigtol, False, dm1ac)
-            alphadep +=  fixed_quad(integrand.vfunc, 0, 1, args=params, n=nint)[0]
-        else:
-            raise ValueError("Invalid mult parameter. Valid options are 1, 3 or 13.")
-        
-        rhs = Integrandhh.eval_dmterms(n, dm1).reshape(n ** 2, n ** 2)
-        temp = _rdm2_a0(n, dm2, rhs, summall, eigtol)
-        alphaindep = -0.5 * np.einsum("pqrs,pqrs", dv, temp, optimize=True)
-        ecorr = alphadep + alphaindep
-
-        output = {}
-        output["ecorr"] = ecorr
-        output["linear"] = alphaindep
-        output["error"] = None
-
-        return output
 
 
-def _hherpa_linearterms(_dh, _dm1):
-    # dh * \gamma
-    return np.einsum("pq,pq", _dh, _dm1, optimize=True)
+def _pperpa_linearterms(_dh, _dv, _dm1):
+    _n = _dm1.shape[0]
+    # \delta_pr * \gamma_qs
+    eye_dm1 = np.einsum("pr,qs->pqrs", np.eye(_n), _dm1, optimize=True)
+    # \delta_qs * \gamma_pr
+    dm1_eye = np.einsum("pr,qs->pqrs", _dm1, np.eye(_n), optimize=True)
+
+    # Compute linear term (eq. 19)
+    # dh * \gamma + 0.5 * dv * (\delta_pr * \gamma_qs + \delta_qs * \gamma_pr - \delta_ps * \gamma_qr
+    #                           - \delta_qr * \gamma_ps - \delta_pr * \delta_qs + \delta_ps * \delta_qr)
+    _linear = (
+        eye_dm1
+        - np.transpose(eye_dm1, axes=(0, 1, 3, 2))
+        + dm1_eye
+        - np.transpose(dm1_eye, axes=(0, 1, 3, 2))
+        - np.einsum("pr,qs->pqrs", np.eye(_n), np.eye(_n), optimize=True)
+        + np.einsum("ps,qr->pqrs", np.eye(_n), np.eye(_n), optimize=True)
+    )
+    _linear = np.einsum("pq,pq", _dh, _dm1, optimize=True) + 0.5 * np.einsum(
+        "pqrs,pqrs", _dv, _linear, optimize=True
+    )
+    return _linear
 
 
-def _rdm2_a0(_n, _rdm2, _rhs, _summall, _eigtol):
-    if not _summall:
-        d_occs_ij = np.diag(_rhs)
-        _rdm2  = truncate_rdm2_matrix(_n, d_occs_ij, _rdm2, _eigtol)
-    return _rdm2
+def eval_alphadependent_2dmterms(_dm1, evecs, dmterms):
+    _k = _dm1.shape[0]//2
+    # Compute transition RDMs (eq. 29)
+    tdms = np.einsum("mrs,pqrs->mpq", evecs.reshape(evecs.shape[0], _k, _k), dmterms)
+    # Compute nonlinear energy term
+    _tv = np.zeros((_k, _k, _k, _k), dtype=_dm1.dtype)
+    for tdm in tdms:
+        _tv += np.einsum("pq,rs->pqrs", tdm, tdm, optimize=True)
+    return _tv
 
 
-def truncate_rdm2_matrix(nspins, ij_d_occs, _rdm2, _eigtol):
-    nt = nspins**2
-    truncated = np.zeros_like(_rdm2)
-    for pq in range(nt):
-        for rs in range(nt):
-            cond1 = np.abs(ij_d_occs[pq]) > _eigtol
-            cond2 = np.abs(ij_d_occs[rs]) > _eigtol
-            if cond1 and cond2:
-                p = pq//nspins
-                q = pq%nspins
-                r = rs//nspins
-                s = rs%nspins
-                truncated[p,q,r,s] = _rdm2[p,q,r,s]
-    return truncated
+def eval_tdmterms(_dm1):
+    # Note: This functions returns the generalized particle-particle RHS
+    # not the spin-adapted one.
+    n = _dm1.shape[0]
+    # Compute inmutable terms in (eq. 35)
+    # #
+    # rdm_terms = (
+    #     np.einsum("li,kj->klji", np.eye(n), np.eye(n), optimize=True)
+    #     - np.einsum("ki,lj->klji", np.eye(n), np.eye(n), optimize=True)
+    #     + eye_dm1
+    #     - np.transpose(eye_dm1, axes=(0, 1, 3, 2))
+    #     + dm1_eye
+    #     - np.transpose(dm1_eye, axes=(0, 1, 3, 2))
+    #     + dm2
+    # )
+    # #
+    # \delta_{i l} \delta_{j k} -\delta_{i k} \delta_{j l}
+    _rdm_terms = np.einsum("il,jk->klji", np.eye(n), np.eye(n), optimize=True)
+    _rdm_terms -= np.einsum("ik,jl->klji", np.eye(n), np.eye(n), optimize=True)
+    # + \delta_{i k} \left\{a^\dagger_{j} a_{l}\right\}
+    # - \delta_{i l} \left\{a^\dagger_{j} a_{k}\right\}
+    _rdm_terms += np.einsum("ik,jl->klji", np.eye(n), _dm1, optimize=True)
+    _rdm_terms -= np.einsum("il,jk->klji", np.eye(n), _dm1, optimize=True)
+    # + \delta_{j l} \left\{a^\dagger_{i} a_{k}\right\}
+    # - \delta_{j k} \left\{a^\dagger_{i} a_{l}\right\}
+    _rdm_terms += np.einsum("jl,ik->klji", np.eye(n), _dm1, optimize=True)
+    _rdm_terms -= np.einsum("jk,il->klji", np.eye(n), _dm1, optimize=True)
+    return _rdm_terms
 
 
-class Integrandhh:
+class IntegrandPP:
     r"""Compute adiabatic connection integrand."""
     def __init__(self, method, h0, v0, dh, dv, dm1, dm2):
         self.h_0 = h0
         self.v_0 = v0
         self.dh = dh
         self.dv = dv
-        # TODO: Check that method is DIP
+        # TODO: Check that method is DEA
         self.dm1 = dm1
         self.dm2 = dm2
         self.method = method
         self.vfunc = np.vectorize(self.eval_integrand) 
-    
-    @staticmethod
-    def eval_dmterms(_n, _dm1):
-        #FIXME: This functions returns the generalized hole-hole RHS
-        # not the spin-adapted one. It is left here because its used to 
-        # compute the alpha-independent terms in the classmethodsa bove.
-
-        # Compute RDM terms of transition RDM
-        # Commutator form: < |[p+q+,s r]| >
-        # \delta_{i k} \delta_{j l} - \delta_{i l} \delta_{j k}
-        _rdm_terms = np.einsum("ik,jl->klji", np.eye(_n), np.eye(_n), optimize=True)
-        _rdm_terms -= np.einsum("il,jk->klji", np.eye(_n), np.eye(_n), optimize=True)
-        # - \delta_{i k} \left\{a^\dagger_{l} a_{j}\right\}
-        # + \delta_{i l} \left\{a^\dagger_{k} a_{j}\right\}
-        _rdm_terms -= np.einsum("ik,jl->klji", np.eye(_n), _dm1, optimize=True)
-        _rdm_terms += np.einsum("il,jk->klji", np.eye(_n), _dm1, optimize=True)
-        # - \delta_{j l} \left\{a^\dagger_{k} a_{i}\right\}
-        # + \delta_{j k} \left\{a^\dagger_{l} a_{i}\right\}
-        _rdm_terms -= np.einsum("jl,ik->klji", np.eye(_n), _dm1, optimize=True)
-        _rdm_terms += np.einsum("jk,il->klji", np.eye(_n), _dm1, optimize=True)
-        return _rdm_terms
-    
-    @staticmethod
-    def eval_alphadependent_2rdmterms(_k, _dm1, coeffs, dmterms):
-        # Compute transition RDMs (eq. 29)
-        tdms = np.einsum("mrs,pqrs->mpq", coeffs.reshape(coeffs.shape[0], _k, _k), dmterms)
-        # Compute nonlinear energy term
-        _tv = np.zeros((_k, _k, _k, _k), dtype=_dm1.dtype)
-        for tdm in tdms:
-            _tv += np.einsum("pq,rs->pqrs", tdm, tdm, optimize=True)
-        return _tv
 
     def eval_integrand(self, alpha, gevps, tol, singlets, _dm1ac):
         """Compute integrand."""
@@ -333,16 +289,16 @@ class Integrandhh:
         m = h.shape[0]
         k = m // 2
         # Solve EOM equations
-        hh = self.method(h, v, self.dm1, self.dm2)
+        pp = self.method(h, v, self.dm1, self.dm2)
 
         if singlets:
-            w, c = hh.solve_dense(tol=tol, mode=gevps, mult=1)
-            metric = hh._rhs1
+            w, c = pp.solve_dense(tol=tol, mode=gevps, mult=1)
+            metric = pp._rhs1
         else:
-            w, c = hh.solve_dense(tol=tol, mode=gevps, mult=3)
-            metric = hh._rhs3
+            w, c = pp.solve_dense(tol=tol, mode=gevps, mult=3)
+            metric = pp._rhs3
         
-        cv_p = pickpositiveeig(w, c)[1]
+        cv_p = picknonzeroeigs(w, c)[1]
         norm = np.dot(cv_p, np.dot(metric, cv_p.T))
         diag_n = np.diag(norm)
         idx = np.where(diag_n > 0)[0]  # Remove eigenvalues with negative norm
@@ -351,39 +307,37 @@ class Integrandhh:
 
         # Compute transition RDMs energy contribution (eq. 29)
         metric = metric.reshape(k, k, k, k)
-        tdtd_ab = Integrandhh.eval_alphadependent_2rdmterms(k, self.dm1, c, metric)
-        hh_rdm2 = np.zeros((m,m,m,m), dtype=self.dm2.dtype)
-        # NOTE: the 0.5 factor in the singlet and triplet alpha-beta transition DM contributions is because each
-        # contributes to G_abab and G_baba blocks of 2RDM. This factor wouldn't be necesary if we ommited the G_baba
-        # block, or restricted the DIP transition operator to Q_pq with p>q.
+        tdtd_ab = eval_alphadependent_2dmterms(self.dm1, c, metric)
+        pp_rdm2 = np.zeros((m,m,m,m), dtype=self.dm2.dtype)
         if singlets:
-            hh_rdm2[:k, k:, :k, k:] = 0.5 * tdtd_ab
-            hh_rdm2[k:, :k, k:, :k] = 0.5 * tdtd_ab
+            pp_rdm2[:k, k:, :k, k:] = 0.5 * tdtd_ab
+            pp_rdm2[k:, :k, k:, :k] = 0.5 * tdtd_ab
         else:
             # 30
-            hh_rdm2[:k, k:, :k, k:] += 0.5 * tdtd_ab
-            hh_rdm2[k:, :k, k:, :k] += 0.5 * tdtd_ab
+            pp_rdm2[:k, k:, :k, k:] += 0.5 * tdtd_ab
+            pp_rdm2[k:, :k, k:, :k] += 0.5 * tdtd_ab
             # 31
-            hh_rdm2[:k, :k, :k, :k] = tdtd_ab
-            hh_rdm2[k:, k:, k:, k:] = tdtd_ab
-        result = 0.5 * np.einsum("pqrs,pqrs", self.dv, hh_rdm2, optimize=True)
+            pp_rdm2[:k, :k, :k, :k] = tdtd_ab
+            pp_rdm2[k:, k:, k:, k:] = tdtd_ab
+        result = 0.5 * np.einsum("pqrs,pqrs", self.dv, pp_rdm2, optimize=True)
 
         if not _dm1ac:
-            # Evaluate ERPA 1RDM^alpha
-            nparts = np.trace(self.dm1)
-            hh_rdm1 = np.einsum('pqrq->pr', hh_rdm2) / (nparts-1)
-            result += np.einsum('pq,pq->', self.dh, hh_rdm1)
+            # # Evaluate ERPA 1RDM^alpha
+            # nparts = np.trace(self.dm1)
+            # hh_rdm1 = np.einsum('pqrq->pr', pp_rdm2) / (nparts-1)
+            # result += np.einsum('pq,pq->', self.dh, hh_rdm1)
+            raise NotImplementedError("1RDM not implemented yet")
         
-        return result     
+        return result 
 
 
-class DIP2SA(DIPm):
+class DEA2SA(DEAm):
     r"""
-    Excitation EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a_i  a_{\bar{j}} \mp a_{\bar{i}} a_j)}`.
+    EOM state for operator :math:`\hat{Q}_k = \sum_{ij} { c_{ij} (a^\dagger_i  a^\dagger_{\bar{j}} \mp a^\dagger_{\bar{i}} a^\dagger_j)}`.
 
     .. math::
-        \left< \Psi^{(N)}_0 \middle| \left[a^\dagger_k  a^\dagger_{\bar{l}} \mp a^\dagger_{\bar{k}} a^\dagger_l , \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
-        = \Delta_{k} \left< \Psi^{(N)}_0 \middle| a^\dagger_k  a^\dagger_{\bar{l}} \mp a^\dagger_{\bar{k}} a^\dagger_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
+        \left< \Psi^{(N)}_0 \middle| \left[a_k  a_{\bar{l}} \mp a_{\bar{k}} a_l , \left[\hat{H}, \hat{Q} \right]\right] \middle| \Psi^{(N)}_0 \right>
+        = \Delta_{k} \left< \Psi^{(N)}_0 \middle| a_k  a_{\bar{l}} \mp a_{\bar{k}} a_l \hat{Q} \middle| \Psi^{(N)}_0 \right>
 
     """
     def __init__(self, h, v, dm1, dm2):
