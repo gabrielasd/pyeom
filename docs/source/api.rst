@@ -37,19 +37,19 @@ EOM Classes
 .. autoclass:: eomee.EOMEAAntiCommutator
    :members:
 
-:mod:`eomee.EOMIP`
+:mod:`eomee.IP`
 =======================
-.. autoclass:: eomee.EOMIP
+.. autoclass:: eomee.IP
    :members:
 
-:mod:`eomee.EOMIPDoubleCommutator`
+:mod:`eomee.IPc`
 ==================================
-.. autoclass:: eomee.EOMIPDoubleCommutator
+.. autoclass:: eomee.IPc
    :members:
 
-:mod:`eomee.EOMIPAntiCommutator`
+:mod:`eomee.IPa`
 ================================
-.. autoclass:: eomee.EOMIPAntiCommutator
+.. autoclass:: eomee.IPa
    :members:
 
 :mod:`eomee.EOMExc`
