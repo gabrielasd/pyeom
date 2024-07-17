@@ -14,3 +14,19 @@
 # along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
 
 r"""Equations-of-motion testing package."""
+
+from os import path
+
+
+__all__ = [
+    "find_datafile",
+]
+
+
+DIRPATH = path.join(path.dirname(__file__), "data/")
+
+
+def find_datafile(file_name):
+    r""" Return the full path of a test data file. """
+    datapath = path.join(path.abspath(DIRPATH), file_name)
+    return path.abspath(datapath)

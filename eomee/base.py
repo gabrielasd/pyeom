@@ -27,7 +27,7 @@ from .solver import eig_pinvb, lowdin_svd, eig_pruneq_pinvb
 from .solver import pick_positive, pick_nonzero
 from .solver import INV_THRESHOLD, EIG_THRESHOLD
 
-from .tools import antisymmetrize
+from .tools.tools import antisymmetrize
 
 
 __all__ = [
