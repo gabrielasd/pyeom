@@ -44,16 +44,18 @@ def _get_lhs_spin_blocks(lhs, n, k):
 
 def _get_rhs_spin_blocks(rhs, n, k):
     rhs = rhs.reshape(n, n, n, n)
-    M_aaaa = rhs[:k, :k, : k, : k]
-    M_bbbb = rhs[ k:,  k:,  k:,  k:]
-    M_aabb = rhs[: k, : k,  k:,  k:]
-    M_bbaa = rhs[ k:,  k:, : k, : k]
+    M_aaaa = rhs[:k, :k, :k, :k]
+    M_bbbb = rhs[k:, k:, k:, k:]
+    M_aabb = rhs[:k, :k, k:, k:]
+    M_bbaa = rhs[k:, k:, :k, :k]
     return (M_aaaa, M_bbbb, M_aabb, M_bbaa)
 
 
 def _get_transition_rdm1(cv, metric, nabsis):
-    if not cv.shape[0] == nabsis**2:
-        raise ValueError(f"Coefficients vector has the wrong shape, expected {nabsis**2}, got {cv.shape[0]}.")
+    if not cv.shape[0] == nabsis ** 2:
+        raise ValueError(
+            f"Coefficients vector has the wrong shape, expected {nabsis**2}, got {cv.shape[0]}."
+        )
     cv = cv.reshape(nabsis, nabsis)
     rhs = metric.reshape(nabsis, nabsis, nabsis, nabsis)
     return np.einsum("pqrs,rs->pq", rhs, cv)
@@ -74,6 +76,7 @@ class EES(EE):
         = \Delta_{k} \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l + a^{\dagger}_{\bar{k}}  a_{\bar{l}}, \hat{Q} \right] \Psi^{(N)}_0 \right>
 
     """
+
     def __init__(self, h, v, dm1, dm2):
         super().__init__(h, v, dm1, dm2)
         self._k = self._n // 2
@@ -83,7 +86,6 @@ class EES(EE):
         # Spin-adapted particle-hole matrices
         self._lhs = self._compute_lhs_1()
         self._rhs = self._compute_rhs_1()
-    
 
     @property
     def k(self):
@@ -111,18 +113,18 @@ class EES(EE):
         """
         # Number of q_n terms = n_{\text{basis}} * n_{\text{basis}}
         return (self._k) ** 2
-    
+
     def _compute_lhs_1(self):
         A_aaaa, A_bbbb, A_aabb, A_bbaa = _get_lhs_spin_blocks(self._lhs, self._n, self._k)
         A = A_aaaa + A_bbbb + A_aabb + A_bbaa
-        return 0.5 * A.reshape(self._k**2, self._k**2)
+        return 0.5 * A.reshape(self._k ** 2, self._k ** 2)
 
     def _compute_rhs_1(self):
-        M_aaaa, M_bbbb, M_aabb, M_bbaa = _get_rhs_spin_blocks(self._rhs, self._n, self._k) 
+        M_aaaa, M_bbbb, M_aabb, M_bbaa = _get_rhs_spin_blocks(self._rhs, self._n, self._k)
         M = M_aaaa + M_bbbb + M_aabb + M_bbaa
-        return 0.5 * M.reshape(self._k**2, self._k**2)
-    
-    def compute_tdm1(self, coeffs):
+        return 0.5 * M.reshape(self._k ** 2, self._k ** 2)
+
+    def compute_tdm(self, coeffs):
         r"""
         Compute the transition RDMs for the singlet excitations.
 
@@ -160,6 +162,7 @@ class EET(EE):
         = \Delta_{k} \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_k  a_l - a^{\dagger}_{\bar{k}}  a_{\bar{l}}, \hat{Q} \right] \Psi^{(N)}_0 \right>
 
     """
+
     def __init__(self, h, v, dm1, dm2):
         super().__init__(h, v, dm1, dm2)
         self._k = self._n // 2
@@ -169,7 +172,6 @@ class EET(EE):
         # Spin-adapted particle-hole matrices
         self._lhs = self._compute_lhs_30()
         self._rhs = self._compute_rhs_30()
-    
 
     @property
     def k(self):
@@ -197,18 +199,18 @@ class EET(EE):
         """
         # Number of q_n terms = n_{\text{basis}} * n_{\text{basis}}
         return (self._k) ** 2
-    
+
     def _compute_lhs_30(self):
         A_aaaa, A_bbbb, A_aabb, A_bbaa = _get_lhs_spin_blocks(self._lhs, self._n, self._k)
         A = A_aaaa + A_bbbb - A_aabb - A_bbaa
-        return 0.5 * A.reshape(self._k**2, self._k**2)
-    
+        return 0.5 * A.reshape(self._k ** 2, self._k ** 2)
+
     def _compute_rhs_30(self):
-        M_aaaa, M_bbbb, M_aabb, M_bbaa = _get_rhs_spin_blocks(self._rhs, self._n, self._k) 
+        M_aaaa, M_bbbb, M_aabb, M_bbaa = _get_rhs_spin_blocks(self._rhs, self._n, self._k)
         M = M_aaaa + M_bbbb - M_aabb - M_bbaa
-        return 0.5 * M.reshape(self._k**2, self._k**2)
-    
-    def compute_tdm1(self, coeffs):
+        return 0.5 * M.reshape(self._k ** 2, self._k ** 2)
+
+    def compute_tdm(self, coeffs):
         r"""
         Compute the transition RDMs for the triplet excitations.
 
@@ -236,6 +238,7 @@ class EESm(EEm):
     Singlet excited states for the particle-hole EOM without commutator on the metric matrix.
 
     """
+
     def __init__(self, h, v, dm1, dm2):
         super().__init__(h, v, dm1, dm2)
         self._k = self._n // 2
@@ -245,7 +248,6 @@ class EESm(EEm):
         # Spin-adapted particle-hole matrices
         self._lhs = self._compute_lhs_30()
         self._rhs = self._compute_rhs_30()
-    
 
     @property
     def k(self):
@@ -273,18 +275,18 @@ class EESm(EEm):
         """
         # Number of q_n terms = n_{\text{basis}} * n_{\text{basis}}
         return (self._k) ** 2
-    
+
     def _compute_lhs_30(self):
         A_aaaa, A_bbbb, A_aabb, A_bbaa = _get_lhs_spin_blocks(self._lhs, self._n, self._k)
         A = A_aaaa + A_bbbb - A_aabb - A_bbaa
-        return 0.5 * A.reshape(self._k**2, self._k**2)
-    
+        return 0.5 * A.reshape(self._k ** 2, self._k ** 2)
+
     def _compute_rhs_30(self):
-        M_aaaa, M_bbbb, M_aabb, M_bbaa = _get_rhs_spin_blocks(self._rhs, self._n, self._k) 
+        M_aaaa, M_bbbb, M_aabb, M_bbaa = _get_rhs_spin_blocks(self._rhs, self._n, self._k)
         M = M_aaaa + M_bbbb - M_aabb - M_bbaa
-        return 0.5 * M.reshape(self._k**2, self._k**2)
-    
-    def compute_tdm1(self, coeffs):
+        return 0.5 * M.reshape(self._k ** 2, self._k ** 2)
+
+    def compute_tdm(self, coeffs):
         r"""
         Compute the transition RDMs for the triplet excitations.
 
@@ -312,6 +314,7 @@ class EETm(EEm):
     Triplet excited states for the particle-hole EOM without commutator on the metric matrix.
 
     """
+
     def __init__(self, h, v, dm1, dm2):
         super().__init__(h, v, dm1, dm2)
         self._k = self._n // 2
@@ -321,7 +324,6 @@ class EETm(EEm):
         # Spin-adapted particle-hole matrices
         self._lhs = self._compute_lhs_30()
         self._rhs = self._compute_rhs_30()
-    
 
     @property
     def k(self):
@@ -349,18 +351,18 @@ class EETm(EEm):
         """
         # Number of q_n terms = n_{\text{basis}} * n_{\text{basis}}
         return (self._k) ** 2
-    
+
     def _compute_lhs_30(self):
         A_aaaa, A_bbbb, A_aabb, A_bbaa = _get_lhs_spin_blocks(self._lhs, self._n, self._k)
         A = A_aaaa + A_bbbb - A_aabb - A_bbaa
-        return 0.5 * A.reshape(self._k**2, self._k**2)
-    
+        return 0.5 * A.reshape(self._k ** 2, self._k ** 2)
+
     def _compute_rhs_30(self):
-        M_aaaa, M_bbbb, M_aabb, M_bbaa = _get_rhs_spin_blocks(self._rhs, self._n, self._k) 
+        M_aaaa, M_bbbb, M_aabb, M_bbaa = _get_rhs_spin_blocks(self._rhs, self._n, self._k)
         M = M_aaaa + M_bbbb - M_aabb - M_bbaa
-        return 0.5 * M.reshape(self._k**2, self._k**2)
-    
-    def compute_tdm1(self, coeffs):
+        return 0.5 * M.reshape(self._k ** 2, self._k ** 2)
+
+    def compute_tdm(self, coeffs):
         r"""
         Compute the transition RDMs for the triplet excitations.
 
@@ -383,86 +385,73 @@ class EETm(EEm):
         return _get_transition_rdm1(coeffs, self.rhs, self._k)
 
 
-def _pherpa_linearterms(_n, _dh, _dv, _dm1):
-    # Gamma_pqrs = < | p^+ q^+ s r | > = - < | p^+ q^+ r s | >
-    #            = - \delta_qr * \gamma_ps
-    #            + \gamma_pr * \gamma_qs
-    #            + \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
-    dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
-    # Compute linear term (eq. 19)
-    # dh * \gamma + 0.5 * dv * (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
-    _linear = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True) - dm1_eye
-    _linear = np.einsum("pq,pq", _dh, _dm1, optimize=True) + 0.5 * np.einsum(
-        "pqrs,pqrs", _dv, _linear, optimize=True
-    )
-    return _linear
-
-
+### Beggins definition of utility functions that will be used to compute the residual correlation energy
+### with the `eval_ecorr` function defined at the end of this file.
 def _truncate_dm1dm1_matrix(nspins, ij_d_occs, _dm1dm1, _eigtol):
-    nt = nspins**2
+    nt = nspins ** 2
     truncated = np.zeros_like(_dm1dm1)
     for pq in range(nt):
         for rs in range(nt):
             cond1 = np.abs(ij_d_occs[pq]) > _eigtol
             cond2 = np.abs(ij_d_occs[rs]) > _eigtol
             if cond1 and cond2:
-                p = pq//nspins
-                q = pq%nspins
-                r = rs//nspins
-                s = rs%nspins
-                truncated[p,r,q,s] = _dm1dm1[p,r,q,s]
+                p = pq // nspins
+                q = pq % nspins
+                r = rs // nspins
+                s = rs % nspins
+                truncated[p, r, q, s] = _dm1dm1[p, r, q, s]
     return truncated
 
 
 def _truncate_eyedm1_matrix(nspins, ij_d_occs, _eyedm1, _eigtol):
-    nt = nspins**2
+    nt = nspins ** 2
     truncated = np.zeros_like(_eyedm1)
     for pq in range(nt):
         for rs in range(nt):
             cond1 = np.abs(ij_d_occs[pq]) > _eigtol
             cond2 = np.abs(ij_d_occs[rs]) > _eigtol
             if cond1 and cond2:
-                p = pq//nspins
-                q = pq%nspins
-                r = rs//nspins
-                s = rs%nspins
-                truncated[p,q,r,s] = _eyedm1[p,q,r,s]
+                p = pq // nspins
+                q = pq % nspins
+                r = rs // nspins
+                s = rs % nspins
+                truncated[p, q, r, s] = _eyedm1[p, q, r, s]
     return truncated
 
 
 def _truncate_rdm2_matrix(nspins, ij_d_occs, _rdm2, _eigtol):
-    nt = nspins**2
+    nt = nspins ** 2
     truncated = np.zeros_like(_rdm2)
     for pq in range(nt):
         for rs in range(nt):
             cond1 = np.abs(ij_d_occs[pq]) > _eigtol
             cond2 = np.abs(ij_d_occs[rs]) > _eigtol
             if cond1 and cond2:
-                p = pq//nspins
-                q = pq%nspins
-                r = rs//nspins
-                s = rs%nspins
-                truncated[p,r,q,s] = _rdm2[p,r,q,s]
+                p = pq // nspins
+                q = pq % nspins
+                r = rs // nspins
+                s = rs % nspins
+                truncated[p, r, q, s] = _rdm2[p, r, q, s]
     return truncated
 
 
-def _alpha_independent_terms_rdm2_alpha(_dm1, _rhs, _summall, _eigtol):
+def _perturbed_rdm2_constant_terms(_dm1, _rhs, _summall, _eigtol):
     # (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
     _n = _dm1.shape[0]
     dm1dm1 = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True)
     dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
     if not _summall:
         d_occs_ij = np.diag(_rhs)
-        dm1dm1  = _truncate_dm1dm1_matrix(_n, d_occs_ij, dm1dm1, _eigtol)
-        dm1_eye  = _truncate_eyedm1_matrix(_n, d_occs_ij, dm1_eye, _eigtol)
-    return (dm1dm1 - dm1_eye)
+        dm1dm1 = _truncate_dm1dm1_matrix(_n, d_occs_ij, dm1dm1, _eigtol)
+        dm1_eye = _truncate_eyedm1_matrix(_n, d_occs_ij, dm1_eye, _eigtol)
+    return dm1dm1 - dm1_eye
 
 
-def _rdm2_a0(_rdm2, _rhs, _summall, _eigtol):
+def _zeroth_order_rdm2(_rdm2, _rhs, _summall, _eigtol):
     _n = _rdm2.shape[0]
     if not _summall:
         d_occs_ij = np.diag(_rhs)
-        _rdm2  = _truncate_rdm2_matrix(_n, d_occs_ij, _rdm2, _eigtol)
+        _rdm2 = _truncate_rdm2_matrix(_n, d_occs_ij, _rdm2, _eigtol)
     return _rdm2
 
 
@@ -476,32 +465,29 @@ def _get_pherpa_metric_matrix(dm1):
 
 
 def _sum_over_nstates_tdtd_matrices(_k, _dm1, coeffs, dmterms):
-    # Compute transition RDMs (eq. 29)
+    # Compute transition RDMs
     tdms = np.einsum("mrs,pqrs->mpq", coeffs.reshape(coeffs.shape[0], _k, _k), dmterms)
     # Compute nonlinear energy term
-    _tv = np.zeros((_k, _k, _k, _k), dtype=_dm1.dtype)
+    _tdtd = np.zeros((_k, _k, _k, _k), dtype=_dm1.dtype)
     for tdm in tdms:
-        _tv += np.einsum("pr,qs->pqrs", tdm, tdm.T, optimize=True)
-    return _tv
+        _tdtd += np.einsum("pr,qs->pqrs", tdm, tdm.T, optimize=True)
+    return _tdtd
 
 
 def _eval_tdtd_alpha_mtx_from_erpa(erpa_gevp_type, h_l, v_l, dm1, dm2, invtol, solver_type):
-    # Solve particle-hole ERPA equations at given perturbation strength alpha
+    # Solve the perturbation dependent particle-hole ERPA equations
     ph = erpa_gevp_type(h_l, v_l, dm1, dm2)
     ph._invtol = invtol
     cv = ph.solve_dense(mode=solver_type, normalize=True)[1]
-    # norm = np.dot(cv, np.dot(ph.rhs, cv.T))
-    # diag_n = np.diag(norm)
-    # sqr_n = np.sqrt(np.abs(diag_n))
-    # cv = (cv.T / sqr_n).T
-
     metric = ph.rhs.reshape(ph.k, ph.k, ph.k, ph.k)
-    return 0.5 * _sum_over_nstates_tdtd_matrices(ph.k, dm1, cv, metric) # where is the 0.5 factor coming from?
+    return 0.5 * _sum_over_nstates_tdtd_matrices(
+        ph.k, dm1, cv, metric
+    )  # where is the 0.5 factor coming from?
 
 
 def _eval_W_alpha_singlets(tdtd_singlets, dv):
     # f(alpha) = 0.5 * \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) Gamma_term^{\alpha}_{pqrs}
-    # Gamma_term = \sum_{n \in Singlets} tdm_0n tdm_n0
+    # where: Gamma_term = \sum_{n \in Singlets} tdm_0n tdm_n0
     tdtd = spinize(tdtd_singlets)
     energy = np.einsum("pqrs,pqrs", dv, tdtd, optimize=True)
     return 0.5 * energy
@@ -509,64 +495,35 @@ def _eval_W_alpha_singlets(tdtd_singlets, dv):
 
 def _eval_W_alpha_triplets(tdtd_triplets, dv):
     # f(alpha) = 0.5 * \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) Gamma_term^{\alpha}_{pqrs}
-    # Gamma_term = \sum_{n \in Triplets} tdm_0n tdm_n0
-    tdtd = from_unrestricted([tdtd_triplets, -tdtd_triplets, tdtd_triplets]) # tdtd_aa, tdtd_ab, tsts_bb
+    # where: Gamma_term = \sum_{n \in Triplets} tdm_0n tdm_n0
+    tdtd = from_unrestricted(
+        [tdtd_triplets, -tdtd_triplets, tdtd_triplets]
+    )  # tdtd_aa, tdtd_ab, tsts_bb
     energy = np.einsum("pqrs,pqrs", dv, tdtd, optimize=True)
     return 0.5 * energy
 
 
 def _eval_W_alpha_constant_terms(dv, rdm1, rdm2, summall, invtol):
-    # 0.5 * \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) Gamma_terms_{pqrs}
-    # Gamma_terms = (gamma_{pr} * gamma_{qs} + delta_{qr} * gamma_{ps})
-    #             - Gamma_^{\alpha=0}
+    # f = 0.5 * \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) Gamma_terms_{pqrs}
+    # where: Gamma_terms = (gamma_{pr} * gamma_{qs} + delta_{qr} * gamma_{ps}) - Gamma_^{\alpha=0}
     n = rdm1.shape[0]
-    rhs = _get_pherpa_metric_matrix(rdm1).reshape(n ** 2, n ** 2)
-    temp = _alpha_independent_terms_rdm2_alpha(rdm1, rhs, summall, invtol)
-    temp -= _rdm2_a0(rdm2, rhs, summall, invtol)
+    metric = _get_pherpa_metric_matrix(rdm1).reshape(n ** 2, n ** 2)
+    temp = _perturbed_rdm2_constant_terms(rdm1, metric, summall, invtol)
+    temp -= _zeroth_order_rdm2(rdm2, metric, summall, invtol)
     return 0.5 * np.einsum("pqrs,pqrs", dv, temp, optimize=True)
 
 
-def ac_integrand_pherpa(lam, h0, v0, dh, dv, dm1, dm2, summall=True, invtol=1.0e-7, solvertype="nonsymm"):
+### End of utility functions
+
+
+def ac_integrand_pherpa(
+    lam, h0, v0, dh, dv, dm1, dm2, summall=True, invtol=1.0e-7, solvertype="nonsymm"
+):
     """Compute the integrand of the adiabatic connection formulation.
 
     .. math::
     W(\alpha) = 0.5 \sum_{pqrs} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) (\Gamma^{\alpha}_{pqrs} - \Gamma^{\alpha=0}_{pqrs})
 
-    where :math:`\Gamma^{\alpha}_{pqrs}` is
-
-    .. math::
-    \Gamma^{\alpha}_{pqrs} = \gamma^{\alpha=0}_{pr} \gamma^{\alpha=0}_{qs} 
-    + \sum_{\nu \in Singlets} \gamma^{\alpha;0 \nu}_{pr} \gamma^{\alpha;\nu 0}_{qs} 
-    + \sum_{\nu \in Triplets} \gamma^{\alpha;0 \nu}_{pr} \gamma^{\alpha;\nu 0}_{qs} 
-    - \delta_{ps} \gamma^{\alpha=0}_{qr}
-
-    Parameters
-    ----------
-    lam : _type_
-        _description_
-    h0 : _type_
-        _description_
-    v0 : _type_
-        _description_
-    dh : _type_
-        _description_
-    dv : _type_
-        _description_
-    dm1 : _type_
-        _description_
-    dm2 : _type_
-        _description_
-    summall : bool, optional
-        _description_, by default True
-    invtol : _type_, optional
-        _description_, by default 1.0e-7
-    solvertype : str, optional
-        _description_, by default "nonsymm"
-
-    Returns
-    -------
-    _type_
-        _description_
     """
     # Compute H^alpha
     h = lam * dh
@@ -579,7 +536,7 @@ def ac_integrand_pherpa(lam, h0, v0, dh, dv, dm1, dm2, summall=True, invtol=1.0e
     energy = _eval_W_alpha_singlets(tdtd_aa, dv)
 
     # Eval TDMs at alpha from particle-hole triplets transitions and compute energy
-    tdtd_aa = _eval_tdtd_alpha_mtx_from_erpa(EET, h, v, dm1, dm2, invtol, solvertype)    
+    tdtd_aa = _eval_tdtd_alpha_mtx_from_erpa(EET, h, v, dm1, dm2, invtol, solvertype)
     energy += _eval_W_alpha_triplets(tdtd_aa, dv)
 
     # Eval perturbation independent terms
@@ -589,7 +546,7 @@ def ac_integrand_pherpa(lam, h0, v0, dh, dv, dm1, dm2, summall=True, invtol=1.0e
 
 
 def eval_ecorr(h_0, v_0, h_1, v_1, dm1, dm2, summ_all=True, inv_tol=1.0e-7, nint=5):
-    """Compute the (dynamic) correlation energy from the adiabatic connection formulation and 
+    """Compute the residual correlation energy from the adiabatic connection formulation and 
     particle-hole ERPA.
 
     .. math::
@@ -633,15 +590,17 @@ def eval_ecorr(h_0, v_0, h_1, v_1, dm1, dm2, summ_all=True, inv_tol=1.0e-7, nint
     _type_
         _description_
     """
-    # H_1 - H_0
+    # One-body perturbation
     dh = h_1 - h_0
-    # V_1 - V_0
+    # Two-body perturbation
     dv = v_1 - v_0
 
     # Evaluate integrand function: W(alpha)
     @np.vectorize
-    def ac_integrand(alpha):        
-        return ac_integrand_pherpa(alpha, h_0, v_0, dh, dv, dm1, dm2, summall=summ_all, invtol=inv_tol)
+    def ac_integrand(alpha):
+        return ac_integrand_pherpa(
+            alpha, h_0, v_0, dh, dv, dm1, dm2, summall=summ_all, invtol=inv_tol
+        )
 
     # integrate function
     return fixed_quad(ac_integrand, 0, 1, n=nint)[0]
