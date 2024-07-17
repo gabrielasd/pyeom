@@ -18,8 +18,8 @@ r"""Test eomee.eomdea."""
 
 from eomee import DEAm
 
-from eomee.tools import (
-    find_datafiles,
+from eomee.test import find_datafile
+from eomee.tools.tools import (
     spinize,
     antisymmetrize,
     hartreefock_rdms,
@@ -56,7 +56,7 @@ def test_eomdea_one_body_term():
     # to spin orbital basis (internal representation in eomee code)
     # For this test the two-electron integrals are ignored and the
     # Hartree-Fock density matrices are used.
-    one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
+    one_mo = np.load(find_datafile("h2_hf_sto6g_oneint.npy"))
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
@@ -163,8 +163,8 @@ def test_eomdea_beIV_sto6g():
     # Be^+4 + 2e --> Be^+2   DEA < 0
     # using the MOs from neutral Be SCF calculation will give a negative DEA 
     # (i.e. the eigenvalue appears on the negative side of the RPA spectrum)
-    one_mo = spinize(np.load(find_datafiles("beII_sto6g_oneint.npy")))
-    two_mo = spinize(np.load(find_datafiles("beII_sto6g_twoint.npy")))
+    one_mo = spinize(np.load(find_datafile("beII_sto6g_oneint.npy")))
+    two_mo = spinize(np.load(find_datafile("beII_sto6g_twoint.npy")))
     one_dm = np.zeros((one_mo.shape[0],) * 2, dtype=one_mo.dtype)
     two_dm = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     nspin = one_mo.shape[0]
@@ -215,8 +215,8 @@ def test_eomdea_beII_sto6g():
     Test DEAm on Be+2 (STO-6G).
 
     """
-    one_mo = np.load(find_datafiles("beII_sto6g_oneint.npy"))
-    two_mo = np.load(find_datafiles("beII_sto6g_twoint.npy"))
+    one_mo = np.load(find_datafile("beII_sto6g_oneint.npy"))
+    two_mo = np.load(find_datafile("beII_sto6g_twoint.npy"))
     nspatial = one_mo.shape[0]
     nspin = 2 * nspatial
     npart = 2

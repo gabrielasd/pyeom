@@ -18,8 +18,8 @@ r"""Test eomee.excitation."""
 
 from eomee.excitation import EE, eval_ecorr, _eval_W_alpha_constant_terms
 
-from eomee.tools import (
-    find_datafiles,
+from eomee.test import find_datafile
+from eomee.tools.tools import (
     spinize,
     antisymmetrize,
     hartreefock_rdms,
@@ -146,8 +146,8 @@ def test_eomexc(filename, nparts, answer):
     cases 2 and 3: H-H bond 0.742 A
 
     """
-    one_mo = np.load(find_datafiles("{}_oneint.npy".format(filename)))
-    two_mo = np.load(find_datafiles("{}_twoint.npy".format(filename)))
+    one_mo = np.load(find_datafile("{}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafile("{}_twoint.npy".format(filename)))
     nbasis = one_mo.shape[0]
     na, nb = nparts
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
@@ -160,9 +160,9 @@ def test_eomexc(filename, nparts, answer):
 
 def test_eomexc_gvb_h2_631g():
     filename = 'h2_0.70_gvbpp_631g'
-    ham = np.load(find_datafiles("{}.ham.npz".format(filename)))
-    dms = np.load(find_datafiles("{}.dms.npz".format(filename)))
-    gem_m = np.load(find_datafiles("{}.geminals.npy".format(filename)))
+    ham = np.load(find_datafile("{}.ham.npz".format(filename)))
+    dms = np.load(find_datafile("{}.dms.npz".format(filename)))
+    gem_m = np.load(find_datafile("{}.geminals.npy".format(filename)))
     one_mo = ham['onemo']
     two_mo = ham["twomo"]
     dm1_a = dms['dm1'][0]
@@ -211,8 +211,8 @@ def test_eomexc_gvb_h2_631g():
 
 def test_eomexc_gvb_h2o_631g():
     filename = 'h2o_1.00_gvbpp_631g'
-    ham = np.load(find_datafiles("{}.ham.npz".format(filename)))
-    dms = np.load(find_datafiles("{}.dms.npz".format(filename)))
+    ham = np.load(find_datafile("{}.ham.npz".format(filename)))
+    dms = np.load(find_datafile("{}.dms.npz".format(filename)))
     one_mo = ham['onemo']
     two_mo = ham["twomo"]
     dm1_a = dms['rdm1'][0]
@@ -243,9 +243,9 @@ def test_eomexc_gvb_h2o_631g():
 
 def test_eomexc_gvb_h2_631g():
     filename = 'h2_0.70_gvbpp_631g'
-    ham = np.load(find_datafiles("{}.ham.npz".format(filename)))
-    dms = np.load(find_datafiles("{}.dms.npz".format(filename)))
-    gem_m = np.load(find_datafiles("{}.geminals.npy".format(filename)))
+    ham = np.load(find_datafile("{}.ham.npz".format(filename)))
+    dms = np.load(find_datafile("{}.dms.npz".format(filename)))
+    gem_m = np.load(find_datafile("{}.geminals.npy".format(filename)))
     one_mo = ham['onemo']
     two_mo = ham["twomo"]
     dm1_a = dms['dm1'][0]
@@ -268,7 +268,7 @@ def test_eomexc_gvb_h2_631g():
     triplets = [0.6729, 0.6729, 0.6729, 1.3819, 1.3819, 1.3819, 1.3819, 1.6211, 1.6211,
     1.6211, 1.6211, 2.2159, 2.2159, 2.2159, 2.2159, 2.4551, 2.4551, 2.4551, 2.4551]
     erpa = EE(h0, v0, rdm1, rdm2)
-    ev, cv = erpa.solve_dense(orthog="nonsymm")
+    ev, cv = erpa.solve_dense()
     # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
     singlets_ev = _pick_singlets(ev, cv)[0]
     triplets_ev = _pick_multiplets(ev, cv)[0]
@@ -281,7 +281,7 @@ def test_eomexc_gvb_h2_631g():
     triplets = [0.4182, 0.4182, 0.4182, 0.8364, 0.8364, 0.8364, 1.3622, 1.3622,
     1.3622, 1.467,  1.467,  1.467, 1.9592, 1.9592, 1.9592]
     erpa = EE(h1, v1, rdm1, rdm2)
-    ev, cv = erpa.solve_dense(orthog="nonsymm")
+    ev, cv = erpa.solve_dense(mode="nonsymm")
     # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
     singlets_ev = _pick_singlets(ev, cv)[0]
     triplets_ev = _pick_multiplets(ev, cv)[0]
@@ -292,8 +292,8 @@ def test_eomexc_gvb_h2_631g():
 
 def test_eomexc_gvb_h2o_631g():
     filename = 'h2o_1.00_gvbpp_631g'
-    ham = np.load(find_datafiles("{}.ham.npz".format(filename)))
-    dms = np.load(find_datafiles("{}.dms.npz".format(filename)))
+    ham = np.load(find_datafile("{}.ham.npz".format(filename)))
+    dms = np.load(find_datafile("{}.dms.npz".format(filename)))
     one_mo = ham['onemo']
     two_mo = ham["twomo"]
     dm1_a = dms['rdm1'][0]
@@ -310,7 +310,7 @@ def test_eomexc_gvb_h2o_631g():
     singlets = [0.33050385, 0.39671774, 0.43111097]
     triplets = [0.30006822, 0.36716561, 0.38073963]
     erpa = EE(h1, v1, rdm1, rdm2)
-    ev, cv = erpa.solve_dense(orthog="nonsymm")
+    ev, cv = erpa.solve_dense()
     # ev_p, cv_p, _ = pickpositiveeig(ev, cv)
     singlets_ev = _pick_singlets(ev, cv)[0]
     singlets_ev = _pickeig(singlets_ev, tol=0.001)[:3]
@@ -336,8 +336,8 @@ def test_reconstructed_2rdm_phrpa(filename, nparts, ehf):
     of the excitation operator) and reconstruct the 2-RDM.
 
     """
-    one_mo = np.load(find_datafiles("{}_oneint.npy".format(filename)))
-    two_mo = np.load(find_datafiles("{}_twoint.npy".format(filename)))
+    one_mo = np.load(find_datafile("{}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafile("{}_twoint.npy".format(filename)))
     nbasis = one_mo.shape[0]
     na, nb = nparts
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
@@ -380,8 +380,8 @@ def test_phrpa_adiabaticconection(filename, nparts, ehf):
     """Test ground state energy correction through eRPA.
 
     """
-    one_mo = np.load(find_datafiles("{}_oneint.npy".format(filename)))
-    two_mo = np.load(find_datafiles("{}_twoint.npy".format(filename)))
+    one_mo = np.load(find_datafile("{}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafile("{}_twoint.npy".format(filename)))
     nbasis = one_mo.shape[0]
     na, nb = nparts
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
@@ -420,9 +420,9 @@ def test_ac_gvb_h2_631g():
     E_corr = -0.00437571
 
     filename = 'h2_0.70_gvbpp_631g'
-    ham = np.load(find_datafiles("{}.ham.npz".format(filename)))
-    dms = np.load(find_datafiles("{}.dms.npz".format(filename)))
-    gem_m = np.load(find_datafiles("{}.geminals.npy".format(filename)))
+    ham = np.load(find_datafile("{}.ham.npz".format(filename)))
+    dms = np.load(find_datafile("{}.dms.npz".format(filename)))
+    gem_m = np.load(find_datafile("{}.geminals.npy".format(filename)))
     one_mo = ham['onemo']
     two_mo = ham['twomo']
     nuc = ham['nuc']
@@ -468,9 +468,9 @@ def test_ac_gvb_h2o_631g():
     E_corr = -0.06764874
 
     filename = 'h2o_1.00_gvbpp_631g'
-    ham = np.load(find_datafiles("{}.ham.npz".format(filename)))
-    dms = np.load(find_datafiles("{}.dms.npz".format(filename)))
-    gem_m = np.load(find_datafiles("{}.geminals.npy".format(filename)))
+    ham = np.load(find_datafile("{}.ham.npz".format(filename)))
+    dms = np.load(find_datafile("{}.dms.npz".format(filename)))
+    gem_m = np.load(find_datafile("{}.geminals.npy".format(filename)))
     one_mo = ham['onemo']
     two_mo = ham['twomo']
     nuc = ham['nuc']
