@@ -170,6 +170,30 @@ class DIP(EOMState):
         sqr_n = np.sqrt(np.abs(norm_factor))
         return (coeffs.T / sqr_n).T
     
+    def compute_tdm(self, coeffs):
+        r"""
+        Compute the transition RDMs
+
+        .. math::
+        \gamma^{0 \lambda}_{pq} = < \Psi^{(N)}_0 | a^\dagger_p a^\dagger_q | \Psi^{(N-2)}_\lambda >
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n**2)
+            Coefficients vector for the lambda-th double ionized state.
+        
+        Returns
+        -------
+        tdm : np.ndarray(n,n)
+            transition RDMs between the reference (ground) state and the double ionized state.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        coeffs = coeffs.reshape(self._n, self._n)
+        rhs = self.rhs.reshape(self.n,self.n,self.n,self.n)
+        return np.einsum("pqrs,rs->pq", rhs, coeffs)
+    
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, nint=50, *args, **kwargs):
         r"""

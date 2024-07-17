@@ -498,10 +498,6 @@ def eval_ecorr(h_0, v_0, h_1, v_1, dm1, dm2, summ_all=True, inv_tol=1.0e-7, nint
     nint : int, optional
         Order of quadrature integration, by default 5.
 
-    Returns
-    -------
-    _type_
-        _description_
     """
     # One-body perturbation
     dh = h_1 - h_0
