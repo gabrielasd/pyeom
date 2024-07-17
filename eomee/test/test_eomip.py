@@ -39,11 +39,6 @@ import pytest
 
 
 def incorrect_inputs():
-    listparam = np.load(find_datafile("be_sto3g_oneint_spino.npy"))
-    listparam = listparam.tolist()
-    matrix = np.load(find_datafile("be_sto3g_oneint_spino.npy"))
-    tensor = np.load(find_datafile("be_sto3g_twoint_spino.npy"))
-
     array2d = np.arange(16, dtype=float).reshape(4, 4)
     list2d = array2d.tolist()
     array4d = np.arange(16 * 16, dtype=float).reshape(4, 4, 4, 4)
