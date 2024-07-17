@@ -28,7 +28,6 @@ __all__ = [
     "from_unrestricted",
     "hartreefock_rdms",
     "find_datafiles",
-    "pickpositiveeig",
 ]
 
 DIRPATH = path.join(path.dirname(__file__), "test/", "data/")

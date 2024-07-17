@@ -21,8 +21,6 @@ import numpy as np
 from scipy.integrate import fixed_quad
 
 from eomee.eomdip import DIP, DIPm
-from eomee.tools import pickpositiveeig, spinize, from_unrestricted
-from eomee.solver import nonsymmetric, svd_lowdin, eig_pinv
 
 
 __all__ = [
