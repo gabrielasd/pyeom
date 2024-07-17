@@ -23,8 +23,8 @@ from eomee import (
     IPa,
 )
 
-from eomee.tools import (
-    find_datafiles,
+from eomee.test import find_datafile
+from eomee.tools.tools import (
     spinize,
     symmetrize,
     antisymmetrize,
@@ -39,10 +39,10 @@ import pytest
 
 
 def incorrect_inputs():
-    listparam = np.load(find_datafiles("be_sto3g_oneint_spino.npy"))
+    listparam = np.load(find_datafile("be_sto3g_oneint_spino.npy"))
     listparam = listparam.tolist()
-    matrix = np.load(find_datafiles("be_sto3g_oneint_spino.npy"))
-    tensor = np.load(find_datafiles("be_sto3g_twoint_spino.npy"))
+    matrix = np.load(find_datafile("be_sto3g_oneint_spino.npy"))
+    tensor = np.load(find_datafile("be_sto3g_twoint_spino.npy"))
 
     array2d = np.arange(16, dtype=float).reshape(4, 4)
     list2d = array2d.tolist()
@@ -104,7 +104,7 @@ def test_eomip_one_body_term():
     # to spin orbital basis (internal representation in eomee code)
     # For this test the two-electron integrals are ignored and the
     # Hartree-Fock density matrices are used.
-    one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
+    one_mo = np.load(find_datafile("h2_hf_sto6g_oneint.npy"))
     one_mo = spinize(one_mo)
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
@@ -153,9 +153,9 @@ def test_ionization_eom_methods(filename, nbasis, nocc, evidx, expected, tol, eo
 
     """
     na, nb = nocc
-    one_mo = np.load(find_datafiles("{0}_oneint.npy".format(filename)))
+    one_mo = np.load(find_datafile("{0}_oneint.npy".format(filename)))
     one_mo = spinize(one_mo)
-    two_mo = np.load(find_datafiles("{0}_twoint.npy".format(filename)))
+    two_mo = np.load(find_datafile("{0}_twoint.npy".format(filename)))
     two_mo = spinize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 

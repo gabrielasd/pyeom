@@ -22,8 +22,9 @@ from scipy.linalg import eig, svd
 import pytest
 
 from eomee import DIP, DIPm
-from eomee.tools import (
-    find_datafiles,
+
+from eomee.test import find_datafile
+from eomee.tools.tools import (
     spinize,
     symmetrize,
     antisymmetrize,
@@ -46,6 +47,7 @@ def test_eomdip_neigs():
     eom = DIP(one_mo, two_mo, one_dm, two_dm)
     assert eom.neigs == nspino ** 2
 
+
 def test_eomdip_one_body_term():
     r"""
     Check the one-body terms of the double ionization potential equation of motion are correct.
@@ -56,7 +58,7 @@ def test_eomdip_one_body_term():
     # to spin orbital basis (internal representation in eomee code)
     # For this test the two-electron integrals are ignored and the
     # Hartree-Fock density matrices are used.
-    one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
+    one_mo = np.load(find_datafile("h2_hf_sto6g_oneint.npy"))
     one_mo = spinize(one_mo)
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
@@ -83,7 +85,7 @@ def test_eomdip_two_body_terms():
     # to spin orbital basis (internal representation in eomee code)
     # For this test the two-electron integrals are ignored and the
     # Hartree-Fock density matrices are used.
-    one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
+    one_mo = np.load(find_datafile("h2_hf_sto6g_oneint.npy"))
     one_mo = spinize(one_mo)
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
@@ -238,8 +240,8 @@ def test_eomdip(filename, nparts, ehomo, nbasis, idx):
     case 1: H-H bond 0.742 A
 
     """
-    one_mo = np.load(find_datafiles("{}_oneint.npy".format(filename)))
-    two_mo = np.load(find_datafiles("{}_twoint.npy".format(filename)))
+    one_mo = np.load(find_datafile("{}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafile("{}_twoint.npy".format(filename)))
     assert np.allclose(nbasis, one_mo.shape[0])
     na, nb = nparts
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
@@ -261,9 +263,9 @@ def test_doubleionization_erpa_HeHcation_sto3g():
 
     """
     nbasis = 2
-    one_mo = np.load(find_datafiles("heh+_sto3g_oneint.npy"))
+    one_mo = np.load(find_datafile("heh+_sto3g_oneint.npy"))
     one_mo = spinize(one_mo)
-    two_mo = np.load(find_datafiles("heh+_sto3g_twoint.npy"))
+    two_mo = np.load(find_datafile("heh+_sto3g_twoint.npy"))
     two_mo = symmetrize(spinize(two_mo))
     two_mo = antisymmetrize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
@@ -304,9 +306,9 @@ def test_doubleionization_erpa_Ne_321g():
 
     """
     nbasis = 9
-    one_mo = np.load(find_datafiles("ne_321g_oneint.npy"))
+    one_mo = np.load(find_datafile("ne_321g_oneint.npy"))
     one_mo = spinize(one_mo)
-    two_mo = np.load(find_datafiles("ne_321g_twoint.npy"))
+    two_mo = np.load(find_datafile("ne_321g_twoint.npy"))
     two_mo = symmetrize(spinize(two_mo))
     two_mo = antisymmetrize(two_mo)
     one_dm, two_dm = hartreefock_rdms(nbasis, 5, 5)

@@ -18,11 +18,8 @@ r"""Test eomee.eomea."""
 
 from eomee import EA, EAc, EAa
 
-from eomee.tools import (
-    find_datafiles,
-    spinize,
-    hartreefock_rdms,
-)
+from eomee.test import find_datafile
+from eomee.tools.tools import spinize, hartreefock_rdms
 
 import numpy as np
 
@@ -57,7 +54,7 @@ def test_eomea_one_body_term():
     # For this test the two-electron integrals are neglected and the
     # Hartree-Fock density matrices are used.
     nbasis = 2
-    one_mo = np.load(find_datafiles("h2_hf_sto6g_oneint.npy"))
+    one_mo = np.load(find_datafile("h2_hf_sto6g_oneint.npy"))
     two_mo = np.zeros((one_mo.shape[0],) * 4, dtype=one_mo.dtype)
     one_dm, two_dm = hartreefock_rdms(nbasis, 1, 1)
 
@@ -98,8 +95,8 @@ def test_eomea(filename, nbasis, nocc, evidx, hf_vmo, tol):
 
     """
     na, nb = nocc
-    one_mo = np.load(find_datafiles("{0}_oneint.npy".format(filename)))
-    two_mo = np.load(find_datafiles("{0}_twoint.npy".format(filename)))
+    one_mo = np.load(find_datafile("{0}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafile("{0}_twoint.npy".format(filename)))
     nbasis = one_mo.shape[0]
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
@@ -124,8 +121,8 @@ def test_eadoublecommutator(filename, nbasis, nocc, evidx, hf_vmo, tol):
 
     """
     na, nb = nocc
-    one_mo = np.load(find_datafiles("{0}_oneint.npy".format(filename)))
-    two_mo = np.load(find_datafiles("{0}_twoint.npy".format(filename)))
+    one_mo = np.load(find_datafile("{0}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafile("{0}_twoint.npy".format(filename)))
     nbasis = one_mo.shape[0]
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
@@ -150,8 +147,8 @@ def test_eaanticommutator(filename, nbasis, nocc, evidx, hf_vmo, tol):
 
     """
     na, nb = nocc
-    one_mo = np.load(find_datafiles("{0}_oneint.npy".format(filename)))
-    two_mo = np.load(find_datafiles("{0}_twoint.npy".format(filename)))
+    one_mo = np.load(find_datafile("{0}_oneint.npy".format(filename)))
+    two_mo = np.load(find_datafile("{0}_twoint.npy".format(filename)))
     nbasis = one_mo.shape[0]
     one_dm, two_dm = hartreefock_rdms(nbasis, na, nb)
 
@@ -169,8 +166,8 @@ def test_electronaff_b_sto3g():
     HF MO_a: 0.29136562, 0.32299525, 0.38625451
 
     """
-    one_mo = np.load(find_datafiles("b_sto3g_oneint.npy"))
-    two_mo = np.load(find_datafiles("b_sto3g_twoint.npy"))
+    one_mo = np.load(find_datafile("b_sto3g_oneint.npy"))
+    two_mo = np.load(find_datafile("b_sto3g_twoint.npy"))
     nbasis = one_mo.shape[0]
     one_dm, two_dm = hartreefock_rdms(nbasis, 3, 2)
 
