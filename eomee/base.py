@@ -63,6 +63,7 @@ def verify_integrals(h, v):
     if not h.shape[0] == v.shape[0]:
         raise ValueError("The number of spin-orbitals between electron integrals don't match.")
 
+
 def verify_rdms(dm1, dm2):
     """Check the type, shape and symmetry of the 1- and 2-particle reduced density matrices.
 
@@ -97,10 +98,7 @@ def verify_rdms(dm1, dm2):
     # Symmetric permutations:
     onedm_symm = np.allclose(dm1, dm1.T)
     twodm_symm = np.all(
-        [
-            np.allclose(dm2, dm2.transpose(2, 3, 0, 1)),
-            np.allclose(dm2, dm2.transpose(1, 0, 3, 2)),
-        ]
+        [np.allclose(dm2, dm2.transpose(2, 3, 0, 1)), np.allclose(dm2, dm2.transpose(1, 0, 3, 2)),]
     )
     symmetries = {"1": onedm_symm, "2": twodm_symm}
     for number, symm in symmetries.items():
@@ -116,9 +114,7 @@ def verify_rdms(dm1, dm2):
         ]
     )
     if not twodm_asymm:
-        raise ValueError(
-            "2-particle density matrix does not satisfy the asymmetric permutations."
-        )
+        raise ValueError("2-particle density matrix does not satisfy the asymmetric permutations.")
 
 
 class EOMState(metaclass=ABCMeta):
@@ -167,7 +163,6 @@ class EOMState(metaclass=ABCMeta):
         self._invtol = INV_THRESHOLD
         self._eigtol = EIG_THRESHOLD
 
-
     @property
     def n(self):
         r"""
@@ -193,7 +188,7 @@ class EOMState(metaclass=ABCMeta):
 
         """
         raise NotImplementedError("Subclasses must overwrite this property")
-    
+
     @abstractproperty
     def normalize_eigvect(self):
         r""" Return the normalized eigenvector."""
@@ -285,7 +280,7 @@ class EOMState(metaclass=ABCMeta):
         """
         return self._rhs
 
-    def solve_dense(self, mode="nonsymm", pick_posw=True, normalize=True, *args, **kwargs):
+    def solve_dense(self, mode="nonsymm", invtol=None, pick_posw=True, normalize=False):
         r"""
         Solve the EOM eigenvalue system.
 
@@ -295,12 +290,12 @@ class EOMState(metaclass=ABCMeta):
             Specifies which method is used to solve the GEVP.
             Default is `nonsymm` in which the inverse of the right hand side matrix is taken.
         pick_posw : bool, optional
-            If True, only eigenpairs for positive transition energies are returned, otherwise only those with positive norm. 
-            Default is True.
+            If True, only eigenpairs for positive transition energies are returned, otherwise only
+            those with positive norm.
         normalize : bool, optional
-            If True, the eigenvectors are normalized. Default is True.
-        tol : float, optional
-            Tolerance for small singular values. Default: 1.0e-10
+            If True, the eigenvectors are normalized.
+        invtol : float, optional
+            Tolerance for small singular values. Default: 1.0e-7
 
 
         Returns
@@ -311,18 +306,19 @@ class EOMState(metaclass=ABCMeta):
             Eigenvector matrix (m eigenvectors).
 
         """
-        modes = {'nonsymm': eig_pinvb, 'symm': lowdin_svd, 'qtrunc': eig_pruneq_pinvb}
-        if not isinstance(self._invtol, float):
-            raise TypeError("Argument tol must be a float")        
+        modes = {"nonsymm": eig_pinvb, "symm": lowdin_svd, "qtrunc": eig_pruneq_pinvb}
+        if invtol is None:
+            invtol = self._invtol
+        # Check input parameters
+        if not isinstance(invtol, float):
+            raise TypeError("Argument invtol must be a float.")
         try:
             _solver = modes[mode]
         except KeyError:
-            print(
-                "Invalid mode parameter. Valid options are nonsymm, symm or qtrunc."
-            )
-        
+            print("Invalid mode parameter. Valid options are nonsymm, symm or qtrunc.")
+
         # Solve GEVP  and return only positive side of spectrum
-        w, v = _solver(self._lhs, self._rhs, tol=self._invtol)
+        w, v = _solver(self._lhs, self._rhs, tol=invtol)
 
         # Filter spectrum
         if pick_posw:
@@ -332,7 +328,7 @@ class EOMState(metaclass=ABCMeta):
             w, v = pick_nonzero(w, v, self._eigtol)
             norm = np.dot(v, np.dot(self._rhs, v.T))
             diag_n = np.diag(norm)
-            pnorm_idx = np.where(diag_n > 0)[0]  
+            pnorm_idx = np.where(diag_n > 0)[0]
             w = w[pnorm_idx]
             v = v[pnorm_idx]
 
@@ -344,10 +340,10 @@ class EOMState(metaclass=ABCMeta):
         if normalize:
             # Normalize eigenvectors
             v = np.array([self.normalize_eigvect(v_n) for v_n in v])
-        
+
         return w, v
 
-    def solve_sparse(self, nsols=6, err="ignore", *args, **kwargs):
+    def solve_sparse(self, nsols=6, sigma=1e-2, err="ignore", invtol=None, *args, **kwargs):
         r"""
         Solve the EOM eigenvalue system.
 
@@ -355,11 +351,14 @@ class EOMState(metaclass=ABCMeta):
         ----------
         nsols : int, optional
             Number of eigenpairs to find. Must be smaller than N-1.
+        sigma : real or complex, optional
+            Find eigenvalues near sigma using shift-invert mode. See `scipy.sparse.linalg.eigs` for
+            more details.
         err : ("warn" | "ignore" | "raise")
             What to do if a divide-by-zero floating point error is raised.
             Default behavior is to ignore divide by zero errors.
-        tol : float, optional
-            Tolerance for small singular values. Default: 1.0e-10
+        invtol : float, optional
+            Tolerance for small singular values. Default: 1.0e-7
 
         Returns
         -------
@@ -369,31 +368,30 @@ class EOMState(metaclass=ABCMeta):
             Eigenvector matrix (m eigenvectors).
 
         """
-        if not isinstance(self._invtol, float):
+        if invtol is None:
+            invtol = self._invtol
+        if not isinstance(invtol, float):
             raise TypeError("Argument tol must be a float")
-        # Invert RHS matrix
-        # RHS matrix SVD
+
+        # Invert the EOM metric matrix
         U, s, Vh = svd(self._rhs)
-        # Check singular value threshold
         with np.errstate(divide=err):
             s = s ** (-1)
-        s[s >= 1 / self._invtol] = 0.0
-        # S^(-1)
-        S_inv = np.diag(s)
-        # rhs^(-1)
-        rhs_inv = np.dot(U, np.dot(S_inv, Vh))
-        # Apply RHS^-1 * LHS
-        A = np.dot(rhs_inv, self._lhs)
-        # Run scipy `linalg.eigs` eigenvalue solver
-        w, v = eigs(A, k=nsols, which="SR", *args, **kwargs)
-        # Return w (eigenvalues)
-        #    and v (eigenvector column matrix -- so transpose it!)
+        s[s >= 1 / invtol] = 0.0  # Check the singular value threshold
+        S_inv = np.diag(s)  # S^(-1)
+        rhs_inv = np.dot(U, np.dot(S_inv, Vh))  # rhs^(-1)
+        A = np.dot(rhs_inv, self._lhs)  # Apply RHS^-1 * LHS
+
+        # Run scipy's sparse eigenvalue solver `linalg.eigs`
+        w, v = eigs(A, k=nsols, which="SR", sigma=sigma, *args, **kwargs)
 
         # Sort eigenvalues and eigenvectors in ascending order
         idx = np.argsort(w)
         w = w[idx]
         v = v[idx]
 
+        # Return w (eigenvalues)
+        #    and v (eigenvector column matrix -- so transpose it!)
         return np.real(w), np.real(v.T)
 
     @abstractmethod
