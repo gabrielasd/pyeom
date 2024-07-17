@@ -161,6 +161,30 @@ class DEA(EOMState):
         norm_factor = np.dot(coeffs, np.dot(self.rhs, coeffs.T))
         sqr_n = np.sqrt(np.abs(norm_factor))
         return (coeffs.T / sqr_n).T
+
+    def compute_tdm(self, coeffs):
+        r"""
+        Compute the transition RDMs
+
+        .. math::
+        \gamma^{0 \lambda}_{pq} = < \Psi^{(N)}_0 | a_p a_q | \Psi^{(N+2)}_\lambda >
+
+        Parameters
+        ----------
+        coeffs : np.ndarray(n**2)
+            Coefficients vector for the lambda-th two-electron attached state.
+        
+        Returns
+        -------
+        tdm : np.ndarray(n,n)
+            transition RDMs between the reference (ground) state and the two-electron attached state.
+
+        """
+        if not coeffs.shape[0] == self.neigs:
+            raise ValueError("Coefficients vector has the wrong shape, expected {self.neigs}, got {coeffs.shape[0]}.")
+        coeffs = coeffs.reshape(self._n, self._n)
+        rhs = self.rhs.reshape(self.n,self.n,self.n,self.n)
+        return np.einsum("pqrs,rs->pq", rhs, coeffs)
     
     @classmethod
     def erpa(cls, h_0, v_0, h_1, v_1, dm1, dm2, solver="nonsymm", eigtol=1.e-7, singl=True, nint=5):
