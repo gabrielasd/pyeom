@@ -45,28 +45,29 @@ def eig_invb(lhs, rhs, tol=1.0e-10, err="ignore"):
         s = s ** (-1)
     s[s >= 1 / tol] = 0.0
     S_inv = np.diag(s)  # S^(-1)
-    rhs_inv = np.dot(U, np.dot(S_inv, V))   # rhs^(-1)
-    A = np.dot(rhs_inv, lhs)    # Apply RHS^-1 * LHS
+    rhs_inv = np.dot(U, np.dot(S_inv, V))  # rhs^(-1)
+    A = np.dot(rhs_inv, lhs)  # Apply RHS^-1 * LHS
     # Run scipy `linalg.eig` eigenvalue solver
     w, v = eig(A)
     # if len(np.iscomplex(w)) != 0:
     #     print(f'Warning: complex eigenvalues found.')
-    # # Return w (eigenvalues)
-    # #    and v (eigenvector column matrix -- so transpose it!)
+
+    # Return w (eigenvalues)
+    #    and v (eigenvector column matrix -- so transpose it!)
     return w, v.T
 
 
 def _zeroing_rows_and_cols(h, s, lindep):
-        # HARD CODED
-        # lindep = 1.0e-2
-        seig = np.diag(s)
-        idx = np.abs(seig) < lindep
-        t = np.ones_like(seig)
-        t[idx] = 0.
-        T = np.diag(t)
-        A = T@h@T
-        B = T@s@T
-        return A, B
+    # HARD CODED
+    # lindep = 1.0e-2
+    seig = np.diag(s)
+    idx = np.abs(seig) < lindep
+    t = np.ones_like(seig)
+    t[idx] = 0.0
+    T = np.diag(t)
+    A = T @ h @ T
+    B = T @ s @ T
+    return A, B
 
 
 def eig_pinvb(lhs, rhs, tol=1.0e-10):
@@ -106,8 +107,8 @@ def eig_pinvb(lhs, rhs, tol=1.0e-10):
     return w, v.T
 
 
-def _pruneQ(L, R, tol):     
-    # Fid the eigenvalues of the metric matrix smaller than a tolerance assuming 
+def _pruneQ(L, R, tol):
+    # Fid the eigenvalues of the metric matrix smaller than a tolerance assuming
     # it is a Hermitian matrix.
     s, _U = eigh(R)
     _idx = np.where(np.abs(s) > tol)[0]
@@ -215,10 +216,10 @@ def lowdin(lhs, rhs, tol=1.0e-10, err="ignore"):
     # assert np.allclose(rhs, rhs.T)
     # assert np.allclose(lhs, lhs.T)
     w, v = eigh(rhs)
-    w[w < 0.] = 0.
+    w[w < 0.0] = 0.0
     with np.errstate(divide=err):
         inv_sqrt_w = w ** (-0.5)
-    inv_sqrt_w[inv_sqrt_w > 1./tol] = 0.
+    inv_sqrt_w[inv_sqrt_w > 1.0 / tol] = 0.0
     ort_m = np.dot(v, np.dot(np.diag(inv_sqrt_w), v.T))
     Hm = np.dot(ort_m.T, np.dot(lhs, ort_m))
     # assert np.allclose(Hm, Hm.T)
@@ -264,10 +265,10 @@ def lowdin_complex(lhs, rhs, tol=1.0e-10):
     ort_m = np.dot(v, np.dot(inv_sqrt_w, v.T))
     Hm = np.dot(ort_m.T, np.dot(lhs, ort_m))
     # assert np.allclose(Hm, Hm.T)
-    w, v= eigh(Hm)
+    w, v = eigh(Hm)
     v = np.dot(ort_m, v)
     if len(np.iscomplex(w)) != 0:
-        print(f'Warning: complex eigenvalues found.')
+        print(f"Warning: complex eigenvalues found.")
     return w, v.T
 
 
@@ -284,13 +285,15 @@ def pick_positive(ev, cv, cutoff):
     real_indices = np.where(ev.imag < IMAG_THRESHOLD)[0]
     nimag = len(ev) - len(real_indices)
     if nimag != 0:
-        print(f"""Warning: {nimag} complex eigenvalues found. 
-              These will be removed from the final solution set.""")
-        
+        print(
+            f"""Warning: {nimag} complex eigenvalues found. 
+              These will be removed from the final solution set."""
+        )
+
     # Remove complex eigenvalues and corresponding eigenvectors
     real_ev = ev[real_indices]
     real_cv = cv[real_indices]
-            
+
     return np.real(real_ev), np.real(real_cv)
 
 
@@ -307,14 +310,16 @@ def pick_nonzero(ev, cv, cutoff):
     real_indices = np.where(ev.imag < IMAG_THRESHOLD)[0]
     nimag = len(ev) - len(real_indices)
     if nimag != 0:
-        print(f"""Warning: {nimag} complex eigenvalues found. 
-              These will be removed from the final solution set.""")
-        
+        print(
+            f"""Warning: {nimag} complex eigenvalues found. 
+              These will be removed from the final solution set."""
+        )
+
     # Remove complex eigenvalues and corresponding eigenvectors
     real_ev = ev[real_indices]
     real_cv = cv[real_indices]
-            
-    return real_ev, real_cv   
+
+    return real_ev, real_cv
 
 
 def _pickeig(w, tol=0.001):
@@ -334,12 +339,12 @@ def _pick_singlets(eigvals, eigvecs):
     b = eigvals[idx]
     eigvecs = eigvecs[idx]
     # start picking up singlets
-    mask = np.append(True, np.diff(b)) > 1.e-7
+    mask = np.append(True, np.diff(b)) > 1.0e-7
     unique_eigs_idx = np.where(mask)[0]
     number_unique_eigs = np.diff(unique_eigs_idx)
     idx = np.where(number_unique_eigs == 1)[0]
     singlet_idx = unique_eigs_idx[idx]
-    if unique_eigs_idx[-1] == len(eigvals)-1:
+    if unique_eigs_idx[-1] == len(eigvals) - 1:
         singlet_idx = np.append(singlet_idx, unique_eigs_idx[-1])
     singlets_ev = b[singlet_idx]
     singlets_cv = eigvecs[singlet_idx]

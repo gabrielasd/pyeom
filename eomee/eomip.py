@@ -115,7 +115,7 @@ class IP(EOMState):
         sqr_n = np.sqrt(np.abs(norm_factor))
         return (coeffs.T / sqr_n).T
     
-    def compute_td(self, coeffs):
+    def compute_tdm(self, coeffs):
         r"""
         Compute the transition density matrix.
 
