@@ -16,8 +16,6 @@
 r"""Electron integral transformations from spatial to spin representation and Hartree-Fock RDMs."""
 
 
-from os import path
-
 import numpy as np
 
 
@@ -27,16 +25,7 @@ __all__ = [
     "antisymmetrize",
     "from_unrestricted",
     "hartreefock_rdms",
-    "find_datafiles",
 ]
-
-DIRPATH = path.join(path.dirname(__file__), "test/", "data/")
-
-
-def find_datafiles(file_name):
-    r""" """
-    datapath = path.join(path.abspath(DIRPATH), file_name)
-    return path.abspath(datapath)
 
 
 def spinize(x):
@@ -234,8 +223,8 @@ def spinize_rdms(blocks):
         y[:n, n:, :n, n:] = blocks[2]
         y[n:, :n, n:, :n] = blocks[2]
         y[n:, n:, n:, n:] = blocks[1]
-        y[:n, n:, n:, :n] = - blocks[2].transpose(0, 1, 3, 2)
-        y[n:, :n, :n, n:] = - blocks[2].transpose(1, 0, 2, 3)
+        y[:n, n:, n:, :n] = -blocks[2].transpose(0, 1, 3, 2)
+        y[n:, :n, :n, n:] = -blocks[2].transpose(1, 0, 2, 3)
     else:
         raise ValueError("Invalid input")
     return y
@@ -272,25 +261,25 @@ def make_doci_hamiltonian(one_mo, two_mo):
 def make_doci_ham_spinized(one_mo, two_mo):
     # DOCI Hamiltonian
     n = one_mo.shape[0]
-    m = 2*n
-    one_int_aa = np.zeros((n,n))
-    two_int_aaaa = np.zeros((n,n,n,n))
-    two_int_abab = np.zeros((n,n,n,n))
+    m = 2 * n
+    one_int_aa = np.zeros((n, n))
+    two_int_aaaa = np.zeros((n, n, n, n))
+    two_int_abab = np.zeros((n, n, n, n))
 
     for p in range(n):
         one_int_aa[p, p] = one_mo[p, p]
     # aaaa
     for p in range(n):
         for q in range(n):
-            #may need to exclude p==q
-            two_int_aaaa[p, q, p, q] = two_mo[p, q, p, q] 
+            # may need to exclude p==q
+            two_int_aaaa[p, q, p, q] = two_mo[p, q, p, q]
             two_int_aaaa[p, q, q, p] = two_mo[p, q, q, p]
-    # abab        
+    # abab
     for p in range(n):
         for q in range(n):
             two_int_abab[p, p, q, q] = two_mo[p, p, q, q]
-            two_int_abab[p, q, p, q] = two_mo[p, q, p, q] # p==q overwrites above
-    
+            two_int_abab[p, q, p, q] = two_mo[p, q, p, q]  # p==q overwrites above
+
     _h = np.zeros((m, m))
     _h[:n, :n] = one_int_aa
     _h[n:, n:] = one_int_aa
@@ -301,7 +290,7 @@ def make_doci_ham_spinized(one_mo, two_mo):
     _v[n:, n:, n:, n:] = two_int_aaaa
     # abab
     _v[:n, n:, :n, n:] = two_int_abab
-    _v[n:, :n, n:, :n] = two_int_abab.transpose((1,0,3,2))
+    _v[n:, :n, n:, :n] = two_int_abab.transpose((1, 0, 3, 2))
     return _h, _v
 
 
@@ -346,10 +335,10 @@ def make_gvbpp_hamiltonian(one_mo, two_mo, gem_matrix, dm1a):
             for q in set_i:
                 for r in set_j:
                     # g_pqrs_aaaa
-                    two_mo0[p, q] += dm1[r,r]*two_mo[p,r,q,r]
-                    two_mo0[p, q] -= dm1[r,r]*two_mo[p,r,r,q]
+                    two_mo0[p, q] += dm1[r, r] * two_mo[p, r, q, r]
+                    two_mo0[p, q] -= dm1[r, r] * two_mo[p, r, r, q]
                     # g_pqrs_abab
-                    two_mo0[p, q] += dm1[r,r]*two_mo[p,r,q,r]
+                    two_mo0[p, q] += dm1[r, r] * two_mo[p, r, q, r]
         return two_mo0
 
     def fill_ham_intra(one_mo0, two_mo0, one_mo, two_mo, set_i):
@@ -359,7 +348,7 @@ def make_gvbpp_hamiltonian(one_mo, two_mo, gem_matrix, dm1a):
                 for r in set_i:
                     for s in set_i:
                         two_mo0[p, q, r, s] = two_mo[p, q, r, s]
-        return one_mo0, two_mo0  
+        return one_mo0, two_mo0
 
     one_mo0 = np.zeros_like(one_mo)
     two_mo0 = np.zeros_like(two_mo)
@@ -370,71 +359,12 @@ def make_gvbpp_hamiltonian(one_mo, two_mo, gem_matrix, dm1a):
         for j in range(n_gems):
             if j != i:
                 gem_j = np.nonzero(gem_matrix.T[j])[0]
-                two_mo_inter = fill_ham_inter(two_mo_inter, two_mo, gem_i, gem_j, dm1a)    
+                two_mo_inter = fill_ham_inter(two_mo_inter, two_mo, gem_i, gem_j, dm1a)
 
     return one_mo_0, two_mo_0, two_mo_inter
 
-# # FIXME: make pickpositiveeig return sorted w, c and remove sorting from pick_{singlet, triplet}
-# def pickpositiveeig(w, cv, tol=0.01):
-#     r"""
-#     Adapted from PySCF TDSCF module.
 
-#     """
-#     idx = np.where(w > tol ** 2)[0]
-#     return w[idx], cv[idx], idx
-
-
-# def picknonzeroeigs(w, cv, tol=0.01):
-#     r"""
-#     Prune out the GEVP solutions whose eigenvalues are close to zero as determined by the tolerance tol.
-
-#     """
-#     idx = np.where(np.abs(w) > tol ** 2)[0]
-#     return w[idx], cv[idx], idx
-
-
-# def pickeig(w, tol=0.001):
-#     "adapted from PySCF TDSCF module"
-#     idx = np.where(w > tol ** 2)[0]
-#     # get unique eigvals
-#     b = np.sort(w[idx])
-#     d = np.append(True, np.diff(b))
-#     TOL = 1e-6
-#     w = b[d > TOL]
-#     return w
-
-
-# def pick_singlets(eigvals, eigvecs):
-#     # sort ev and cv correspondingly
-#     idx = eigvals.argsort()
-#     b = eigvals[idx]
-#     eigvecs = eigvecs[idx]
-#     # start picking up singlets
-#     mask = np.append(True, np.diff(b)) > 1.e-7
-#     unique_eigs_idx = np.where(mask)[0]
-#     number_unique_eigs = np.diff(unique_eigs_idx)
-#     idx = np.where(number_unique_eigs == 1)[0]
-#     singlet_idx = unique_eigs_idx[idx]
-#     if unique_eigs_idx[-1] == len(eigvals)-1:
-#         singlet_idx = np.append(singlet_idx, unique_eigs_idx[-1])
-#     singlets_ev = b[singlet_idx]
-#     singlets_cv = eigvecs[singlet_idx]
-#     return singlets_ev, singlets_cv, singlet_idx
-
-
-# def pick_multiplets(eigvals, eigvecs):
-#     # sort ev and cv correspondingly
-#     idx = eigvals.argsort()
-#     b = eigvals[idx]
-#     eigvecs = eigvecs[idx]
-#     # start picking up triplets
-#     _, _, singlet_idx = pick_singlets(eigvals, eigvecs)
-#     triplets_ev = np.delete(b, singlet_idx)
-#     triplets_cv = np.delete(eigvecs, singlet_idx, axis=0)
-#     return triplets_ev, triplets_cv
-
-
-class TDM():
+class TDM:
     """Compute the transition RDMs. Two options are possible: to use the commutator of
     the excitation operators (commutator=True) or not.
 
@@ -455,6 +385,7 @@ class TDM():
     np.ndarray((n**2, n, n))
         1-particle transition density matrix.
     """
+
     def __init__(self, cv, dm1, dm2) -> None:
         self._cv = cv
         self._dm1 = dm1
@@ -462,11 +393,11 @@ class TDM():
         self._n = dm1.shape[0]
 
     def get_tdm(self, op, comm=True):
-        if op == 'hh':
+        if op == "hh":
             rdmterms = self.hh(commutator=comm)
-        elif op == 'ph':
+        elif op == "ph":
             rdmterms = self.ph(commutator=comm)
-        elif op == 'pp':
+        elif op == "pp":
             rdmterms = self.pp(commutator=comm)
         else:
             raise ValueError("`op` must be one of `ph`, `pp` or `hh`.")
@@ -558,15 +489,15 @@ def reconstruct_dm2(cv, dm1, dm2, op, comm=True):
     """
     n = dm1.shape[0]
     tv = np.zeros_like(dm2)
-    if op == 'hh':
+    if op == "hh":
         # Gamma_pqrs = < | p^+ q^+ s r | >
         #            = \sum_{n=0} < | p^+ q^+|N-2> <N-2|s r| >
-        tdms = TDM(cv, dm1, dm2).get_tdm('hh', comm=comm)
+        tdms = TDM(cv, dm1, dm2).get_tdm("hh", comm=comm)
         tv = np.zeros_like(dm2)
         for rdm in tdms:
             tv += np.einsum("pq,rs->pqrs", rdm, rdm, optimize=True)
-        return tv/2
-    elif op == 'pp':
+        return tv / 2
+    elif op == "pp":
         # Gamma_pqrs = < | p^+ q^+ s r | >
         #            = \deta_ps \delta_rq - delta_pr \delta_sq
         #            + \delta_qs \gamma_pr - delta_qr \gamma_ps
@@ -581,11 +512,11 @@ def reconstruct_dm2(cv, dm1, dm2, op, comm=True):
         linear_terms = eye_eye + eye_dm1
         # Compute term involvin the tdms
         # \sum_{n=0} < |s r|N+2> <N+2|p^+ q^+| >
-        tdms = TDM(cv, dm1, dm2).get_tdm('pp', comm=comm)
+        tdms = TDM(cv, dm1, dm2).get_tdm("pp", comm=comm)
         for rdm in tdms:
             tv += np.einsum("sr,qp->pqrs", rdm, rdm, optimize=True)
-        return linear_terms + tv/2
-    elif op == 'ph':
+        return linear_terms + tv / 2
+    elif op == "ph":
         # Gamma_pqrs = < | p^+ q^+ s r | >
         #            = - < | p^+ q^+ r s | >
         #            = - \delta_qr * \gamma_ps + \gamma_pr * \gamma_qs
@@ -595,212 +526,13 @@ def reconstruct_dm2(cv, dm1, dm2, op, comm=True):
         linear_terms -= np.einsum("qr,ps->pqrs", np.eye(n), dm1, optimize=True)
         # Compute term involvin the tdms
         # \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
-        tdms = TDM(cv, dm1, dm2).get_tdm('ph', comm=comm)
+        tdms = TDM(cv, dm1, dm2).get_tdm("ph", comm=comm)
         for rdm in tdms:
             tv += np.einsum("pr,qs->pqrs", rdm, rdm.T, optimize=True)
         return linear_terms + tv
     else:
         raise ValueError("`op` must be one of `ph`, `pp` or `hh`.")
-    
 
-def pick_singlets(eigvals, eigvecs):
-    # sort ev and cv correspondingly
-    idx = eigvals.argsort()
-    b = eigvals[idx]
-    eigvecs = eigvecs[idx]
-    # start picking up singlets
-    mask = np.append(True, np.diff(b)) > 1.e-7
-    unique_eigs_idx = np.where(mask)[0]
-    number_unique_eigs = np.diff(unique_eigs_idx)
-    idx = np.where(number_unique_eigs == 1)[0]
-    singlet_idx = unique_eigs_idx[idx]
-    if unique_eigs_idx[-1] == len(eigvals)-1:
-        singlet_idx = np.append(singlet_idx, unique_eigs_idx[-1])
-    singlets_ev = b[singlet_idx]
-    singlets_cv = eigvecs[singlet_idx]
-    return singlets_ev, singlets_cv, singlet_idx
-
-
-def pick_multiplets(eigvals, eigvecs):
-    # sort ev and cv correspondingly
-    idx = eigvals.argsort()
-    b = eigvals[idx]
-    eigvecs = eigvecs[idx]
-    # start picking up triplets
-    _, _, singlet_idx = pick_singlets(eigvals, eigvecs)
-    triplets_ev = np.delete(b, singlet_idx)
-    triplets_cv = np.delete(eigvecs, singlet_idx, axis=0)
-    return triplets_ev, triplets_cv
-
-
-class TDM():
-    """Compute the transition RDMs. Two options are possible: to use the commutator of
-    the excitation operators (commutator=True) or not.
-
-    Parameters
-    ----------
-    cv : np.ndarray((n**2, n**2))
-        Eigenvector matrix.
-    dm1 : np.ndarray((n, n))
-        Spin resolved 1-particle reduced density matrix.
-    dm2 : np.ndarray((n, n, n, n))
-        Spin resolved 2-particle reduced density matrix.
-    commutator : bool, optional
-        Form used to approximate the transition-RDMs, one of commutator (True) or no commutator
-        (False), by default True
-
-    Returns
-    -------
-    np.ndarray((n**2, n, n))
-        1-particle transition density matrix.
-    """
-    def __init__(self, cv, dm1, dm2) -> None:
-        self._cv = cv
-        self._dm1 = dm1
-        self._dm2 = dm2
-        self._n = dm1.shape[0]
-
-    def get_tdm(self, op, comm=True):
-        if op == 'hh':
-            rdmterms = self.hh(commutator=comm)
-        elif op == 'ph':
-            rdmterms = self.ph(commutator=comm)
-        elif op == 'pp':
-            rdmterms = self.pp(commutator=comm)
-        else:
-            raise ValueError("`op` must be one of `ph`, `pp` or `hh`.")
-        cv = self._cv.reshape(self._cv.shape[0], self._n, self._n)
-        return np.einsum("mrs,pqsr->mpq", cv, rdmterms)
-
-    def ph(self, commutator=True):
-        if commutator:
-            rdm_terms = np.einsum("li,kj->klji", np.eye(self._n), self._dm1, optimize=True)
-            rdm_terms -= np.einsum("kj,il->klji", np.eye(self._n), self._dm1, optimize=True)
-        else:
-            rdm_terms = np.einsum("kj,li->klji", self._dm1, np.eye(self._n), optimize=True)
-            rdm_terms -= np.einsum("kijl->klji", self._dm2, optimize=True)
-        return rdm_terms
-
-    def hh(self, commutator=True):
-        if commutator:
-            # < |[k^+ l^+, i j]| >
-            # \delta_{i k} \delta_{j l} - \delta_{i l} \delta_{j k}
-            rdm_terms = np.einsum("ik,jl->klji", np.eye(self._n), np.eye(self._n), optimize=True)
-            rdm_terms -= np.einsum("il,jk->klji", np.eye(self._n), np.eye(self._n), optimize=True)
-            # - \delta_{i k} \left\{a^\dagger_{l} a_{j}\right\}
-            # + \delta_{i l} \left\{a^\dagger_{k} a_{j}\right\}
-            rdm_terms -= np.einsum("ik,jl->klji", np.eye(self._n), self._dm1, optimize=True)
-            rdm_terms += np.einsum("il,jk->klji", np.eye(self._n), self._dm1, optimize=True)
-            # - \delta_{j l} \left\{a^\dagger_{k} a_{i}\right\}
-            # + \delta_{j k} \left\{a^\dagger_{l} a_{i}\right\}
-            rdm_terms -= np.einsum("jl,ik->klji", np.eye(self._n), self._dm1, optimize=True)
-            rdm_terms += np.einsum("jk,il->klji", np.eye(self._n), self._dm1, optimize=True)
-        else:
-            # gamma_kl;n = \sum_ij < |k^+ l^+ i j| > c_ij;n
-            # c_ij;n \Gamma_klji
-            rdm_terms = self._dm2
-        return rdm_terms
-
-    def pp(self, commutator=True):
-        if commutator:
-            #
-            # < |[k l, i^+ j^+]| >
-            #
-            # \delta_{i l} \delta_{j k} -\delta_{i k} \delta_{j l}
-            rdm_terms = np.einsum("il,jk->klji", np.eye(self._n), np.eye(self._n), optimize=True)
-            rdm_terms -= np.einsum("ik,jl->klji", np.eye(self._n), np.eye(self._n), optimize=True)
-            # + \delta_{i k} \left\{a^\dagger_{j} a_{l}\right\}
-            # - \delta_{i l} \left\{a^\dagger_{j} a_{k}\right\}
-            rdm_terms += np.einsum("ik,jl->klji", np.eye(self._n), self._dm1, optimize=True)
-            rdm_terms -= np.einsum("il,jk->klji", np.eye(self._n), self._dm1, optimize=True)
-            # + \delta_{j l} \left\{a^\dagger_{i} a_{k}\right\}
-            # - \delta_{j k} \left\{a^\dagger_{i} a_{l}\right\}
-            rdm_terms += np.einsum("jl,ik->klji", np.eye(self._n), self._dm1, optimize=True)
-            rdm_terms -= np.einsum("jk,il->klji", np.eye(self._n), self._dm1, optimize=True)
-        else:
-            #
-            # < |k l i^+ j^+| >
-            #
-            # M_klji = \delta_li \delta_kj - \delta_ki \delta_lj
-            rdm_terms = np.einsum("li,kj->klji", np.eye(self._n), np.eye(self._n), optimize=True)
-            rdm_terms -= np.einsum("ki,lj->klji", np.eye(self._n), np.eye(self._n), optimize=True)
-            # M_klji += \delta_{ki} \gamma_{jl} - \delta_{kj} \gamma_{li}
-            #        += \delta_{lj} \gamma_{ki} - \delta_{li} \gamma_{jk}
-            rdm_terms += np.einsum("ki,lj->klji", np.eye(self._n), self._dm1, optimize=True)
-            rdm_terms -= np.einsum("kj,li->klji", np.eye(self._n), self._dm1, optimize=True)
-            rdm_terms -= np.einsum("li,kj->klji", np.eye(self._n), self._dm1, optimize=True)
-            rdm_terms += np.einsum("lj,ki->klji", np.eye(self._n), self._dm1, optimize=True)
-            # M_klji += \Gamma_klji
-            rdm_terms += self._dm2
-        return rdm_terms
-
-
-def reconstruct_dm2(cv, dm1, dm2, op, comm=True):
-    """Reconstruct the 2-RDM from the 1-RDM and transition-RDMs.
-
-    Parameters
-    ----------
-    cv : np.ndarray((n**2, n**2))
-        Eigenvector matrix.
-    dm1 : np.ndarray((n, n))
-        Spin resolved 1-particle reduced density matrix.
-    dm2 : np.ndarray((n, n, n, n))
-        Spin resolved 2-particle reduced density matrix.
-    comm : bool, optional
-        Form used to approximate the transition-RDMs, one of commutator (True) or no commutator
-        (False), by default True
-
-    Returns
-    -------
-    np.ndarray((n, n, n, n))
-        Reconstructed 2-RDM.
-    """
-    n = dm1.shape[0]
-    tv = np.zeros_like(dm2)
-    if op == 'hh':
-        # Gamma_pqrs = < | p^+ q^+ s r | >
-        #            = \sum_{n=0} < | p^+ q^+|N-2> <N-2|s r| >
-        tdms = TDM(cv, dm1, dm2).get_tdm('hh', comm=comm)
-        tv = np.zeros_like(dm2)
-        for rdm in tdms:
-            tv += np.einsum("pq,rs->pqrs", rdm, rdm, optimize=True)
-        return tv/2
-    elif op == 'pp':
-        # Gamma_pqrs = < | p^+ q^+ s r | >
-        #            = \deta_ps \delta_rq - delta_pr \delta_sq
-        #            + \delta_qs \gamma_pr - delta_qr \gamma_ps
-        #            - \delta_ps \gamma_qr + delta_pr \gamma_qs
-        #            + \sum_{n=0} < |s r|N+2> <N+2|p^+ q^+| >
-        eye_eye = np.einsum("ps,rq->pqrs", np.eye(n), np.eye(n), optimize=True)
-        eye_eye -= np.einsum("pr,sq->pqrs", np.eye(n), np.eye(n), optimize=True)
-        eye_dm1 = np.einsum("qs,pr->pqrs", np.eye(n), dm1, optimize=True)
-        eye_dm1 -= np.einsum("qr,ps->pqrs", np.eye(n), dm1, optimize=True)
-        eye_dm1 -= np.einsum("ps,qr->pqrs", np.eye(n), dm1, optimize=True)
-        eye_dm1 += np.einsum("pr,qs->pqrs", np.eye(n), dm1, optimize=True)
-        linear_terms = eye_eye + eye_dm1
-        # Compute term involvin the tdms
-        # \sum_{n=0} < |s r|N+2> <N+2|p^+ q^+| >
-        tdms = TDM(cv, dm1, dm2).get_tdm('pp', comm=comm)
-        for rdm in tdms:
-            tv += np.einsum("sr,qp->pqrs", rdm, rdm, optimize=True)
-        return linear_terms + tv/2
-    elif op == 'ph':
-        # Gamma_pqrs = < | p^+ q^+ s r | >
-        #            = - < | p^+ q^+ r s | >
-        #            = - \delta_qr * \gamma_ps + \gamma_pr * \gamma_qs
-        #            + \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
-        # \gamma_pr * \gamma_qs - \delta_qr * \gamma_ps
-        linear_terms = np.einsum("pr,qs->pqrs", dm1, dm1, optimize=True)
-        linear_terms -= np.einsum("qr,ps->pqrs", np.eye(n), dm1, optimize=True)
-        # Compute term involvin the tdms
-        # \sum_{n!=0} (\gamma_pr;0n * \gamma_qs;n0)
-        tdms = TDM(cv, dm1, dm2).get_tdm('ph', comm=comm)
-        for rdm in tdms:
-            tv += np.einsum("pr,qs->pqrs", rdm, rdm.T, optimize=True)
-        return linear_terms + tv
-    else:
-        raise ValueError("`op` must be one of `ph`, `pp` or `hh`.")
-    
 
 def two_positivity_condition(matrix, nbasis, dm1, dm2):
     r""" P, Q and G (2-positivity) conditions for N-representability.
@@ -824,29 +556,29 @@ def two_positivity_condition(matrix, nbasis, dm1, dm2):
     """
     m = 2 * nbasis
     I = np.eye(m)
-    if matrix == 'p':
+    if matrix == "p":
         # P-condition: P >= 0
         # P_pqrs = <\Psi|a^\dagger_p a^\dagger_q s r|\Psi>
         #        = \Gamma_pqrs
-        return dm2   # P_matrix
-    elif matrix == 'q':
+        return dm2  # P_matrix
+    elif matrix == "q":
         # Q-condition: Q >= 0
         # Q_pqrs = <\Psi|a_p a_q s^\dagger r^\dagger|\Psi>
         #        = \Gamma_pqrs + \delta_qs \delta_pr - \delta_ps \delta_qr
         #        - \delta_qs \gamma_pr + \delta_ps \gamma_qr + \delta_qr \gamma_ps - \delta_pr \gamma_qs
         # Q_matrix = dm2
-        Q_matrix = (np.einsum('qs,pr->pqrs', I, I) -  np.einsum('ps,qr->pqrs', I, I))
-        Q_matrix -= (np.einsum('qs,pr->pqrs', I, dm1) +  np.einsum('pr,qs->pqrs', I, dm1))
-        Q_matrix += (np.einsum('ps,qr->pqrs', I, dm1) +  np.einsum('qr,ps->pqrs', I, dm1)) 
+        Q_matrix = np.einsum("qs,pr->pqrs", I, I) - np.einsum("ps,qr->pqrs", I, I)
+        Q_matrix -= np.einsum("qs,pr->pqrs", I, dm1) + np.einsum("pr,qs->pqrs", I, dm1)
+        Q_matrix += np.einsum("ps,qr->pqrs", I, dm1) + np.einsum("qr,ps->pqrs", I, dm1)
         Q_matrix += dm2
         return Q_matrix
-    elif matrix == 'g':
+    elif matrix == "g":
         # G-condition: G >= 0
         # G_pqrs = <\Psi|a^\dagger_p a_q s^\dagger r|\Psi>
         #        = \delta_qs \gamma_pr - \Gamma_psrq
-        return np.einsum('qs,pr->pqrs', I, dm1) - dm2.transpose((0,3,2,1))
+        return np.einsum("qs,pr->pqrs", I, dm1) - dm2.transpose((0, 3, 2, 1))
     else:
-        raise ValueError(f'Matrix must be one of `p`, `q` and `g`, {matrix} given.')
+        raise ValueError(f"Matrix must be one of `p`, `q` and `g`, {matrix} given.")
 
 
 def matrix_P_to_matrix(matrix, nbasis, dm1, dm2, matrixp=None):
@@ -875,26 +607,26 @@ def matrix_P_to_matrix(matrix, nbasis, dm1, dm2, matrixp=None):
     I = np.eye(m)
     # P_pqrs = <\Psi|a^\dagger_p a^\dagger_q s r|\Psi>
     if matrixp is None:
-        P_matrix = two_positivity_condition('p', nbasis, dm1, dm2)
+        P_matrix = two_positivity_condition("p", nbasis, dm1, dm2)
     else:
         P_matrix = matrixp
 
-    if matrix == 'g':
+    if matrix == "g":
         # P_pqrs = \delta_qs \gamma_pr - <\Psi|a^\dagger_p a_s q^\dagger r|\Psi>
         # G_psrq = \delta_qs \gamma_pr - P_pqrs = G_pqrs
-        return np.einsum('qs,pr->pqrs', I, dm1) - P_matrix
-    elif matrix == 'q':
+        return np.einsum("qs,pr->pqrs", I, dm1) - P_matrix
+    elif matrix == "q":
         # P_pqrs = <\Psi|a_p a_q s^\dagger r^\dagger|\Psi> - \delta_qs \delta_pr + \delta_ps \delta_qr
         #        + \delta_qs \gamma_pr - \delta_ps \gamma_qr - \delta_qr \gamma_ps + \delta_pr \gamma_qs
         # Q_pqrs = P_pqrs + \delta_qs \delta_pr - \delta_ps \delta_qr
         #        - \delta_qs \gamma_pr + \delta_ps \gamma_qr + \delta_qr \gamma_ps - \delta_pr \gamma_qs
         Q_matrix = P_matrix
-        Q_matrix += (np.einsum('qs,pr->pqrs', I, I) -  np.einsum('ps,qr->pqrs', I, I))
-        Q_matrix -= (np.einsum('qs,pr->pqrs', I, dm1) +  np.einsum('pr,qs->pqrs', I, dm1))
-        Q_matrix += (np.einsum('ps,qr->pqrs', I, dm1) +  np.einsum('qr,ps->pqrs', I, dm1)) 
-        return Q_matrix    
+        Q_matrix += np.einsum("qs,pr->pqrs", I, I) - np.einsum("ps,qr->pqrs", I, I)
+        Q_matrix -= np.einsum("qs,pr->pqrs", I, dm1) + np.einsum("pr,qs->pqrs", I, dm1)
+        Q_matrix += np.einsum("ps,qr->pqrs", I, dm1) + np.einsum("qr,ps->pqrs", I, dm1)
+        return Q_matrix
     else:
-        raise ValueError(f'Matrix must be `q` or `g`, {matrix} given.')
+        raise ValueError(f"Matrix must be `q` or `g`, {matrix} given.")
 
 
 def matrix_G_to_matrix(matrix, nbasis, dm1, dm2, matrixg=None):
@@ -923,27 +655,27 @@ def matrix_G_to_matrix(matrix, nbasis, dm1, dm2, matrixg=None):
     I = np.eye(m)
     # G_pqrs = <\Psi|a^\dagger_p a_q s^\dagger r|\Psi>
     if matrixg is None:
-        G_matrix = two_positivity_condition('g', nbasis, dm1, dm2)
+        G_matrix = two_positivity_condition("g", nbasis, dm1, dm2)
     else:
         G_matrix = matrixg
 
-    if matrix == 'p':
+    if matrix == "p":
         # G_pqrs = \delta_qs \gamma_pr - <\Psi|a^\dagger_p s^\dagger a_q r|\Psi>
-        # P_psrq = \delta_qs \gamma_pr - G_pqrs = P_pqrs        
-        return np.einsum('qs,pr->pqrs', I, dm1) - G_matrix
-    elif matrix == 'q':
+        # P_psrq = \delta_qs \gamma_pr - G_pqrs = P_pqrs
+        return np.einsum("qs,pr->pqrs", I, dm1) - G_matrix
+    elif matrix == "q":
         # G_pqrs = \delta_qs \gamma_pr - P_psrq
         # P_psrq = <\Psi|a_p a_s q^\dagger r^\dagger|\Psi> - \delta_qs \delta_pr + \delta_pq \delta_sr
         #        + \delta_qs \gamma_pr - \delta_pq \gamma_sr - \delta_sr \gamma_pq + \delta_pr \gamma_qs
         # Q_psrq = (\delta_qs \gamma_pr - G_pqrs) + \delta_qs \delta_pr - \delta_pq \delta_sr
         #        - \delta_qs \gamma_pr + \delta_pq \gamma_sr + \delta_sr \gamma_pq - \delta_pr \gamma_qs
-        Q_matrix = matrix_G_to_matrix('p', nbasis, dm1, dm2)   # P_pqrs
-        Q_matrix += (np.einsum('qs,pr->pqrs', I, I) -  np.einsum('ps,qr->pqrs', I, I))
-        Q_matrix -= (np.einsum('qs,pr->pqrs', I, dm1) +  np.einsum('pr,qs->pqrs', I, dm1))
-        Q_matrix += (np.einsum('ps,qr->pqrs', I, dm1) +  np.einsum('qr,ps->pqrs', I, dm1)) 
-        return Q_matrix    
+        Q_matrix = matrix_G_to_matrix("p", nbasis, dm1, dm2)  # P_pqrs
+        Q_matrix += np.einsum("qs,pr->pqrs", I, I) - np.einsum("ps,qr->pqrs", I, I)
+        Q_matrix -= np.einsum("qs,pr->pqrs", I, dm1) + np.einsum("pr,qs->pqrs", I, dm1)
+        Q_matrix += np.einsum("ps,qr->pqrs", I, dm1) + np.einsum("qr,ps->pqrs", I, dm1)
+        return Q_matrix
     else:
-        raise ValueError(f'Matrix must be `q` or `p`, {matrix} given.')
+        raise ValueError(f"Matrix must be `q` or `p`, {matrix} given.")
 
 
 def matrix_Q_to_matrix(matrix, nbasis, dm1, dm2, matrixq=None):
@@ -972,160 +704,24 @@ def matrix_Q_to_matrix(matrix, nbasis, dm1, dm2, matrixq=None):
     I = np.eye(m)
     # Q_pqrs = <\Psi|a_p a_q s^\dagger r^\dagger|\Psi>
     if matrixq is None:
-        Q_matrix = two_positivity_condition('q', nbasis, dm1, dm2)
+        Q_matrix = two_positivity_condition("q", nbasis, dm1, dm2)
     else:
         Q_matrix = matrixq
 
-    if matrix == 'p':
+    if matrix == "p":
         # Q_pqrs = <\Psi|a^\dagger_p a^\dagger_q s r|\Psi> + \delta_qs \delta_pr - \delta_ps \delta_qr
         #        - \delta_qs \gamma_pr + \delta_ps \gamma_qr + \delta_qr \gamma_ps - \delta_pr \gamma_qs
         # P_pqrs = Q_pqrs - \delta_qs \delta_pr + \delta_ps \delta_qr
         #        + \delta_qs \gamma_pr - \delta_ps \gamma_qr - \delta_qr \gamma_ps + \delta_pr \gamma_qs
         P_matrix = Q_matrix
-        P_matrix += (np.einsum('ps,qr->pqrs', I, I) - np.einsum('qs,pr->pqrs', I, I))
-        P_matrix += (np.einsum('qs,pr->pqrs', I, dm1) +  np.einsum('pr,qs->pqrs', I, dm1))
-        P_matrix -= (np.einsum('ps,qr->pqrs', I, dm1) +  np.einsum('qr,ps->pqrs', I, dm1))
+        P_matrix += np.einsum("ps,qr->pqrs", I, I) - np.einsum("qs,pr->pqrs", I, I)
+        P_matrix += np.einsum("qs,pr->pqrs", I, dm1) + np.einsum("pr,qs->pqrs", I, dm1)
+        P_matrix -= np.einsum("ps,qr->pqrs", I, dm1) + np.einsum("qr,ps->pqrs", I, dm1)
         return P_matrix
-    elif matrix == 'g':
+    elif matrix == "g":
         # G_pqrs = \delta_qs \gamma_pr - P_psrq
         # P_pqrs = Q_pqrs - \delta_qs \delta_pr + \delta_ps \delta_qr
         #        + \delta_qs \gamma_pr - \delta_ps \gamma_qr - \delta_qr \gamma_ps + \delta_pr \gamma_qs
-        return np.einsum('qs,pr->pqrs', I, dm1) - matrix_Q_to_matrix('p', nbasis, dm1, dm2)
+        return np.einsum("qs,pr->pqrs", I, dm1) - matrix_Q_to_matrix("p", nbasis, dm1, dm2)
     else:
-        raise ValueError(f'Matrix must be `p` or `g`, {matrix} given.')
-
-
-def brute_hherpa_lhs(h, v, dm1, dm2):
-    """hole-hole ERPA left-hand side supermatrix
-
-    Parameters
-    ----------
-    h : ndarray(n,n)
-        spin resolved one-electron integrals
-    v : ndarray(n,n,n,n)
-        spin resolved two-electron integrals (<pq|rs>)
-    dm1 : ndarray(n,n)
-        1-RDM
-    dm2 : ndarray(n,n,n,n)
-        2-RDM
-    """
-    n = h.shape[0]
-    I = np.eye(n, dtype=h.dtype)
-
-    a = np.einsum("ik,lj->klji", h, dm1)
-    a -= np.einsum("jk,li->klji", h, dm1)
-    a += np.einsum("jl,ki->klji", h, dm1)
-    a -= np.einsum("il,kj->klji", h, dm1)
-    #
-    b = np.einsum("ik,jp->ijkp", I, I)
-    hdm1 = np.einsum("pq,lq->pl", h, dm1)
-    a += np.einsum("pl,ijkp->klji", hdm1, b)
-    a -= np.einsum("pl,ijkp->klji", h, b)
-    b = np.einsum("ip,jk->ijpk", I, I)
-    a -= np.einsum("pl,ijpk->klji", hdm1, b)
-    a += np.einsum("pl,ijpk->klji", h, b)
-    #
-    b = np.einsum("il,jp->ijlp", I, I)
-    hdm1 = np.einsum("pq,kq->pk", h, dm1)
-    a += np.einsum("pk,ijlp->klji", h, b)
-    a -= np.einsum("pk,ijlp->klji", hdm1, b)
-    b = np.einsum("ip,jl->ijpl", I, I)
-    a -= np.einsum("pk,ijpl->klji", h, b)
-    a += np.einsum("pk,ijpl->klji", hdm1, b)
-    ##
-    # # b = np.einsum("pi,qj->pqij", I, I)
-    # # vI = np.einsum("pqrs,pqij->rsij", v, b)
-    # # b = np.einsum("kr,ls->klrs", I, I)
-    # # a -= 0.5 * np.einsum("rsij,klrs->klji", vI, b)
-    # # b = np.einsum("ks,lr->klsr", I, I)
-    # # a += 0.5 * np.einsum("rsij,klsr->klji", vI, b)
-    # # #
-    # # b = np.einsum("pj,qi->pqji", I, I)
-    # # vI = np.einsum("pqrs,pqji->rsji", v, b)
-    # # b = np.einsum("kr,ls->klrs", I, I)
-    # # a += 0.5 * np.einsum("rsji,klrs->klji", vI, b)
-    # # b = np.einsum("ks,lr->klsr", I, I)
-    # # a -= 0.5 * np.einsum("rsji,klsr->klji", vI, b)
-    nu = v - v.transpose(1, 0, 2, 3)
-    a -= np.einsum("ijkl->klji", nu)
-    ##
-    b = np.einsum("kr,ls->klrs", I, dm1)
-    b -= np.einsum("ks,lr->klrs", I, dm1)
-    b -= np.einsum("lr,ks->klrs", I, dm1)
-    b += np.einsum("ls,kr->klrs", I, dm1)
-    nu = v - v.transpose(1, 0, 2, 3)
-    a += 0.5 * np.einsum("ijrs,klrs->klji", nu, b)
-    #
-    b = np.einsum("qj,pi->qpji", I, dm1)
-    b -= np.einsum("qi,pj->qpji", I, dm1)
-    b -= np.einsum("pj,qi->qpji", I, dm1)
-    b += np.einsum("pi,qj->qpji", I, dm1)
-    nu = v - v.transpose(0, 1, 3, 2)
-    a += 0.5 * np.einsum("pqkl,qpji->klji", nu, b)
-    ##
-    b = np.einsum("pj,qr->pqjr", I, dm1)
-    b -= np.einsum("qj,pr->pqjr", I, dm1)
-    ii = np.einsum("ki,ls->klis", I, I)
-    ii -= np.einsum("li,ks->klis", I, I)
-    vb = np.einsum("pqrs,pqjr->sj", v, b)
-    a += 0.5 * np.einsum("sj,klis->klji", vb, ii)
-    #
-    b = np.einsum("pj,qs->pqjs", I, dm1)
-    b -= np.einsum("qj,ps->pqjs", I, dm1)
-    ii = np.einsum("li,kr->lkir", I, I)
-    ii -= np.einsum("ki,lr->lkir", I, I)
-    vb = np.einsum("pqrs,pqjs->rj", v, b)
-    a += 0.5 * np.einsum("rj,lkir->klji", vb, ii)
-    #
-    b = np.einsum("pi,qs->pqis", I, dm1)
-    b -= np.einsum("qi,ps->pqis", I, dm1)
-    ii = np.einsum("kj,lr->kljr", I, I)
-    ii -= np.einsum("lj,kr->kljr", I, I)
-    vb = np.einsum("pqrs,pqis->ri", v, b)
-    a += 0.5 * np.einsum("ri,kljr->klji", vb, ii)
-    #
-    b = np.einsum("pi,qr->pqir", I, dm1)
-    b -= np.einsum("qi,pr->pqir", I, dm1)
-    ii = np.einsum("lj,ks->lkjs", I, I)
-    ii -= np.einsum("kj,ls->lkjs", I, I)
-    vb = np.einsum("pqrs,pqir->si", v, b)
-    a += 0.5 * np.einsum("si,lkjs->klji", vb, ii)
-    ##
-    a -= 0.5 * np.einsum("jqks,qlsi->klji", v, dm2)
-    a += 0.5 * np.einsum("jqrk,qlri->klji", v, dm2)
-    a += 0.5 * np.einsum("iqks,qlsj->klji", v, dm2)
-    a -= 0.5 * np.einsum("iqrk,qlrj->klji", v, dm2)
-    #
-    a += 0.5 * np.einsum("jqls,qksi->klji", v, dm2)
-    a -= 0.5 * np.einsum("jqrl,qkri->klji", v, dm2)
-    a -= 0.5 * np.einsum("iqls,qksj->klji", v, dm2)
-    a += 0.5 * np.einsum("iqrl,qkrj->klji", v, dm2)
-    #
-    a += 0.5 * np.einsum("pjks,plsi->klji", v, dm2)
-    a -= 0.5 * np.einsum("pjrk,plri->klji", v, dm2)
-    a -= 0.5 * np.einsum("piks,plsj->klji", v, dm2)
-    a += 0.5 * np.einsum("pirk,plrj->klji", v, dm2)
-    #
-    a -= 0.5 * np.einsum("pjls,pksi->klji", v, dm2)
-    a += 0.5 * np.einsum("pjrl,pkri->klji", v, dm2)
-    a += 0.5 * np.einsum("pils,pksj->klji", v, dm2)
-    a -= 0.5 * np.einsum("pirl,pkrj->klji", v, dm2)
-    ##
-    vdm2 = np.einsum("iqrs,qlrs->il", v, dm2)
-    a += 0.5 * np.einsum("kj,il->klji", I, vdm2)
-    vdm2 = np.einsum("jqrs,qlrs->jl", v, dm2)
-    a -= 0.5 * np.einsum("ki,jl->klji", I, vdm2)
-    vdm2 = np.einsum("jqrs,qkrs->jk", v, dm2)
-    a += 0.5 * np.einsum("li,jk->klji", I, vdm2)
-    vdm2 = np.einsum("iqrs,qkrs->ik", v, dm2)
-    a -= 0.5 * np.einsum("lj,ik->klji", I, vdm2)
-    #
-    vdm2 = np.einsum("pjrs,plrs->jl", v, dm2)
-    a += 0.5 * np.einsum("ki,jl->klji", I, vdm2)
-    vdm2 = np.einsum("pirs,plrs->il", v, dm2)
-    a -= 0.5 * np.einsum("kj,il->klji", I, vdm2)
-    vdm2 = np.einsum("pirs,pkrs->ik", v, dm2)
-    a += 0.5 * np.einsum("lj,ik->klji", I, vdm2)
-    vdm2 = np.einsum("pjrs,pkrs->jk", v, dm2)
-    a -= 0.5 * np.einsum("li,jk->klji", I, vdm2)
-    return a.reshape(n**2, n**2)
+        raise ValueError(f"Matrix must be `p` or `g`, {matrix} given.")
