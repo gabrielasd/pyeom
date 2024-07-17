@@ -21,8 +21,10 @@ import numpy as np
 from scipy.integrate import fixed_quad
 
 from eomee.excitation import EE, EEm
-from eomee.tools import spinize, from_unrestricted
+from eomee.tools.tools import spinize, from_unrestricted
 from eomee.solver import eig_pinvb, lowdin_svd, eig_pruneq_pinvb, pick_positive, eig_invb
+from eomee.tools.erpaph import (_perturbed_rdm2_constant_terms, _zeroth_order_rdm2, _get_pherpa_metric_matrix,
+                           _sum_over_nstates_tdtd_matrices)
 
 
 __all__ = [
@@ -387,93 +389,6 @@ class EETm(EEm):
 
 ### Beggins definition of utility functions that will be used to compute the residual correlation energy
 ### with the `eval_ecorr` function defined at the end of this file.
-def _truncate_dm1dm1_matrix(nspins, ij_d_occs, _dm1dm1, _eigtol):
-    nt = nspins ** 2
-    truncated = np.zeros_like(_dm1dm1)
-    for pq in range(nt):
-        for rs in range(nt):
-            cond1 = np.abs(ij_d_occs[pq]) > _eigtol
-            cond2 = np.abs(ij_d_occs[rs]) > _eigtol
-            if cond1 and cond2:
-                p = pq // nspins
-                q = pq % nspins
-                r = rs // nspins
-                s = rs % nspins
-                truncated[p, r, q, s] = _dm1dm1[p, r, q, s]
-    return truncated
-
-
-def _truncate_eyedm1_matrix(nspins, ij_d_occs, _eyedm1, _eigtol):
-    nt = nspins ** 2
-    truncated = np.zeros_like(_eyedm1)
-    for pq in range(nt):
-        for rs in range(nt):
-            cond1 = np.abs(ij_d_occs[pq]) > _eigtol
-            cond2 = np.abs(ij_d_occs[rs]) > _eigtol
-            if cond1 and cond2:
-                p = pq // nspins
-                q = pq % nspins
-                r = rs // nspins
-                s = rs % nspins
-                truncated[p, q, r, s] = _eyedm1[p, q, r, s]
-    return truncated
-
-
-def _truncate_rdm2_matrix(nspins, ij_d_occs, _rdm2, _eigtol):
-    nt = nspins ** 2
-    truncated = np.zeros_like(_rdm2)
-    for pq in range(nt):
-        for rs in range(nt):
-            cond1 = np.abs(ij_d_occs[pq]) > _eigtol
-            cond2 = np.abs(ij_d_occs[rs]) > _eigtol
-            if cond1 and cond2:
-                p = pq // nspins
-                q = pq % nspins
-                r = rs // nspins
-                s = rs % nspins
-                truncated[p, r, q, s] = _rdm2[p, r, q, s]
-    return truncated
-
-
-def _perturbed_rdm2_constant_terms(_dm1, _rhs, _summall, _eigtol):
-    # (\gamma_pr * \gamma_qs - \delta_qr * \gamma_ps)
-    _n = _dm1.shape[0]
-    dm1dm1 = np.einsum("pr,qs->pqrs", _dm1, _dm1, optimize=True)
-    dm1_eye = np.einsum("qr,ps->pqrs", np.eye(_n), _dm1, optimize=True)
-    if not _summall:
-        d_occs_ij = np.diag(_rhs)
-        dm1dm1 = _truncate_dm1dm1_matrix(_n, d_occs_ij, dm1dm1, _eigtol)
-        dm1_eye = _truncate_eyedm1_matrix(_n, d_occs_ij, dm1_eye, _eigtol)
-    return dm1dm1 - dm1_eye
-
-
-def _zeroth_order_rdm2(_rdm2, _rhs, _summall, _eigtol):
-    _n = _rdm2.shape[0]
-    if not _summall:
-        d_occs_ij = np.diag(_rhs)
-        _rdm2 = _truncate_rdm2_matrix(_n, d_occs_ij, _rdm2, _eigtol)
-    return _rdm2
-
-
-def _get_pherpa_metric_matrix(dm1):
-    # Compute ph-ERPA metric matrix
-    # < |[p^+ q,s^+ r]| > = \delta_qs \gamma_pr - \delta_pr \gamma_sq
-    _n = dm1.shape[0]
-    _rdm_terms = np.einsum("qs,pr->pqrs", np.eye(_n), dm1, optimize=True)
-    _rdm_terms -= np.einsum("pr,sq->pqrs", np.eye(_n), dm1, optimize=True)
-    return _rdm_terms
-
-
-def _sum_over_nstates_tdtd_matrices(_k, _dm1, coeffs, dmterms):
-    # Compute transition RDMs
-    tdms = np.einsum("mrs,pqrs->mpq", coeffs.reshape(coeffs.shape[0], _k, _k), dmterms)
-    # Compute nonlinear energy term
-    _tdtd = np.zeros((_k, _k, _k, _k), dtype=_dm1.dtype)
-    for tdm in tdms:
-        _tdtd += np.einsum("pr,qs->pqrs", tdm, tdm.T, optimize=True)
-    return _tdtd
-
-
 def _eval_tdtd_alpha_mtx_from_erpa(erpa_gevp_type, h_l, v_l, dm1, dm2, invtol, solver_type):
     # Solve the perturbation dependent particle-hole ERPA equations
     ph = erpa_gevp_type(h_l, v_l, dm1, dm2)
@@ -511,8 +426,6 @@ def _eval_W_alpha_constant_terms(dv, rdm1, rdm2, summall, invtol):
     temp = _perturbed_rdm2_constant_terms(rdm1, metric, summall, invtol)
     temp -= _zeroth_order_rdm2(rdm2, metric, summall, invtol)
     return 0.5 * np.einsum("pqrs,pqrs", dv, temp, optimize=True)
-
-
 ### End of utility functions
 
 
