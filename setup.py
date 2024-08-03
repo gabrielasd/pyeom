@@ -67,6 +67,8 @@ EXTRAS_REQUIRE = {
 PACKAGES = [
     "eomee",
     "eomee.test",
+    "eomee.tools",
+    "eomee.spinadapted"
 ]
 
 
