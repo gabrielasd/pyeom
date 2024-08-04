@@ -32,6 +32,7 @@ from eomee.tools.erpahh import (
 __all__ = [
     "DIPS",
     "DIPT",
+    "eval_ecorr",
 ]
 
 
@@ -319,17 +320,19 @@ def ac_integrand_hherpa(
 
 
 def eval_ecorr(h_0, v_0, h_1, v_1, dm1, dm2, summ_all=True, inv_tol=1.0e-7, nint=5):
-    """Compute the residual correlation energy from the adiabatic connection formulation and 
-    hole-hole ERPA.
+    """Compute the residual correlation energy from the adiabatic connection formulation and hole-hole ERPA.
 
     .. math::
-    E_corr = < \Psi^{\alpha=1}_0 | \hat{H} | \Psi^{\alpha=1}_0 > - < \Psi^{\alpha=0}_0 | \hat{H} | \Psi^{\alpha=0}_0 >
-    = 0.5 \sum_{pqrs} \int_{0}_{1} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) (\Gamma^{\alpha}_{pqrs} - \Gamma^{\alpha=0}_{pqrs}) d \alpha
 
-    where :math:`\Gamma^{\alpha}_{pqrs}` is
+        E_{corr} &= < \Psi^{\\alpha=1}_0 | \hat{H} | \Psi^{\\alpha=1}_0 > - < \Psi^{\\alpha=0}_0 | \hat{H} | \Psi^{\\alpha=0}_0 >
+        
+        &= 0.5 \sum_{pqrs} \int_{0}^{1} (v^{\\alpha=1}_{pqrs} - v^{\\alpha=0}_{prqs}) (\Gamma^{\\alpha}_{pqrs} - \Gamma^{\\alpha=0}_{pqrs}) d \\alpha
+
+    where :math:`\Gamma^{\\alpha}_{pqrs}` is
 
     .. math::
-    \Gamma^{\alpha}_{pqrs} = \sum_{\nu !=0} \gamma^{\alpha;0 \nu}_{pq} \gamma^{\alpha;\nu 0}_{sr}
+
+        \Gamma^{\\alpha}_{pqrs} = \sum_{\\nu !=0} \gamma^{\\alpha;0 \\nu}_{pq} \gamma^{\\alpha;\\nu 0}_{sr}
 
     Parameters
     ----------

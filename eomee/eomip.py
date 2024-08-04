@@ -38,7 +38,7 @@ class IP(EOMState):
 
     .. math::
 
-        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
+        \mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
 
     where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
 
@@ -153,6 +153,8 @@ class IPc(EOMState):
 
     where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
 
+    .. math::
+
         A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \left[ a^{\dagger}_m, \left[\hat{H}, a_n \right]\right]\middle| \Psi^{(N)}_0 \right>
 
         U_{m,n} &= \left< \Psi^{(N)}_0 \middle| \left[a^{\dagger}_m, a_n \right] \middle| \Psi^{(N)}_0 \right>
@@ -266,6 +268,8 @@ class IPa(EOMState):
         &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
 
     where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
+
+    .. math::
 
         A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \Big\{ a^{\dagger}_m, \left[\hat{H}, a_n \right]\Big\} \middle| \Psi^{(N)}_0 \right>
 

@@ -1,40 +1,40 @@
 ..
-    : This file is part of EOMEE.
+    : This file is part of PyEOM.
     :
-    : EOMEE is free software: you can redistribute it and/or modify it under
+    : PyEOM is free software: you can redistribute it and/or modify it under
     : the terms of the GNU General Public License as published by the Free
     : Software Foundation, either version 3 of the License, or (at your
     : option) any later version.
     :
-    : EOMEE is distributed in the hope that it will be useful, but WITHOUT
+    : PyEOM is distributed in the hope that it will be useful, but WITHOUT
     : ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     : FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
     : for more details.
     :
     : You should have received a copy of the GNU General Public License
-    : along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+    : along with PyEOM. If not, see <http://www.gnu.org/licenses/>.
 
 .. _installation:
 
 Installation
 ############
 
-EOMEE might be available to install from PyPI or Conda later on, but for now
-you should install it manually via ``pip``. EOMEE is a pure Python library,
+PyEOM might be available to install from PyPI or Conda later on, but for now
+you should install it manually via ``pip``. PyEOM is a pure Python library,
 so this process is simple.
 
 Dependencies
 ============
 
-The following programs/libraries are required to run EOMEE:
+The following programs/libraries are required to run PyEOM:
 
 -  Python_ (≥3.6)
 -  NumPy_ (≥1.13)
 -  SciPy_ (≥1.0)
 -  Pytest_ (optional: to run tests)
--  Pip_ (optional: to install EOMEE)
+-  Pip_ (optional: to install PyEOM)
 
-The following programs/libraries are required to build the EOMEE documentation:
+The following programs/libraries are required to build the PyEOM documentation:
 
 -  Sphinx_ (≥ 3.5)
 -  `Read the Docs Sphinx Theme`__
@@ -46,13 +46,13 @@ Installing package
 
 Make sure compatible versions of NumPy_ and SciPy_ are installed.
 
-Run the following in your shell to download EOMEE via ``git``:
+Run the following in your shell to download PyEOM via ``git``:
 
 .. code:: shell
 
-    git clone https://github.com/gabrielasd/eomee.git && cd eomee
+    git clone https://github.com/gabrielasd/pyeom.git && cd pyeom
 
-Then, run the following to install EOMEE via ``pip``:
+Then, run the following to install PyEOM via ``pip``:
 
 .. code:: shell
 
@@ -69,9 +69,9 @@ __ Sphinx-RTD-Theme_
 
 .. code:: shell
 
-    pip install sphinx-rtd-theme --user
+    pip install sphinx-rtd-theme
 
-Then, after installing EOMEE, run the following to build the HTML documentation:
+Then, after installing PyEOM, run the following to build the HTML documentation:
 
 .. code:: shell
 

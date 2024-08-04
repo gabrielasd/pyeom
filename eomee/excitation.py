@@ -160,8 +160,10 @@ class EE(EOMState):
         Normalize coefficients vector.
 
         Make the solutions orthonormal with respect to the metric matrix U:
+        
         .. math::
-        \mathbf{c}^T \mathbf{U} \mathbf{c} = 1
+
+            \mathbf{c}^T \mathbf{U} \mathbf{c} = 1
 
         Parameters
         ----------
