@@ -77,7 +77,7 @@ __ Sphinx-RTD-Theme_
 
 .. code:: shell
 
-    pip install sphinx-rtd-theme --user
+    pip install sphinx-rtd-theme
 
 Then, after installing PyEOM, run the following to build the HTML documentation:
 
