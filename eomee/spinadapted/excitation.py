@@ -32,6 +32,7 @@ __all__ = [
     "EET",
     "EESm",
     "EETm",
+    "eval_ecorr",
 ]
 
 
@@ -459,19 +460,20 @@ def ac_integrand_pherpa(
 
 
 def eval_ecorr(h_0, v_0, h_1, v_1, dm1, dm2, summ_all=True, inv_tol=1.0e-7, nint=5):
-    """Compute the residual correlation energy from the adiabatic connection formulation and 
-    particle-hole ERPA.
+    """Compute the residual correlation energy from the adiabatic connection formulation and particle-hole ERPA.
 
     .. math::
-    E_corr = < \Psi^{\alpha=1}_0 | \hat{H} | \Psi^{\alpha=1}_0 > - < \Psi^{\alpha=0}_0 | \hat{H} | \Psi^{\alpha=0}_0 >
-    = 0.5 \sum_{pqrs} \int_{0}_{1} (v^{\alpha=1}_{pqrs} - v^{\alpha=0}_{prqs}) (\Gamma^{\alpha}_{pqrs} - \Gamma^{\alpha=0}_{pqrs}) d \alpha
+        
+        E_{corr} &= < \Psi^{\\alpha=1}_0 | \hat{H} | \Psi^{\\alpha=1}_0 > - < \Psi^{\\alpha=0}_0 | \hat{H} | \Psi^{\\alpha=0}_0 >
 
-    where :math:`\Gamma^{\alpha}_{pqrs}` is
+        &= 0.5 \sum_{pqrs} \int_{0}^{1} (v^{\\alpha=1}_{pqrs} - v^{\\alpha=0}_{prqs}) (\\Gamma^{\\alpha}_{pqrs} - \Gamma^{\\alpha=0}_{pqrs}) d \\alpha
+
+    where :math:`\Gamma^{\\alpha}_{pqrs}` is
 
     .. math::
-    \Gamma^{\alpha}_{pqrs} = \gamma^{\alpha=0}_{pr} \gamma^{\alpha=0}_{qs} 
-    + \sum_{\nu !=0} \gamma^{\alpha;0 \nu}_{pr} \gamma^{\alpha;\nu 0}_{qs} 
-    - \delta_{ps} \gamma^{\alpha=0}_{qr}
+    
+        \Gamma^{\\alpha}_{pqrs} = \gamma^{\\alpha=0}_{pr} \gamma^{\\alpha=0}_{qs} 
+        + \sum_{\\nu !=0} \gamma^{\\alpha;0 \\nu}_{pr} \gamma^{\\alpha;\\nu 0}_{qs} - \delta_{ps} \gamma^{\\alpha=0}_{qr}
 
     Parameters
     ----------

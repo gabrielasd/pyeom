@@ -1,18 +1,18 @@
 ..
-    : This file is part of EOMEE.
+    : This file is part of PyEOM.
     :
-    : EOMEE is free software: you can redistribute it and/or modify it under
+    : PyEOM is free software: you can redistribute it and/or modify it under
     : the terms of the GNU General Public License as published by the Free
     : Software Foundation, either version 3 of the License, or (at your
     : option) any later version.
     :
-    : EOMEE is distributed in the hope that it will be useful, but WITHOUT
+    : PyEOM is distributed in the hope that it will be useful, but WITHOUT
     : ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     : FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
     : for more details.
     :
     : You should have received a copy of the GNU General Public License
-    : along with EOMEE. If not, see <http://www.gnu.org/licenses/>.
+    : along with PyEOM. If not, see <http://www.gnu.org/licenses/>.
 
 EOM Classes
 -----------
@@ -22,19 +22,19 @@ EOM Classes
 .. autoclass:: eomee.EOMState
    :members:
 
-:mod:`eomee.EOMEA`
+:mod:`eomee.EA`
 =======================
-.. autoclass:: eomee.EOMEA
+.. autoclass:: eomee.EA
    :members:
 
-:mod:`eomee.EOMEADoubleCommutator`
+:mod:`eomee.EAc`
 ==================================
-.. autoclass:: eomee.EOMEADoubleCommutator
+.. autoclass:: eomee.EAc
    :members:
 
-:mod:`eomee.EOMEAAntiCommutator`
+:mod:`eomee.EAa`
 ================================
-.. autoclass:: eomee.EOMEAAntiCommutator
+.. autoclass:: eomee.EAa
    :members:
 
 :mod:`eomee.IP`
@@ -52,17 +52,30 @@ EOM Classes
 .. autoclass:: eomee.IPa
    :members:
 
-:mod:`eomee.EOMExc`
+:mod:`eomee.EE`
 =======================
-.. autoclass:: eomee.EOMExc
+.. autoclass:: eomee.EE
    :members:
 
-:mod:`eomee.EOMDIP`
+:mod:`eomee.DIP`
 =======================
-.. autoclass:: eomee.EOMDIP
+.. autoclass:: eomee.DIP
    :members:
 
 :mod:`eomee.EOMDEA`
 =======================
-.. autoclass:: eomee.EOMDEA
+.. autoclass:: eomee.DEA
+   :members:
+
+ERPA methods
+-----------
+
+:mod:`eomee.spinadapted.excitation.eval_ecorr`
+=======================
+.. autoclass:: eomee.spinadapted.excitation.eval_ecorr
+   :members:
+
+:mod:`eomee.spinadapted.eomdip.eval_ecorr`
+=======================
+.. autoclass:: eomee.spinadapted.eomdip.eval_ecorr
    :members:

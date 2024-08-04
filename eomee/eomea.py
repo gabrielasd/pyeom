@@ -36,7 +36,7 @@ class EA(EOMState):
 
     .. math::
 
-        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
+        \mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
 
     where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
 
@@ -125,9 +125,11 @@ class EAa(EOMState):
 
     .. math::
 
-        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
+        \mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
 
     where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
+
+    .. math::
 
         A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \Big\{ a_m, \left[\hat{H}, a^{\dagger}_n \right]\Big\}\middle| \Psi^{(N)}_0 \right>
 
@@ -185,9 +187,11 @@ class EAc(EOMState):
 
     .. math::
 
-        &\mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
+        \mathbf{A} \mathbf{C}_\lambda = \Delta_\lambda \mathbf{U} \mathbf{C}_\lambda
 
     where the matrices :math:`\mathbf{A}` and :math:`\mathbf{U}` are defined as:
+
+    .. math::
 
         A_{m,n} &= \left< \Psi^{(N)}_0 \middle| \left[ a_m, \left[\hat{H}, a^{\dagger}_n \right]\right]\middle| \Psi^{(N)}_0 \right>
 
